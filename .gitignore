@@ -1,0 +1,14 @@
+# Obsidian personal config
+.obsidian/
+
+# VS Code personal config
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.swp
+*~

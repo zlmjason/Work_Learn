@@ -1,0 +1,7 @@
+{
+  "name": "mineru-pdf-parser",
+  "version": "1.0.0",
+  "description": "基于 MinerU 云端的 PDF 智能解析工具，将 PDF 转为结构化 Markdown，保留标题层级、表格、公式、图片。",
+  "author": "Agent",
+  "tags": ["pdf", "markdown", "document-parser", "mineru"]
+}

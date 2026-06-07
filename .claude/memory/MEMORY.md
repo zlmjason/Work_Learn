@@ -1,0 +1,1 @@
+- [文件分类速查表](file-classification-cheatsheet.md) — 工作区目录结构与文件命名前缀映射，用于确保文件归类正确
