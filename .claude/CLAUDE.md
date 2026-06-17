@@ -291,6 +291,7 @@ MarkDown_Learn/
 |------|------|------|
 | docx-cn | `.claude/skills/docx-cn/` | Word 文档处理（.docx） |
 | find-skills | `.claude/skills/find-skills/` | 搜索/安装外部技能 |
+| context-compress | `.claude/skills/context-compress/` | 上下文压缩与摘要（接近窗口上限时触发） |
 | mineru-pdf-parser | `.claude/skills/mineru-pdf-parser/` | PDF/Word/PPT/Excel 转 Markdown |
 | pdf | `.claude/skills/pdf/` | PDF 处理指南 |
 | self-improving-agent | `.claude/skills/self-improving-agent/` | 持续改进日志（强制工作流） |
