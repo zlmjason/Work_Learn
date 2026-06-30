@@ -139,7 +139,7 @@ CoreMark ≥ xxx
 
 ## 3. 总线架构：系统工程师必须掌握的基本知识
 
-## 3.1 Master / Slave / Agent
+### 3.1 Master / Slave / Agent
 
 在片上总线里：
 
@@ -156,7 +156,7 @@ AURIX TC3xx 的 SRI 文档中，SRI agent 包括 master 和 slave；master 可�
 
 ---
 
-## 3.2 Address phase / Data phase
+### 3.2 Address phase / Data phase
 
 一次总线事务通常可以分为：
 
@@ -181,9 +181,9 @@ AURIX SRI 明确区分 address phase EDC、write data EDC、read data EDC，并�
 
 ---
 
-## 3.3 单次传输、block transfer、burst
+### 3.3 单次传输、block transfer、burst
 
-### 3.3.1 基本概念
+#### 3.3.1 基本概念
 
 | 概念 | 含义 |
 |---|---|
@@ -196,7 +196,7 @@ AURIX SRI 明确区分 address phase EDC、write data EDC、read data EDC，并�
 | Burst length | 一次 burst 有几个 beat |
 | Burst size | 每个 beat 的数据宽度 |
 
-### 3.3.2 为什么 burst 重要？
+#### 3.3.2 为什么 burst 重要？
 
 burst 的价值是减少地址 phase 和仲裁开销，提高有效带宽。
 
@@ -209,7 +209,7 @@ burst 的价值是减少地址 phase 和仲裁开销，提高有效带宽。
 如果是单次 32-bit 访问，每次都要仲裁和地址 phase，效率低。  
 如果是 4-beat / 8-beat burst，可以摊薄开销，DMA 搬运效率高。
 
-### 3.3.3 burst 的副作用
+#### 3.3.3 burst 的副作用
 
 burst 不是越长越好。
 
@@ -230,7 +230,7 @@ burst 不是越长越好。
 5. 长 burst 下 CPU / ISR 最大阻塞延迟是多少？
 ```
 
-### 3.3.4 AURIX 的例子
+#### 3.3.4 AURIX 的例子
 
 AURIX SRI operation code 中包含：
 
@@ -249,9 +249,9 @@ AURIX SRI operation code 中包含：
 
 ---
 
-## 3.4 位宽、对齐、byte lane、RMW
+### 3.4 位宽、对齐、byte lane、RMW
 
-### 3.4.1 位宽
+#### 3.4.1 位宽
 
 总线位宽会影响峰值带宽，例如：
 
@@ -271,7 +271,7 @@ AURIX SRI operation code 中包含：
 - ECC / EDC；
 - clock domain crossing。
 
-### 3.4.2 对齐
+#### 3.4.2 对齐
 
 系统工程师要定义：
 
@@ -283,7 +283,7 @@ AURIX SRI operation code 中包含：
 | 跨 cache line 访问 | cache maintenance 如何处理？ |
 | 外设寄存器半字/字节访问 | 是否允许？是否有副作用？ |
 
-### 3.4.3 RMW
+#### 3.4.3 RMW
 
 Read-Modify-Write 是车规 MCU 外设寄存器设计中的高风险点。
 
@@ -314,9 +314,9 @@ AURIX FPI 文档说明 FPI 支持多 master、pipelined transaction、32-bit add
 
 ---
 
-## 3.5 仲裁：priority、round-robin、QoS、starvation
+### 3.5 仲裁：priority、round-robin、QoS、starvation
 
-### 3.5.1 为什么仲裁是系统工程师重点？
+#### 3.5.1 为什么仲裁是系统工程师重点？
 
 仲裁决定多个 Master 同时访问同一个 Slave 时谁先走。
 
@@ -329,7 +329,7 @@ HSM 访问 mailbox
 
 如果全部访问 LMU0，瓶颈不在 CPU 主频，而在 LMU0 的 Slave 端口和仲裁器。
 
-### 3.5.2 常见仲裁策略
+#### 3.5.2 常见仲裁策略
 
 | 策略 | 优点 | 风险 |
 |---|---|---|
@@ -339,7 +339,7 @@ HSM 访问 mailbox
 | QoS / priority level | 可按业务定义优先级 | 需要软件/硬件协同 |
 | Starvation prevention | 防止低优先级长期无响应 | 可能增加高优先级抖动 |
 
-### 3.5.3 AURIX 的例子
+#### 3.5.3 AURIX 的例子
 
 AURIX SRI 中，每个 SCI 关联一个 arbiter；当两个或更多 Master 访问同一个 Slave 时，arbiter 决定访问顺序，顺序由两级 round-robin 机制和用户配置决定。同时，SRI crossbar 在不同 Master 访问不同 Slave 时可以并行执行多个 transaction。  
 来源：fileciteturn5file3
@@ -357,9 +357,9 @@ AURIX SRI 中，每个 SCI 关联一个 arbiter；当两个或更多 Master 访�
 
 ---
 
-## 3.6 同步、异步、Clock Domain Crossing
+### 3.6 同步、异步、Clock Domain Crossing
 
-### 3.6.1 同步总线
+#### 3.6.1 同步总线
 
 同步总线指访问双方处于同源或边沿对齐时钟域，数据在统一时钟边沿采样。
 
@@ -371,7 +371,7 @@ AURIX SRI 中，每个 SCI 关联一个 arbiter；当两个或更多 Master 访�
 | 设计简单 | 频率/时钟域灵活性差 |
 | 时序确定性较好 | 大 SoC 上难以全局同步 |
 
-### 3.6.2 异步总线 / 异步桥
+#### 3.6.2 异步总线 / 异步桥
 
 异步桥用于跨独立 clock domain。
 
@@ -393,7 +393,7 @@ AURIX SRI 中，每个 SCI 关联一个 arbiter；当两个或更多 Master 访�
 | 便于低功耗分域 | ordering 和 debug 更复杂 |
 | 支持外设慢时钟域 | 需要 CDC 安全验证 |
 
-### 3.6.3 系统工程师要定义什么？
+#### 3.6.3 系统工程师要定义什么？
 
 | 需求项 | 说明 |
 |---|---|
@@ -405,7 +405,7 @@ AURIX SRI 中，每个 SCI 关联一个 arbiter；当两个或更多 Master 访�
 | low-power | 一侧 clock gate 时访问如何响应？ |
 | debug | 异步桥是否有状态寄存器、overflow、timeout？ |
 
-### 3.6.4 AURIX 的例子：GTM Bridge
+#### 3.6.4 AURIX 的例子：GTM Bridge
 
 AURIX GTM bridge 中存在同步 / 异步相关配置。手册中 `BYPASS_SYNC` 字段说明：当 `aei_clk` 和 `aei_sys_clk` 完全异步并来自独立时钟源时，需要使用 synchronizer flip-flops；如果两个时钟由共同 clock source 通过 gating 或 division 生成且边沿条件满足，可以 bypass synchronizer 以减少额外同步延迟。  
 来源：fileciteturn3file9
@@ -427,9 +427,9 @@ write buffer 深度、overflow 行为、错误上报路径和 debug status。
 
 ---
 
-## 3.7 posted write / non-posted write / write buffer
+### 3.7 posted write / non-posted write / write buffer
 
-### 3.7.1 posted write 是什么？
+#### 3.7.1 posted write 是什么？
 
 posted write 指：
 
@@ -451,7 +451,7 @@ Master 发起写 → bridge / buffer 接收 → Master 侧认为写完成
 - 写错误不一定能返回给原 Master；
 - 对安全寄存器、外设控制寄存器、高实时触发寄存器存在语义风险。
 
-### 3.7.2 AURIX 的例子：S2S / F2S / S2F Bridge
+#### 3.7.2 AURIX 的例子：S2S / F2S / S2F Bridge
 
 AURIX S2S bridge 的写事务采用 posted write。也就是说，一个 SRI Master 通过 S2S bridge 写到另一个 SRI domain 时，写操作可以在源 SRI Fabric 上完成，由 S2S bridge 后续在目标 domain 完成。如果目标 domain 写事务出错，错误不会传回源 SRI Fabric。  
 来源：fileciteturn5file6
@@ -459,7 +459,7 @@ AURIX S2S bridge 的写事务采用 posted write。也就是说，一个 SRI Mas
 AURIX SFI_F2S bridge 也类似：SPB master 写 SRI resource 时，SPB 侧可以先完成，SFI_F2S 后续在 SRI 上完成写入；如果 SRI 写出错，错误不会返回 SPB bus，而由接收 SRI slave 按配置中断或报警。  
 来源：fileciteturn3file0
 
-### 3.7.3 产品定义要求
+#### 3.7.3 产品定义要求
 
 对于车规 MCU，posted write 必须写进架构需求和软件约束：
 
@@ -486,9 +486,9 @@ posted write 后端失败时，必须能记录目标地址、Master TAG、错误
 
 ---
 
-## 3.8 Timeout、default slave、bus error
+### 3.8 Timeout、default slave、bus error
 
-### 3.8.1 为什么重要？
+#### 3.8.1 为什么重要？
 
 车规 MCU 不能出现访问不存在地址后系统永久 hang 住。
 
@@ -500,7 +500,7 @@ posted write 后端失败时，必须能记录目标地址、Master TAG、错误
 - 能定位地址；
 - 能进入安全反应路径。
 
-### 3.8.2 AURIX 例子
+#### 3.8.2 AURIX 例子
 
 AURIX FPI 特性中包含 timeout detection and handling、default slave、debug support，可以在 timeout 或 bus error 时捕获 transaction information。  
 来源：fileciteturn5file8
@@ -527,9 +527,9 @@ timeout 阈值应可配置，并支持中断 / SMU alarm / reset escalation。
 
 ---
 
-## 3.9 Master TAG、权限、bus-level MPU、FFI
+### 3.9 Master TAG、权限、bus-level MPU、FFI
 
-### 3.9.1 为什么车规 MCU 特别关注这个？
+#### 3.9.1 为什么车规 MCU 特别关注这个？
 
 车规 MCU 经常存在混合关键性软件：
 
@@ -544,7 +544,7 @@ Debug / calibration
 
 它们共享一颗芯片。如果没有总线级隔离，单个软件错误可能破坏安全相关内存或寄存器。
 
-### 3.9.2 要关注的机制
+#### 3.9.2 要关注的机制
 
 | 机制 | 作用 |
 |---|---|
@@ -561,7 +561,7 @@ AURIX Safety Manual 中说明，SRI address map monitoring 用于 slave bus agen
 对于 EMEM / LMU 等模块，Safety Manual 还描述了基于 Master Tag 的访问检查和 SV_AP supervisor privilege monitoring：如果 slave interface 接收写访问，会检查是否具备 supervisor privilege；关键模块寄存器限制为 supervisor 软件或具备 supervisor 权限的 DMA 访问。  
 来源：fileciteturn5file5、fileciteturn5file11
 
-### 3.9.3 产品定义要求
+#### 3.9.3 产品定义要求
 
 ```text
 REQ-FFI-001:
@@ -585,9 +585,9 @@ DMA channel 必须能配置 privilege / protection attribute，否则 DMA 会成
 
 ---
 
-## 3.10 Cache、DMA、一致性
+### 3.10 Cache、DMA、一致性
 
-### 3.10.1 系统工程师为什么必须懂 cache？
+#### 3.10.1 系统工程师为什么必须懂 cache？
 
 只要 MCU 有 DCache，DMA 就是高风险点。
 
@@ -598,7 +598,7 @@ CPU 写 buffer，但数据还在 DCache，DMA 从 RAM 读到旧数据。
 DMA 写 RAM，但 CPU DCache 里还有旧 cache line，CPU 读不到新数据。
 ```
 
-### 3.10.2 需求定义关注点
+#### 3.10.2 需求定义关注点
 
 | 项目 | 需求 |
 |---|---|
@@ -633,9 +633,9 @@ REQ-CACHE-003:
 
 ---
 
-# 4. 以 AURIX TC3xx 为例理解总线架构
+## 4. 以 AURIX TC3xx 为例理解总线架构
 
-## 4.1 TC3xx 的三类片上连接资源
+### 4.1 TC3xx 的三类片上连接资源
 
 AURIX TC3xx User Manual 明确说明 TC3xx 平台有三类 independent on-chip connectivity resources：
 
@@ -659,9 +659,9 @@ AURIX TC3xx User Manual 明确说明 TC3xx 平台有三类 independent on-chip c
 
 ---
 
-## 4.2 AURIX SRI：高带宽共享互连
+### 4.2 AURIX SRI：高带宽共享互连
 
-### 4.2.1 SRI 的系统意义
+#### 4.2.1 SRI 的系统意义
 
 SRI 是高带宽互连，负责：
 
@@ -674,7 +674,7 @@ SRI 是高带宽互连，负责：
 Safety Manual 也说明，SRI Fabric 连接 CPU、DMA 和其他 high bandwidth requestors 到 high bandwidth memories 和其他资源，并支持 SRI masters 与 independent SRI slaves 之间的 parallel transactions。  
 来源：fileciteturn3file3
 
-### 4.2.2 SRI 的 MCI / SCI / Arbiter 模型
+#### 4.2.2 SRI 的 MCI / SCI / Arbiter 模型
 
 ```text
 Master → MCI → SRI Crossbar → SCI / Arbiter → Slave
@@ -699,7 +699,7 @@ Master → MCI → SRI Crossbar → SCI / Arbiter → Slave
 
 ---
 
-## 4.3 AURIX SPB / FPI：中低速外设互连
+### 4.3 AURIX SPB / FPI：中低速外设互连
 
 SPB 基于 FPI protocol，主要用于中低速外设。
 
@@ -740,7 +740,7 @@ CPU 写 GTM/ADC/QSPI 控制寄存器 → SPB/FPI → peripheral slave
 
 ---
 
-## 4.4 AURIX Bridge：最容易被忽略的风险点
+### 4.4 AURIX Bridge：最容易被忽略的风险点
 
 AURIX 中常见 bridge：
 
@@ -772,9 +772,9 @@ AURIX 的 SFI_F2S 文档就给出了 FPI transaction 到 SRI transaction 的映�
 
 ---
 
-# 5. 系统工程师如何把“总线理解”转成产品需求
+## 5. 系统工程师如何把“总线理解”转成产品需求
 
-## 5.1 第一步：列 Master
+### 5.1 第一步：列 Master
 
 车规 MCU 常见 Master：
 
@@ -797,7 +797,7 @@ AURIX 的 SFI_F2S 文档就给出了 FPI transaction 到 SRI transaction 的映�
 
 ---
 
-## 5.2 第二步：列 Slave
+### 5.2 第二步：列 Slave
 
 常见 Slave：
 
@@ -821,7 +821,7 @@ AURIX 的 SFI_F2S 文档就给出了 FPI transaction 到 SRI transaction 的映�
 
 ---
 
-## 5.3 第三步：画访问矩阵
+### 5.3 第三步：画访问矩阵
 
 建议产品定义阶段必须输出 Master-Slave 矩阵。
 
@@ -847,11 +847,11 @@ AURIX 的 SFI_F2S 文档就给出了 FPI transaction 到 SRI transaction 的映�
 
 ---
 
-## 5.4 第四步：定义典型和极限 traffic profile
+### 5.4 第四步：定义典型和极限 traffic profile
 
 只定义单点带宽没有意义。必须定义场景。
 
-### Profile A：电机控制实时场景
+#### Profile A：电机控制实时场景
 
 ```text
 CPU0: 20 kHz FOC ISR, code in PSPR, data in DSPR
@@ -869,7 +869,7 @@ HSM: 周期性 alive check
 - GTM / ADC 触发链延迟；
 - LMU 共享变量访问最坏延迟。
 
-### Profile B：通信峰值场景
+#### Profile B：通信峰值场景
 
 ```text
 CAN FD / Ethernet / LIN / SPI 同时高负载
@@ -884,7 +884,7 @@ CPU 处理协议栈
 - FIFO underflow / overflow；
 - 中断风暴下 CPU 和 SPB 访问延迟。
 
-### Profile C：OTA / Flash 编程场景
+#### Profile C：OTA / Flash 编程场景
 
 ```text
 CPU 执行 bootloader
@@ -900,7 +900,7 @@ CRC / HSM 验签
 - DMA / CRC / HSM 与 Flash / SRAM 的竞争；
 - reset / power loss 下数据一致性。
 
-### Profile D：安全故障场景
+#### Profile D：安全故障场景
 
 ```text
 非法地址访问
@@ -919,11 +919,11 @@ posted write 后端失败
 
 ---
 
-## 5.5 第五步：给 IC 设计明确的需求项
+### 5.5 第五步：给 IC 设计明确的需求项
 
 下面是一组可以直接放进产品需求文档的模板。
 
-### 5.5.1 拓扑需求
+#### 5.5.1 拓扑需求
 
 ```text
 REQ-BUS-TOP-001:
@@ -940,7 +940,7 @@ REQ-BUS-TOP-003:
 Shared RAM shall be split into multiple banks or slave ports to reduce CPU/DMA/multi-core contention.
 ```
 
-### 5.5.2 延迟需求
+#### 5.5.2 延迟需求
 
 ```text
 REQ-BUS-LAT-001:
@@ -957,7 +957,7 @@ REQ-BUS-LAT-003:
 The interconnect specification shall provide worst-case arbitration latency per master class and slave port.
 ```
 
-### 5.5.3 带宽需求
+#### 5.5.3 带宽需求
 
 ```text
 REQ-BUS-BW-001:
@@ -974,7 +974,7 @@ REQ-BUS-BW-003:
 The product manual shall provide sustained bandwidth numbers for typical paths: CPU↔RAM, DMA↔RAM, DMA↔Peripheral, CPU↔Flash.
 ```
 
-### 5.5.4 仲裁 / QoS 需求
+#### 5.5.4 仲裁 / QoS 需求
 
 ```text
 REQ-BUS-QOS-001:
@@ -991,7 +991,7 @@ REQ-BUS-QOS-003:
 Real-time masters, such as control CPU, ADC/GTM data path, and safety monitor, shall be configurable to higher arbitration class.
 ```
 
-### 5.5.5 访问保护需求
+#### 5.5.5 访问保护需求
 
 ```text
 REQ-BUS-PROT-001:
@@ -1013,7 +1013,7 @@ REQ-BUS-PROT-004:
 Access violation shall be recordable and shall support interrupt/SMU alarm escalation.
 ```
 
-### 5.5.6 错误处理需求
+#### 5.5.6 错误处理需求
 
 ```text
 REQ-BUS-ERR-001:
@@ -1035,7 +1035,7 @@ REQ-BUS-ERR-004:
 Safety relevant bus errors shall be routable to SMU alarm and software interrupt.
 ```
 
-### 5.5.7 Bridge 需求
+#### 5.5.7 Bridge 需求
 
 ```text
 REQ-BRIDGE-001:
@@ -1052,7 +1052,7 @@ REQ-BRIDGE-003:
 For safety-related register writes across bridge, software shall have a way to confirm completion, such as read-back, write-complete flag, barrier, or non-posted access path.
 ```
 
-### 5.5.8 Clock domain / CDC 需求
+#### 5.5.8 Clock domain / CDC 需求
 
 ```text
 REQ-CDC-001:
@@ -1069,7 +1069,7 @@ REQ-CDC-003:
 If synchronizer bypass is supported, the required clock relationship shall be explicitly stated and protected against invalid configuration.
 ```
 
-### 5.5.9 Cache / DMA 需求
+#### 5.5.9 Cache / DMA 需求
 
 ```text
 REQ-CACHE-001:
@@ -1086,7 +1086,7 @@ REQ-CACHE-003:
 If cacheable and non-cacheable aliases are supported, aliasing restrictions shall be documented.
 ```
 
-### 5.5.10 可观测性 / 验证需求
+#### 5.5.10 可观测性 / 验证需求
 
 ```text
 REQ-OBS-001:
@@ -1105,9 +1105,9 @@ System validation shall be able to inject illegal address, access protection vio
 
 ---
 
-# 6. 面向总线的基本知识清单
+## 6. 面向总线的基本知识清单
 
-## 6.1 必须掌握的术语
+### 6.1 必须掌握的术语
 
 | 术语 | 解释 | 系统关注点 |
 |---|---|---|
@@ -1134,7 +1134,7 @@ System validation shall be able to inject illegal address, access protection vio
 
 ---
 
-## 6.2 总线负载公式
+### 6.2 总线负载公式
 
 简单模型：
 
@@ -1162,7 +1162,7 @@ Bus Load ≈ 请求频率 × 单次事务成本 × 竞争系数
 
 ---
 
-## 6.3 总线性能不是看单一指标
+### 6.3 总线性能不是看单一指标
 
 | 指标 | 解释 |
 |---|---|
@@ -1179,11 +1179,11 @@ Bus Load ≈ 请求频率 × 单次事务成本 × 竞争系数
 
 ---
 
-# 7. 典型架构风险和需求建议
+## 7. 典型架构风险和需求建议
 
-## 7.1 多核共享 RAM 热点
+### 7.1 多核共享 RAM 热点
 
-### 风险
+#### 风险
 
 ```text
 CPU0 + CPU1 + CPU2 + DMA 同时访问 LMU0
@@ -1197,7 +1197,7 @@ CPU0 + CPU1 + CPU2 + DMA 同时访问 LMU0
 - 通信 FIFO 可能 underflow / overflow；
 - 多核共享锁等待变长。
 
-### 需求建议
+#### 需求建议
 
 ```text
 1. Shared RAM 分 bank / 多端口。
@@ -1208,13 +1208,13 @@ CPU0 + CPU1 + CPU2 + DMA 同时访问 LMU0
 
 ---
 
-## 7.2 DMA 长 burst 抢占 CPU
+### 7.2 DMA 长 burst 抢占 CPU
 
-### 风险
+#### 风险
 
 DMA 长 burst 提高吞吐，但可能长时间占用 SRAM slave port。
 
-### 需求建议
+#### 需求建议
 
 ```text
 1. DMA burst length 可配置。
@@ -1225,9 +1225,9 @@ DMA 长 burst 提高吞吐，但可能长时间占用 SRAM slave port。
 
 ---
 
-## 7.3 posted write 导致配置顺序错误
+### 7.3 posted write 导致配置顺序错误
 
-### 风险
+#### 风险
 
 ```text
 write CTRL_REG
@@ -1236,7 +1236,7 @@ write START_REG
 
 如果 CTRL_REG 经过 posted bridge 延迟，START_REG 可能先被执行，导致外设用旧配置启动。
 
-### 需求建议
+#### 需求建议
 
 ```text
 1. 安全/trigger 寄存器不建议 posted。
@@ -1247,9 +1247,9 @@ write START_REG
 
 ---
 
-## 7.4 CPU cache 与 DMA 不一致
+### 7.4 CPU cache 与 DMA 不一致
 
-### 风险
+#### 风险
 
 ```text
 CPU 写 TX buffer → 数据停在 DCache
@@ -1263,7 +1263,7 @@ DMA 写 RX buffer → RAM 已更新
 CPU DCache 命中旧 line → 读到旧数据
 ```
 
-### 需求建议
+#### 需求建议
 
 ```text
 1. DMA buffer 放 non-cacheable memory。
@@ -1274,13 +1274,13 @@ CPU DCache 命中旧 line → 读到旧数据
 
 ---
 
-## 7.5 非法访问无法定位 Master
+### 7.5 非法访问无法定位 Master
 
-### 风险
+#### 风险
 
 发现 bus error，但不知道是哪个 CPU、哪个 DMA channel、哪个外设 Master。
 
-### 需求建议
+#### 需求建议
 
 ```text
 1. transaction 必须携带 Master TAG。
@@ -1291,9 +1291,9 @@ CPU DCache 命中旧 line → 读到旧数据
 
 ---
 
-# 8. 系统工程师和 IC 设计评审时应该问的问题
+## 8. 系统工程师和 IC 设计评审时应该问的问题
 
-## 8.1 CPU 评审问题
+### 8.1 CPU 评审问题
 
 | 问题 | 目的 |
 |---|---|
@@ -1305,7 +1305,7 @@ CPU DCache 命中旧 line → 读到旧数据
 | cache line size / policy / maintenance 如何定义？ | 判断 DMA 一致性 |
 | lockstep CPU 对 bus error / ECC error 的反应是什么？ | 判断 safety |
 
-## 8.2 总线评审问题
+### 8.2 总线评审问题
 
 | 问题 | 目的 |
 |---|---|
@@ -1324,9 +1324,9 @@ CPU DCache 命中旧 line → 读到旧数据
 
 ---
 
-# 9. 系统验证角度：总线相关测试应该怎么设计
+## 9. 系统验证角度：总线相关测试应该怎么设计
 
-## 9.1 测试不应只做“寄存器读写通”
+### 9.1 测试不应只做“寄存器读写通”
 
 总线测试应该覆盖：
 
@@ -1344,9 +1344,9 @@ CPU DCache 命中旧 line → 读到旧数据
 | safety | EDC/ECC/error injection、SMU alarm、trap |
 | debug | error capture、trace、performance counter |
 
-## 9.2 典型测试 CASE
+### 9.2 典型测试 CASE
 
-### CASE-BUS-001：多 Master 同 Slave 竞争
+#### CASE-BUS-001：多 Master 同 Slave 竞争
 
 ```text
 条件：CPU0、CPU1、DMA0 同时访问 LMU0
@@ -1361,7 +1361,7 @@ CPU DCache 命中旧 line → 读到旧数据
 3. 仲裁行为与优先级配置一致。
 ```
 
-### CASE-BUS-002：posted write 完成语义
+#### CASE-BUS-002：posted write 完成语义
 
 ```text
 条件：Master 经 bridge 写目标寄存器或 RAM
@@ -1375,7 +1375,7 @@ CPU DCache 命中旧 line → 读到旧数据
 3. 安全相关软件流程能确认写完成。
 ```
 
-### CASE-BUS-003：非法地址和 default slave
+#### CASE-BUS-003：非法地址和 default slave
 
 ```text
 条件：CPU / DMA 访问未实现地址
@@ -1389,7 +1389,7 @@ CPU DCache 命中旧 line → 读到旧数据
 3. 能定位 Master、地址、访问方向、错误类型。
 ```
 
-### CASE-BUS-004：DMA 与 cache 一致性
+#### CASE-BUS-004：DMA 与 cache 一致性
 
 ```text
 条件：DMA buffer 分别放 cacheable 和 non-cacheable region
@@ -1405,7 +1405,7 @@ CPU DCache 命中旧 line → 读到旧数据
 
 ---
 
-# 10. 对自研车规 MCU 的建议架构需求包
+## 10. 对自研车规 MCU 的建议架构需求包
 
 如果你们要定义一颗车规 MCU，建议至少输出以下文档 / 需求包：
 
@@ -1424,7 +1424,7 @@ CPU DCache 命中旧 line → 读到旧数据
 
 ---
 
-# 11. 最终方法论
+## 11. 最终方法论
 
 系统工程师看 CPU / 总线，不是为了证明自己懂多少 RTL，而是为了避免产品定义只停留在参数表。
 
@@ -1453,7 +1453,7 @@ CPU DCache 命中旧 line → 读到旧数据
 
 ---
 
-# 参考资料
+## 参考资料
 
 1. `TC3xx User Manual part1.pdf`：On-Chip System Connectivity、SRI Fabric、SFI Bridge、FPI/SPB。  
 2. `TC3xx User Manual part2.pdf`：GTM bridge、外设 FIFO / DMA / 同步异步配置等。  
