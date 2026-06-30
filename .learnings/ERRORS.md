@@ -84,3 +84,62 @@ Install manually when network is stable:
 
 ---
 
+## [ERR-20260630-004] npx_skills_install_github_timeout
+
+**Logged**: 2026-06-30T00:00:00+08:00
+**Priority**: medium
+**Status**: open
+**Area**: infra
+
+### Summary
+`npx skills add <owner/repo@skill>` failed to clone GitHub repositories due to connection timeout on `github.com:443`.
+
+### Error
+```
+Failed to clone https://github.com/mattpocock/skills.git: ...
+fatal: unable to access 'https://github.com/mattpocock/skills.git/':
+Failed to connect to github.com port 443 after 21113 ms: Could not connect to server
+
+Failed to clone https://github.com/github/awesome-copilot.git: ...
+error: RPC failed; curl 28 Recv failure: Connection was reset
+
+Failed to clone https://github.com/fredrikaverpil/dotfiles.git: ...
+fatal: unable to access 'https://github.com/fredrikaverpil/dotfiles.git/':
+Failed to connect to github.com port 443 after 21086 ms: Could not connect to server
+
+Failed to clone https://github.com/pbakaus/impeccable.git: ...
+fatal: unable to access 'https://github.com/pbakaus/impeccable.git/':
+Failed to connect to github.com port 443 after 21089 ms: Could not connect to server
+```
+
+### Context
+- Commands:
+  - `npx skills add mattpocock/skills@obsidian-vault -g -y`
+  - `npx skills add github/awesome-copilot@autoresearch -g -y`
+  - `npx skills add fredrikaverpil/dotfiles@skill-creator -g -y`
+  - `npx skills add pbakaus/impeccable@impeccable -g -y`
+- Environment: Windows 11 Home China, Git Bash / MSYS2 shell
+- Expected: Install external skills from skills.sh / GitHub
+- Actual: All four installations failed at the repository clone step due to GitHub connectivity issues
+
+### Suggested Fix
+1. Retry when GitHub connectivity is stable (transient network issue).
+2. Configure Git to use an available HTTPS proxy if one is set up in the environment:
+   ```bash
+   git config --global http.proxy http://proxy:port
+   git config --global https.proxy http://proxy:port
+   ```
+3. Alternatively, clone the skill repositories manually via a working channel and install from local path:
+   ```bash
+   git clone https://github.com/mattpocock/skills.git
+   npx skills add ./skills@obsidian-vault -g -y
+   ```
+4. For skills.sh packages, check if a mirror or alternate source is available.
+
+### Metadata
+- Reproducible: yes (under current network conditions)
+- Related Files: .claude/skills/find-skills/SKILL.md
+- See Also: ERR-20260511-003
+
+---
+

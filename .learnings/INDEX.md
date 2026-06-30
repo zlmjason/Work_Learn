@@ -11,15 +11,15 @@
 
 ## 统计概览
 
-- **总条目数**: 11
-- **按状态**: accepted: 3, candidate: 3, pending: 2, proposed: 1, resolved: 5, wont_fix: 1
+- **总条目数**: 12
+- **按状态**: accepted: 3, candidate: 3, open: 1, pending: 2, proposed: 1, resolved: 5, wont_fix: 1
 
 ## 各文件汇总
 
 | 文件 | 条目数 | 状态分布 |
 |------|--------|----------|
 | [LEARNINGS.md](./LEARNINGS.md) | 3 | pending: 2, resolved: 3 |
-| [ERRORS.md](./ERRORS.md) | 2 | resolved: 1, wont_fix: 1 |
+| [ERRORS.md](./ERRORS.md) | 3 | open: 1, resolved: 1, wont_fix: 1 |
 | [FEATURE_REQUESTS.md](./FEATURE_REQUESTS.md) | 0 | — |
 | [DECISIONS.md](./DECISIONS.md) | 3 | accepted: 3, proposed: 1 |
 | [PATTERNS.md](./PATTERNS.md) | 3 | candidate: 3, resolved: 1 |
@@ -36,6 +36,7 @@
 
 - [ERR-20260511-001] pip_install_summarize
 - [ERR-20260511-003] winget_install_tesseract_poppler
+- [ERR-20260630-004] npx_skills_install_github_timeout
 
 ### DECISIONS.md
 
@@ -51,4 +52,4 @@
 
 ---
 
-_Generated at: 2026-06-30T20:54:15.863614+08:00_
+_Generated at: 2026-06-30T21:01:25.401033+08:00_
