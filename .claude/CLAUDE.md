@@ -444,7 +444,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 | 8 | 车规 MCU 相关内容放入 `01_MCU_车规MCU`。 |
 | 9 | 生物医学、论文、动脉粥样硬化相关内容放入 `02_Biomed_动脉粥样硬化`。 |
 | 10 | 投资、AI 产业链、个股跟踪内容放入 `03_AI产业链投资`。 |
-| 11 | AI 工具、Agent、Claude Code、Obsidian 相关内容放入 `04_Tools_AI工具链`。 |
+| 11 | AI 工具、Agent、Claude Code、Obsidian 相关内容放入 `91_Tools_AI工具链`。 |
 
 ### 8.2 笔记格式
 

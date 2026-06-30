@@ -88,8 +88,13 @@ Install manually when network is stable:
 
 **Logged**: 2026-06-30T00:00:00+08:00
 **Priority**: medium
-**Status**: open
+**Status**: resolved
 **Area**: infra
+
+### Resolution
+- **Resolved**: 2026-06-30T13:08:00+08:00
+- **Reason**: GitHub connectivity recovered. Retried installation of the same four skills; three succeeded globally (obsidian-vault, autoresearch, impeccable). One failed due to mismatched skill name in the repository (see ERR-20260630-005).
+- **Notes**: The `PromptScript does not support global skill installation` warning appears for PromptScript-based agents but does not prevent Claude Code from loading the skill.
 
 ### Summary
 `npx skills add <owner/repo@skill>` failed to clone GitHub repositories due to connection timeout on `github.com:443`.
@@ -140,6 +145,64 @@ Failed to connect to github.com port 443 after 21089 ms: Could not connect to se
 - Reproducible: yes (under current network conditions)
 - Related Files: .claude/skills/find-skills/SKILL.md
 - See Also: ERR-20260511-003
+
+---
+
+## [ERR-20260630-005] npx_skills_skill_name_not_found
+
+**Logged**: 2026-06-30T13:08:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: skills
+
+### Resolution
+- **Resolved**: 2026-06-30T21:16:00+08:00
+- **Reason**: The intended skill was actually named `skillify` in the same repository. Installed successfully with `npx skills add fredrikaverpil/dotfiles@skillify -g -y` and copied to the project local `.claude/skills/` directory.
+- **Notes**: The search result for `skill-creator` matched the repository but not the exact skill name inside it.
+
+### Summary
+`npx skills add fredrikaverpil/dotfiles@skill-creator` failed because the repository does not contain a skill named `skill-creator`.
+
+### Error
+```
+No matching skills found for: skill-creator
+
+Available skills:
+  - aip
+  - codebase-audit
+  - gh-cli
+  - gh-pr
+  - git-commit
+  - golang-style
+  - neovim
+  - nvim-config
+  - nvim-plugin
+  - obsidian
+  - plan-interview
+  - proof
+  - self-review
+  - skillify
+```
+
+### Context
+- Command: `npx skills add fredrikaverpil/dotfiles@skill-creator -g -y`
+- Environment: Windows 11 Home China, Git Bash / MSYS2 shell
+- Expected: Install a skill named `skill-creator`
+- Actual: The repository `fredrikaverpil/dotfiles` only exposes a skill named `skillify`
+
+### Suggested Fix
+Install the correct skill name from the same repository:
+
+```bash
+npx skills add fredrikaverpil/dotfiles@skillify -g -y
+```
+
+Or search for another skill creator helper if `skillify` is not the intended one.
+
+### Metadata
+- Reproducible: yes
+- Related Files: .claude/skills/find-skills/SKILL.md
+- See Also: ERR-20260630-004
 
 ---
 
