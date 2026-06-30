@@ -3,6 +3,9 @@
 """
 context-check.py — 上下文 token 占用估算与阈值提醒
 
+配置来源：.claude/skills/context-compress/config.json
+（当前脚本仍以内置默认值为权威源，config.json 用于文档化和未来统一读取。）
+
 用法示例：
   # 估算单个文件
   python context-check.py path/to/file.md

@@ -609,6 +609,74 @@ Before extraction, verify:
 - [ ] No project-specific hardcoded values
 - [ ] Follows skill naming conventions (lowercase, hyphens)
 
+---
+
+## `.learnings/` Upgrade Guide
+
+本项目 `.learnings/` 已升级为结构化知识管理体系，包含以下文件：
+
+| 文件 | 用途 |
+|------|------|
+| `LEARNINGS.md` | 纠正、洞察、知识盲区、最佳实践 |
+| `ERRORS.md` | 命令失败和集成错误 |
+| `FEATURE_REQUESTS.md` | 用户提出的能力需求 |
+| `DECISIONS.md` | 架构决策记录（ADR） |
+| `PATTERNS.md` | 复发性模式跟踪 |
+| `SKILL_REGISTRY.md` | Skill 与来源 Learning 的对应表 |
+| `INDEX.md` | 自动生成的索引 |
+
+### 三层分离
+
+| 层级 | 位置 | 内容 |
+|------|------|------|
+| Project-level | `.learnings/` | 项目特定错误、决策、模式、功能请求 |
+| Personal-level | `.claude/memory/` | 跨项目个人偏好、长期记忆 |
+| Skill-level | `.claude/skills/<name>/` | 可复用的能力资产 |
+
+### 辅助脚本
+
+- **`scripts/update-index.py`**：扫描 `.learnings/*.md`，重新生成 `INDEX.md`
+  ```bash
+  python .claude/skills/self-improving-agent/scripts/update-index.py
+  ```
+
+- **`scripts/promote-learning.py`**：将 Learning 晋升到项目文档
+  ```bash
+  # 预览
+  python .claude/skills/self-improving-agent/scripts/promote-learning.py LRN-20260511-005 .claude/CLAUDE.md --dry-run
+
+  # 执行
+  python .claude/skills/self-improving-agent/scripts/promote-learning.py LRN-20260511-005 .claude/CLAUDE.md
+  ```
+
+### 晋升规则
+
+当 Learning 满足以下条件时，应考虑晋升：
+
+- 跨多个文件/功能适用
+- 任何贡献者（人类或 AI）都应该知道
+- 能防止重复犯错
+- 记录项目特定约定
+
+晋升目标：
+
+| 类型 | 目标 |
+|------|------|
+| 项目事实/规范 | `.claude/CLAUDE.md` |
+| 工作流/自动化 | `AGENTS.md` 或 `.claude/CLAUDE.md` |
+| 可复用能力 | `.claude/skills/` 新 Skill |
+| 个人偏好 | `.claude/memory/` |
+
+### 模式晋升
+
+`PATTERNS.md` 中的模式满足以下全部条件时应晋升：
+
+- `Recurrence-Count >= 3`
+- 在至少 2 个不同任务中出现过
+- 发生在 30 天窗口内
+
+---
+
 ## Multi-Agent Support
 
 This skill works across different AI coding agents with agent-specific activation.

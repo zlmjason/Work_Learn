@@ -1,133 +1,65 @@
 ---
 name: find-skills
-description: Helps users discover and install agent skills when they ask questions like "how do I do X", "find a skill for X", "is there a skill that can...", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill.
+description: Discover and install agent skills from the open skills ecosystem. Trigger when the user asks "how do I do X", "find a skill for X", "is there a skill that can...", "can you do X" for specialized capabilities, or expresses interest in extending agent capabilities.
+metadata:
 ---
 
 # Find Skills
 
-This skill helps you discover and install skills from the open agent skills ecosystem.
+帮助用户从开放 Agent Skills 生态中发现和安装 Skill。
 
-## When to Use This Skill
+## 触发条件
 
-Use this skill when the user:
+用户提到以下任一表达时调用本 skill：
 
-- Asks "how do I do X" where X might be a common task with an existing skill
-- Says "find a skill for X" or "is there a skill for X"
-- Asks "can you do X" where X is a specialized capability
-- Expresses interest in extending agent capabilities
-- Wants to search for tools, templates, or workflows
-- Mentions they wish they had help with a specific domain (design, testing, deployment, etc.)
+- "how do I do X"（X 可能是常见任务）
+- "find a skill for X" / "is there a skill that can..."
+- "can you do X"（X 是专业化能力）
+- 想扩展 Agent 能力
+- 想搜索工具、模板、工作流
+- 希望某个特定领域有 Skill 帮助（如 design、testing、deployment）
 
-## What is the Skills CLI?
+## 快速参考
 
-The Skills CLI (`npx skills`) is the package manager for the open agent skills ecosystem. Skills are modular packages that extend agent capabilities with specialized knowledge, workflows, and tools.
+| 情况 | 操作 |
+|------|------|
+| 想找 Skill | `npx skills find [query]` |
+| 找到后安装 | `npx skills add <owner/repo@skill> -g -y` |
+| 检查更新 | `npx skills check` |
+| 更新所有 | `npx skills update` |
+| 找不到 | 直接用通用能力帮助，或建议 `npx skills init` 自建 |
 
-**Key commands:**
-
-- `npx skills find [query]` - Search for skills interactively or by keyword
-- `npx skills add <package>` - Install a skill from GitHub or other sources
-- `npx skills check` - Check for skill updates
-- `npx skills update` - Update all installed skills
-
-**Browse skills at:** https://skills.sh/
-
-## How to Help Users Find Skills
-
-### Step 1: Understand What They Need
-
-When a user asks for help with something, identify:
-
-1. The domain (e.g., React, testing, design, deployment)
-2. The specific task (e.g., writing tests, creating animations, reviewing PRs)
-3. Whether this is a common enough task that a skill likely exists
-
-### Step 2: Search for Skills
-
-Run the find command with a relevant query:
+## 一分钟示例
 
 ```bash
-npx skills find [query]
+# 搜索 React 性能优化相关 Skill
+npx skills find react performance
+
+# 安装找到的 Skill
+npx skills add vercel-labs/agent-skills@vercel-react-best-practices -g -y
 ```
 
-For example:
-
-- User asks "how do I make my React app faster?" → `npx skills find react performance`
-- User asks "can you help me with PR reviews?" → `npx skills find pr review`
-- User asks "I need to create a changelog" → `npx skills find changelog`
-
-The command will return results like:
+## 文件结构
 
 ```
-Install with npx skills add <owner/repo@skill>
-
-vercel-labs/agent-skills@vercel-react-best-practices
-└ https://skills.sh/vercel-labs/agent-skills/vercel-react-best-practices
+find-skills/
+├── SKILL.md       ← 本文件（入口与触发条件）
+├── reference.md   ← Skills CLI 详细用法、搜索技巧、常见类别
+├── gotchas.md     ← 常见陷阱（搜索词太宽、未确认安装等）
+├── config.json    ← CLI 命令与热门来源
+└── _meta.json
 ```
 
-### Step 3: Present Options to the User
+## 常见陷阱
 
-When you find relevant skills, present them to the user with:
+- 把简单通用问题误判为需要 Skill
+- 搜索词太宽泛导致结果不相关
+- 未向用户确认就直接安装
+- 安装后未验证 Skill 是否可用
+- 忽略本地 `.claude/skills/` 已有 Skill
 
-1. The skill name and what it does
-2. The install command they can run
-3. A link to learn more at skills.sh
+详见 [`gotchas.md`](./gotchas.md)。
 
-Example response:
+## 详细用法
 
-```
-I found a skill that might help! The "vercel-react-best-practices" skill provides
-React and Next.js performance optimization guidelines from Vercel Engineering.
-
-To install it:
-npx skills add vercel-labs/agent-skills@vercel-react-best-practices
-
-Learn more: https://skills.sh/vercel-labs/agent-skills/vercel-react-best-practices
-```
-
-### Step 4: Offer to Install
-
-If the user wants to proceed, you can install the skill for them:
-
-```bash
-npx skills add <owner/repo@skill> -g -y
-```
-
-The `-g` flag installs globally (user-level) and `-y` skips confirmation prompts.
-
-## Common Skill Categories
-
-When searching, consider these common categories:
-
-| Category        | Example Queries                          |
-| --------------- | ---------------------------------------- |
-| Web Development | react, nextjs, typescript, css, tailwind |
-| Testing         | testing, jest, playwright, e2e           |
-| DevOps          | deploy, docker, kubernetes, ci-cd        |
-| Documentation   | docs, readme, changelog, api-docs        |
-| Code Quality    | review, lint, refactor, best-practices   |
-| Design          | ui, ux, design-system, accessibility     |
-| Productivity    | workflow, automation, git                |
-
-## Tips for Effective Searches
-
-1. **Use specific keywords**: "react testing" is better than just "testing"
-2. **Try alternative terms**: If "deploy" doesn't work, try "deployment" or "ci-cd"
-3. **Check popular sources**: Many skills come from `vercel-labs/agent-skills` or `ComposioHQ/awesome-claude-skills`
-
-## When No Skills Are Found
-
-If no relevant skills exist:
-
-1. Acknowledge that no existing skill was found
-2. Offer to help with the task directly using your general capabilities
-3. Suggest the user could create their own skill with `npx skills init`
-
-Example:
-
-```
-I searched for skills related to "xyz" but didn't find any matches.
-I can still help you with this task directly! Would you like me to proceed?
-
-If this is something you do often, you could create your own skill:
-npx skills init my-xyz-skill
-```
+完整搜索流程、安装示例、常见类别、搜索技巧见 [`reference.md`](./reference.md)。

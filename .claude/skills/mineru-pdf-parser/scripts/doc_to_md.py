@@ -23,17 +23,24 @@ SUPPORTED_EXTS = (
 
 
 def get_mineru_client():
-    """Create MinerU client with token from config if available."""
+    """Create MinerU client with token from env or config if available.
+
+    Token priority:
+      1. Environment variable MINERU_API_TOKEN
+      2. config.json['api_token'] (if non-empty)
+      3. No token -> fall back to flash_extract() mode
+    """
     import json
-    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config.json")
-    token = None
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                cfg = json.load(f)
-                token = cfg.get("api_token", None)
-        except Exception:
-            pass
+    token = os.environ.get("MINERU_API_TOKEN", "").strip()
+    if not token:
+        config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config.json")
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    cfg = json.load(f)
+                    token = (cfg.get("api_token") or "").strip()
+            except Exception:
+                pass
     from mineru import MinerU
     if token:
         client = MinerU(token)

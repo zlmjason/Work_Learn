@@ -1,0 +1,26 @@
+{
+  "name": "mcu-note-creator",
+  "version": "1.0.0",
+  "note": "按项目规范创建车规 MCU 知识库笔记。",
+  "noteTemplateSections": [
+    "核心问题",
+    "结论",
+    "背景",
+    "关键机制",
+    "应用场景",
+    "关联笔记",
+    "待补充问题",
+    "标签",
+    "Agent 整理记录"
+  ],
+  "specialDirectories": {
+    "inbox": "00_Inbox_临时收集",
+    "archive": "90_Archive_归档",
+    "attachments": "99_Attachments_附件"
+  },
+  "filenameRules": {
+    "separator": "_",
+    "case": "uppercase_for_abbreviations",
+    "noSpaces": true
+  }
+}

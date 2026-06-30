@@ -6,11 +6,9 @@ metadata:
 
 # Context Compress
 
-一个用于在上下文接近模型窗口上限时自动压缩/摘要对话历史的 Claude Code 本地 skill。
+一个用于在上下文接近模型窗口上限时压缩/摘要对话历史的 Claude Code 本地 skill。
 
-## 触发方式
-
-### 1. 手动触发（推荐）
+## 触发条件
 
 用户输入以下任意一种表达时调用本 skill：
 
@@ -20,23 +18,18 @@ metadata:
 - "session 太长了，整理一下关键信息"
 - "把前面的内容压缩一下"
 
-### 2. 自动触发（需配置 hook）
+## 快速参考
 
-Claude Code 本身无法直接感知自身上下文占用量，需要通过 `.claude/settings.json` 中的 hook 调用辅助脚本 `scripts/context-check.py` 进行估算和提醒。
+| 情况 | 操作 |
+|------|------|
+| 用户手动请求压缩 | 执行压缩，输出结构化摘要 |
+| Hook 报警提示接近上限 | 提醒用户运行 `/context-compress`，不要假设已自动压缩 |
+| 压缩后需要长期保存决策/踩坑 | 使用 `self-improving-agent` 记录到 `.learnings/` |
+| 不确定该保留什么 | 优先保留「当前任务」和「关键决策」，丢弃已推翻的旧方案 |
 
-## 压缩策略
+**常见陷阱**：详见 [`gotchas.md`](./gotchas.md)。
 
-当触发压缩时，按以下优先级保留信息：
-
-| 优先级 | 保留内容 | 丢弃/精简内容 |
-|--------|----------|---------------|
-| P0 | 当前任务目标与用户最终意图 | 中间探索性提问 |
-| P0 | 已达成的重要决策和约定 | 已推翻的旧方案 |
-| P1 | 已修改/创建的文件清单及变更原因 | 未改动的文件全文 |
-| P1 | 关键代码/配置片段（≤ 30 行） | 大段未修改代码 |
-| P1 | 未完成的待办事项（Todo） | 已完成的详细步骤 |
-| P2 | 用户的硬性约束（命名规范、禁用方案等） | 一般性讨论 |
-| P2 | 出现过的关键错误及其根因 | 已解决错误的完整日志 |
+**详细用法**：触发方式、Hook 配置、压缩策略、脚本参数、Skill 联动见 [`reference.md`](./reference.md)。
 
 ## 输出格式
 
@@ -72,51 +65,18 @@ Claude Code 本身无法直接感知自身上下文占用量，需要通过 `.cl
 [下一步建议或用户原话]
 ```
 
-## Hook 自动提醒配置
+## 文件结构
 
-在 `.claude/settings.json` 中添加以下配置，可在每次提交用户提示前运行检查脚本：
-
-```json
-{
-  "hooks": {
-    "UserPromptSubmit": [{
-      "matcher": "",
-      "hooks": [{
-        "type": "command",
-        "command": "python .claude/skills/context-compress/scripts/context-check.py --scan-workspace --warn-at-percent 75 --exit-zero"
-      }]
-    }]
-  }
-}
+```
+context-compress/
+├── SKILL.md      ← 本文件（入口与触发条件）
+├── reference.md  ← 详细用法、Hook 配置、示例、脚本参数
+├── gotchas.md    ← 常见陷阱与失败模式
+├── config.json   ← 默认阈值与配置
+└── scripts/
+    └── context-check.py  ← Token 估算脚本
 ```
 
-脚本会估算当前工作区中常见源文件/文档的总体 token 占用，并在接近阈值时输出警告。注意：该脚本**无法直接读取 Claude Code 内部对话状态**，它只能基于文件大小给出参考提醒。真正的上下文压缩仍需手动调用 `/context-compress`。
+## 相关技能
 
-## 手动使用示例
-
-**用户**：`/context-compress`
-
-**Claude**：
-> 已压缩当前会话上下文。以下是摘要：
->
-> ## 上下文摘要（Compressed Context）
-> ### 当前任务
-> 为 AURIX TC3xx 编写 SPI 主控制器初始化代码...
-> ### 关键决策
-> 1. 使用 QSPI0 通道 0，CPOL=0/CPHA=0...
-> ### 已修改文件
-> - `01_Hardware_硬件层/.../HW_Periph_Comm_SPI_Init.md`：补充初始化流程
-> ### 未完成事项
-> - [ ] 完成 DMA 传输配置
-> - [ ] 补充错误处理分支
-> ### 继续指令
-> 继续编写 SPI 初始化函数并验证时序。
-
-用户可以将这段摘要复制到新会话开头，继续工作而不丢失关键信息。
-
-## 注意事项
-
-1. **Claude Code 无法主动知道上下文窗口还剩多少**。自动触发依赖 hook 脚本的外部估算，仅作提醒。
-2. 压缩会丢失细节，重要代码片段应单独保存到文件而非仅留在对话中。
-3. 如果对话涉及大量文件修改，优先将状态写入 `.learnings/` 或项目文档，而不是依赖对话上下文。
-4. 当前 skill 主要面向中文工作区，输出保持中文，技术术语保留英文。
+- [`self-improving-agent`](../self-improving-agent/SKILL.md)：将压缩摘要中的重要决策、错误、知识盲区沉淀到 `.learnings/`

@@ -1,0 +1,19 @@
+{
+  "name": "summarize",
+  "version": "1.1.0",
+  "note": "Windows-native replacement for the summarize CLI. No API key is configured in this project; use --print-content to extract content for Kimi.",
+  "defaultModel": "google/gemini-3-flash-preview",
+  "defaultLength": "medium",
+  "maxInputChars": 60000,
+  "configPath": "~/.summarize/config.json",
+  "requires": ["python3", "requests", "beautifulsoup4"],
+  "optional": ["PyPDF2", "yt-dlp"],
+  "envVarKeys": {
+    "google": ["GEMINI_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY", "GOOGLE_API_KEY"],
+    "gemini": ["GEMINI_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY", "GOOGLE_API_KEY"],
+    "openai": ["OPENAI_API_KEY"],
+    "anthropic": ["ANTHROPIC_API_KEY"],
+    "xai": ["XAI_API_KEY"]
+  },
+  "ignoredFlags": ["--firecrawl"]
+}

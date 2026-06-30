@@ -291,11 +291,13 @@ MarkDown_Learn/
 |------|------|------|
 | docx-cn | `.claude/skills/docx-cn/` | Word 文档处理（.docx） |
 | find-skills | `.claude/skills/find-skills/` | 搜索/安装外部技能 |
-| context-compress | `.claude/skills/context-compress/` | 上下文压缩与摘要（接近窗口上限时触发） |
+| context-compress | `.claude/skills/context-compress/` | 上下文压缩与摘要（支持手动 `/context-compress` 或 Hook 自动提醒） |
 | mineru-pdf-parser | `.claude/skills/mineru-pdf-parser/` | PDF/Word/PPT/Excel 转 Markdown |
 | pdf | `.claude/skills/pdf/` | PDF 处理指南 |
 | self-improving-agent | `.claude/skills/self-improving-agent/` | 持续改进日志（强制工作流） |
 | summarize | `.claude/skills/summarize/` | 内容提取/摘要 |
+
+> **技能结构约定**：每个技能文件夹遵循多文件结构 — `SKILL.md`（入口与触发条件）、`reference.md`（详细用法）、`gotchas.md`（陷阱与失败模式）、`config.json`（配置）、`scripts/`（可执行脚本）。参考实现：`self-improving-agent`、`context-compress`。
 
 ### 4.2 summarize（内容提取）
 

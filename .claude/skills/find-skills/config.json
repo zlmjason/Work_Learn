@@ -1,0 +1,27 @@
+{
+  "name": "find-skills",
+  "version": "1.1.0",
+  "note": "Help users discover and install agent skills from the open skills ecosystem.",
+  "cli": "npx skills",
+  "commands": {
+    "find": "npx skills find [query]",
+    "add": "npx skills add <owner/repo@skill> [-g] [-y]",
+    "check": "npx skills check",
+    "update": "npx skills update",
+    "init": "npx skills init <skill-name>"
+  },
+  "browseUrl": "https://skills.sh/",
+  "popularSources": [
+    "vercel-labs/agent-skills",
+    "ComposioHQ/awesome-claude-skills"
+  ],
+  "commonCategories": [
+    "Web Development",
+    "Testing",
+    "DevOps",
+    "Documentation",
+    "Code Quality",
+    "Design",
+    "Productivity"
+  ]
+}
