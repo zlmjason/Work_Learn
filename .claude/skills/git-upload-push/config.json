@@ -1,0 +1,9 @@
+{
+  "name": "git-upload-push",
+  "version": "1.0.0",
+  "description": "一键完成 git add、commit、push 的上传推送流程。",
+  "defaultCommitPrefix": "[auto]",
+  "requireCommitMessage": true,
+  "confirmBeforePush": true,
+  "defaultBranchProtection": true
+}
