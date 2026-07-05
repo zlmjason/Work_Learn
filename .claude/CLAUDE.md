@@ -299,6 +299,7 @@ MarkDown_Learn/
 | autoresearch | `.claude/skills/autoresearch/` | 有明确量化指标的自动迭代优化（性能、内存、测试通过率、构建时间等） |
 | impeccable | `.claude/skills/impeccable/` | 前端 UI 设计、重构、评审、打磨（页面、组件、Dashboard、表单等） |
 | obsidian-vault | `.claude/skills/obsidian-vault/` | 在 Obsidian 中搜索、创建、整理笔记 |
+| note-organizer | `.claude/skills/note-organizer/` | 按 CLAUDE.md 规范整理 Markdown 笔记目录与命名 |
 | skillify | `.claude/skills/skillify/` | 将当前会话的可重复流程捕获为新的 skill |
 
 > **技能结构约定**：每个技能文件夹遵循多文件结构 — `SKILL.md`（入口与触发条件）、`reference.md`（详细用法）、`gotchas.md`（陷阱与失败模式）、`config.json`（配置）、`scripts/`（可执行脚本）。参考实现：`self-improving-agent`、`context-compress`。
@@ -422,7 +423,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 | 子目录 | 内容 |
 |--------|------|
 | `references/knowledge-base/` | MCU 架构、通信协议、诊断、外设测试、功能安全、区域架构等参考资料 |
-| `skills/` | 可用技能（find-skills、pdf、summarize、self-improving-agent、docx-cn、mineru-pdf-parser） |
+| `skills/` | 可用技能（find-skills、pdf、summarize、self-improving-agent、docx-cn、mineru-pdf-parser、note-organizer） |
 
 ---
 
@@ -491,6 +492,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 | 2026-05-17 | 融合 CLAUDE.md 与 AGENTS.md，精简 .claude/ 目录适配知识库项目 |
 | 2026-06-05 | 新增第 8 节"Obsidian 知识库管理规范"；本地技能目录从 `skills/` 迁移至 `.claude/skills/`，新增 docx-cn、mineru-pdf-parser 登记 |
 | 2026-06-05 | **工作区重构**：建立车规 MCU 技术栈分层架构（Hardware / Middleware / Application）；目录全英文化；Peripherals 按功能（Comm/Timer/IO/Storage）拆分；Core 按架构（AURIX/ARM/Comparison）细分；新增 AUTOSAR 和 FreeRTOS 完整目录框架；制定文件命名规范 |
+| 2026-07-05 | 新增本地技能 `note-organizer`：按 CLAUDE.md 目录与命名规范自动整理 Markdown 笔记；将两篇原子操作笔记归档至 `01_Hardware_硬件层/01_Core/03_Comparison/` |
 | 2026-06-05 | **深度细分**：Hardware 层全部细化（Memory→RAM/Flash/Cache/MPU、System→Clock/Power/Reset/Bus/DMA/Interrupt、Boot→Bootloader/BootROM/FirmwareUpdate、Peripherals/Comm→SPI/I2C/CAN/LIN/UART/Ethernet/FlexRay/Intercore、Timer→GPT/PWM/ICU/WDG、IO→GPIO/ADC/DAC、Multicore→Lockstep/Resource/Intercore、Debug→CoreSight/Trace/JTAG/CrossTrigger）；新增 `04_Safety_功能安全`（ISO26262/E2E/SafetyMonitor/Lockstep）和 `05_Tools_工具链`（Compiler/Debugger/Flash/Trace/HIL_SIL）；AUTOSAR 全部细化到模块级（CAN/LIN/SPI/Ethernet/FlexRay/UDS/XCP、DEM/DET/UDS/DTC/OBD、OS/EcuM/BswM/SchM/ComM/Nm、E2E/SafeSPI/SafeT/Testing）；FreeRTOS 细化到子模块级（Tasks/Scheduler/Lists/Queues、Semaphores/Mutexes/EventGroups/StreamBuffers、Heap/Stack/MPU、Tick/Timers/Delays、PortLayer/Interrupts/Hooks）；文件命名规则扩展至 28 条覆盖全部层次 |
 
 ---
