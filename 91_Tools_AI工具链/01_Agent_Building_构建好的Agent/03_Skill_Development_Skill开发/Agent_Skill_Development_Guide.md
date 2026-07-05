@@ -1,6 +1,6 @@
 # Agent Skill 开发指南
 
-> 本文档系统化介绍如何为 Claude Code / OpenClaw 等 Agent 平台设计、实现和维护高质量 Skill。
+> 本文档系统化介绍如何为 Claude Code / OpenClaw 等 Agent 平台设计、实现和维护高质量 Skill。核心视角来自论文 *Agent Systems with Harness Engineering* 中的 **Skill Libraries** 组件。
 
 ## 核心问题
 
@@ -9,6 +9,8 @@
 ## 结论
 
 高质量 Skill = **聚焦的问题定义** + **清晰的触发条件** + **可执行的流程/脚本** + **明确的失败模式** + **可进化的结构**。
+
+Skill 是 Harness 中**可复用的行为单元**，需要从"单文件提示"进化为"可管理的能力资产"。
 
 ---
 
@@ -132,7 +134,42 @@ metadata:
 
 ---
 
-## 3. `gotchas.md` 写法
+## 3. Skill Library 的管理
+
+当 Skill 数量增多时，需要考虑 Skill Library 的整体管理。
+
+### 3.1 Progressive Disclosure
+
+解决大规模 Skill 库的上下文窗口问题：
+
+- 先加载 Skill 的 `name` + `description`（metadata）
+- 模型判断需要某个 Skill 时，再展开 `reference.md` 和 `gotchas.md`
+- 避免一次性把所有 Skill 全文塞进上下文
+
+### 3.2 生命周期管理
+
+| 阶段 | 动作 |
+|------|------|
+| 创建 | 从 `.learnings/` 中的重复模式提取 |
+| 注册 | 在 `.claude/CLAUDE.md` 登记 |
+| 使用 | 通过触发条件被模型调用 |
+| 维护 | 根据使用反馈更新 `gotchas.md` 和 `reference.md` |
+| 退役 | 过时 Skill 移入 `90_Archive_归档` |
+
+### 3.3 分类组织
+
+按功能分类存放 Skill：
+
+```text
+.claude/skills/
+├── content/        ← 内容处理（summarize、pdf、mineru）
+├── memory/         ← 记忆与学习（self-improving-agent、context-compress）
+├── dev/            ← 开发辅助（code-review、simplify、verify）
+├── research/       ← 研究（deep-research、autoresearch）
+└── external/       ← 外部集成（find-skills）
+```
+
+## 4. `gotchas.md` 写法
 
 `gotchas.md` 是 Skill 质量的关键。每条 Gotcha 应包含：
 
@@ -152,7 +189,7 @@ metadata:
 
 ---
 
-## 4. Skill 与项目指令的协同
+## 5. Skill 与项目指令的协同
 
 Skill 不是孤立的，它需要与项目级指令（`CLAUDE.md`、`AGENTS.md`）协同：
 
@@ -167,7 +204,7 @@ Skill 不是孤立的，它需要与项目级指令（`CLAUDE.md`、`AGENTS.md`�
 
 ---
 
-## 5. Skill 开发 checklist
+## 6. Skill 开发 checklist
 
 - [ ] 明确 Skill 解决的具体问题
 - [ ] 创建 `.claude/skills/<name>/` 文件夹
@@ -183,7 +220,7 @@ Skill 不是孤立的，它需要与项目级指令（`CLAUDE.md`、`AGENTS.md`�
 
 ---
 
-## 6. 从 Learning 到 Skill 的晋升
+## 7. 从 Learning 到 Skill 的晋升
 
 当某个经验反复出现、具有跨任务通用性时，应该把它从 `.learnings/` 晋升为 Skill。
 
@@ -205,7 +242,7 @@ Project Convention (.claude/CLAUDE.md)
 
 ---
 
-## 7. 跨平台 Skill 设计差异
+## 8. 跨平台 Skill 设计差异
 
 | 平台 | Skill 形式 | 重点 |
 |------|-----------|------|
@@ -222,9 +259,11 @@ Project Convention (.claude/CLAUDE.md)
 
 - [[INDEX]] — 本专题总览
 - [[Agent_Design_Core_Principles]] — Skill 设计背后的原则
+- [[Agent_Architecture_Components]] — Skill 在 Harness 架构中的位置
 - [[self-improving-agent]] — 持续学习与 Skill 晋升机制
 - [[context-compress]] — 本仓库 Skill 实例
+- [论文分析笔记](../99_Attachments_附件/50738_Agent_Systems_with_Harne/50738_Agent_Systems_with_Harne_分析笔记.md)
 
 ## 标签
 
-#Agent #Skill #ClaudeCode #OpenClaw #DesignPattern
+#Agent #Skill #HarnessEngineering #ClaudeCode #OpenClaw #DesignPattern
