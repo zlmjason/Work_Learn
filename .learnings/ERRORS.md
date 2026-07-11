@@ -148,6 +148,46 @@ Failed to connect to github.com port 443 after 21089 ms: Could not connect to se
 
 ---
 
+## [ERR-20260709-006] missing_pdf_libraries_claude_md_mismatch
+
+**Logged**: 2026-07-09T22:10:00+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: infra
+
+### Resolution
+- **Resolved**: 2026-07-09T22:18:00+08:00
+- **Reason**: 通过 `python -m pip install pypdf` 安装 `pypdf` 后，成功提取 `Loop-Engineering-IEEE.pdf` 并完成学习笔记整理。
+- **Notes**: 已记录本次依赖缺失；`CLAUDE.md` 环境依赖表仍需同步更新，避免后续会话再次假设 PDF 库已预装。
+
+### Summary
+`CLAUDE.md` 声称已安装 `pypdf`、`pdfplumber`、`PyPDF2`，但当前 Python 环境中全部缺失，导致无法本地提取 PDF 文本。
+
+### Error
+```
+ModuleNotFoundError: No module named 'pdfplumber'
+ModuleNotFoundError: No module named 'pypdf'
+ModuleNotFoundError: No module named 'PyPDF2'
+```
+
+### Context
+- 命令：尝试用 `pdfplumber`、`pypdf`、`PyPDF2` 读取 `Loop-Engineering-IEEE.pdf`
+- 环境：Windows 11, Python 3.13.3 (`/c/Users/11064/AppData/Local/Programs/Python/Python313/python`)
+- 预期：按 `CLAUDE.md` 第 6 节环境依赖，PDF 库应已安装
+- 实际：`pip list | grep -i pdf` 无输出
+
+### Suggested Fix
+1. 安装 `pypdf`（现代 PyPDF2 继任者，推荐）或 `PyPDF2` 以兼容现有 `summarize.py`
+2. 同步更新 `CLAUDE.md` 环境依赖表，移除过时声明或添加安装命令
+3. 对于本项目（文档知识库），基本 PDF 文本提取能力即可满足需求
+
+### Metadata
+- Reproducible: yes
+- Related Files: `CLAUDE.md`, `.claude/skills/summarize/summarize.py`, `.claude/skills/pdf/SKILL.md`
+- See Also: LRN-20260511-005 (summarize.py Windows 替代实现)
+
+---
+
 ## [ERR-20260630-005] npx_skills_skill_name_not_found
 
 **Logged**: 2026-06-30T13:08:00+08:00

@@ -8,6 +8,37 @@ Corrections, insights, and knowledge gaps captured during development.
 
 ---
 
+## [LRN-20260711-001] best_practice
+
+**Logged**: 2026-07-11T10:00:00+08:00
+**Priority**: medium
+**Status**: active
+**Area**: tools
+
+### Summary
+在国内网络环境下，Python 包安装需根据包的镜像可用性灵活选择 PyPI 源：`markitdown[all]` 用清华镜像下载快且稳定，而 `mineru-open-sdk` 在清华镜像上无分发，需回退到官方 PyPI。
+
+### Details
+安装 MarkItDown 全量版时，首次使用默认 PyPI 源下载 `speechrecognition`（32.9 MB）超时失败。切换到清华镜像源后，所有依赖（包括 `magika`、`onnxruntime`、`azure-*` 等）均快速下载完成。
+
+但安装 MinerU SDK 时，清华镜像源报 `No matching distribution found for mineru-open-sdk`。改用默认 PyPI 源后立即成功（`mineru_open_sdk-0.2.5`）。
+
+### Suggested Action
+- 大包/依赖多且镜像上有分发 → 用清华镜像：`-i https://pypi.tuna.tsinghua.edu.cn/simple`
+- 镜像找不到包 → 去掉 `-i` 回退官方 PyPI
+- 批量安装前可先单独查询包的可用性，避免中途切换
+
+### Metadata
+- Source: best_practice
+- Related Files: `.claude/skills/mineru-pdf-parser/`, `.claude/skills/pdf/`
+- Tags: pip, mirror, markitdown, mineru, network, pypi
+- Pattern-Key: tools.pip_mirror_fallback
+- Recurrence-Count: 1
+- First-Seen: 2026-07-11
+- Last-Seen: 2026-07-11
+
+---
+
 ## [LRN-20260511-005] best_practice
 
 **Logged**: 2026-05-11T10:20:00+08:00

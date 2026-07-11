@@ -1829,6 +1829,2353 @@ spinlock：
 
 ---
 
+
+---
+
+# 27. ARM 与 AURIX 原子指令：单独应用举例、汇编写法与工程场景
+
+> 本章把 ARM 与 AURIX/TriCore 常用原子指令按“**指令 → 汇编写法 → 典型场景 → 工程注意点**”拆开讲。  
+> 重点场景：多核 IPC、Mailbox、Ring Buffer、Event Bitmap、Spinlock、MCAL Driver 状态机、外设寄存器 bit 操作。
+
+---
+
+## 27.1 总体对比
+
+| 平台 | 原子实现风格 | 代表指令 | 典型用途 |
+|---|---|---|---|
+| ARM Cortex-M / ARMv7-M / ARMv8-M | Exclusive access，独占读 + 条件写 | `LDREX` / `STREX` / `CLREX` | spinlock、CAS、atomic counter、event bitmap |
+| AURIX TriCore | 单指令级 atomic read-modify-write / swap / compare-swap | `LDMST` / `SWAP.W` / `CMPSWAP.W` / `SWAPMSK.W` / `ST.T` | bit 操作、semaphore、spinlock、mailbox state、外设位域更新 |
+
+核心区别：
+
+```text
+ARM:
+    LDREX 读
+    软件修改
+    STREX 条件写
+    失败则重试
+
+AURIX:
+    CPU 发出明确的 atomic RMW / SWAP / CMPSWAP 指令
+    总线和目标地址保证 read-write 过程不被其他 master 插入破坏
+```
+
+---
+
+# 28. ARM 原子指令应用举例
+
+---
+
+## 28.1 `LDREX` / `STREX`：原子 OR 设置事件 bit
+
+### 场景
+
+多个 core、ISR 或 task 同时设置 IPC event flag：
+
+```c
+g_ipc_event_flags |= IPC_EVENT_RX;
+g_ipc_event_flags |= IPC_EVENT_ERR;
+```
+
+普通 `|=` 底层是：
+
+```text
+load
+orr
+store
+```
+
+多个写入者并发时可能丢 bit。
+
+---
+
+### ARM 汇编示例：Atomic OR
+
+假设：
+
+```text
+r0 = &g_ipc_event_flags
+r1 = event_mask
+```
+
+```asm
+1:
+    ldrex   r2, [r0]        ; r2 = old flags, establish exclusive monitor
+    orr     r2, r2, r1      ; r2 = old | event_mask
+    strex   r3, r2, [r0]    ; try store, r3 = 0 means success
+    cmp     r3, #0
+    bne     1b              ; retry if failed
+    dmb                     ; release ordering
+```
+
+---
+
+### 对应 C 语义
+
+```c
+void Atomic_Or(volatile uint32_t *addr, uint32_t mask)
+{
+    uint32_t old_val;
+    uint32_t new_val;
+    uint32_t status;
+
+    do
+    {
+        old_val = __LDREXW(addr);
+        new_val = old_val | mask;
+        status = __STREXW(new_val, addr);
+    } while (status != 0u);
+
+    __DMB();
+}
+```
+
+---
+
+### 用在哪里？
+
+| 场景 | 说明 |
+|---|---|
+| IPC event bitmap | 多个发送者同时 set event bit |
+| ISR pending flag | 多个中断源汇总到一个 flag |
+| Driver error flag | 多个模块同时记录错误 |
+| 多核 notification flag | Core0/Core1 同时通知 monitor core |
+
+---
+
+## 28.2 `LDREX` / `STREX`：Spinlock 加锁
+
+### 场景
+
+多核 IPC 的共享 ring buffer 有多个字段需要一起修改：
+
+```c
+queue->head++;
+queue->count++;
+queue->desc[idx] = msg;
+```
+
+这不是单变量 atomic 能解决的，要用 spinlock 包住复杂临界区。
+
+---
+
+### ARM 汇编示例：SpinLock
+
+假设：
+
+```text
+r0 = &lock
+lock = 0 表示空闲
+lock = 1 表示已被占用
+```
+
+```asm
+SpinLock:
+1:
+    ldrex   r1, [r0]        ; read lock
+    cmp     r1, #0
+    bne     1b              ; lock != 0, spin
+
+    movs    r1, #1
+    strex   r2, r1, [r0]    ; try lock = 1
+    cmp     r2, #0
+    bne     1b              ; failed, retry
+
+    dmb                     ; acquire barrier
+    bx      lr
+```
+
+---
+
+### ARM 汇编示例：SpinUnlock
+
+```asm
+SpinUnlock:
+    dmb                     ; release barrier
+    movs    r1, #0
+    str     r1, [r0]        ; lock = 0
+    bx      lr
+```
+
+---
+
+### 对应 C 语义
+
+```c
+void SpinLock(volatile uint32_t *lock)
+{
+    uint32_t old;
+    uint32_t status;
+
+    do
+    {
+        do
+        {
+            old = __LDREXW(lock);
+        } while (old != 0u);
+
+        status = __STREXW(1u, lock);
+
+    } while (status != 0u);
+
+    __DMB();
+}
+
+void SpinUnlock(volatile uint32_t *lock)
+{
+    __DMB();
+    *lock = 0u;
+}
+```
+
+---
+
+### 用在哪里？
+
+| 场景 | 是否适合 |
+|---|---|
+| 多核共享 queue | 适合 |
+| 多核 mailbox 管理结构 | 适合 |
+| MCAL 多核全局状态 | 适合，但 AUTOSAR 中更推荐 OS Spinlock 封装 |
+| ISR 内长临界区 | 不推荐 |
+| 单核 task/ISR | 不一定需要 spinlock，通常 SchM/关中断更直接 |
+
+---
+
+## 28.3 `LDREX` / `STREX`：CAS 状态切换
+
+### 场景
+
+Mailbox receiver 只能在状态是 `READY` 时把它抢成 `PROCESSING`：
+
+```text
+READY -> PROCESSING
+```
+
+如果当前不是 `READY`，不能修改。
+
+---
+
+### ARM 汇编示例：Compare-And-Swap
+
+假设：
+
+```text
+r0 = &state
+r1 = expected
+r2 = desired
+返回:
+    r0 = 1 success
+    r0 = 0 failed
+```
+
+```asm
+Atomic_CAS:
+1:
+    ldrex   r3, [r0]        ; r3 = old state
+    cmp     r3, r1
+    bne     fail            ; old != expected
+
+    strex   r12, r2, [r0]   ; try state = desired
+    cmp     r12, #0
+    bne     1b              ; monitor broken, retry
+
+    dmb
+    movs    r0, #1
+    bx      lr
+
+fail:
+    clrex                   ; abort exclusive sequence
+    movs    r0, #0
+    bx      lr
+```
+
+---
+
+### 对应 C 语义
+
+```c
+bool Atomic_CompareExchange(volatile uint32_t *addr,
+                            uint32_t expected,
+                            uint32_t desired)
+{
+    uint32_t old;
+    uint32_t status;
+
+    do
+    {
+        old = __LDREXW(addr);
+
+        if (old != expected)
+        {
+            __CLREX();
+            return false;
+        }
+
+        status = __STREXW(desired, addr);
+
+    } while (status != 0u);
+
+    __DMB();
+    return true;
+}
+```
+
+---
+
+### 用在哪里？
+
+| 场景 | 状态切换 |
+|---|---|
+| Mailbox sender 抢占 | `EMPTY -> WRITING` |
+| Mailbox receiver 抢占 | `READY -> PROCESSING` |
+| HSM job queue | `FREE -> BUSY` |
+| Buffer ownership | `CPU_OWNED -> DMA_OWNED` |
+| Driver init 状态 | `UNINIT -> INITING -> INITED` |
+
+---
+
+## 28.4 `LDREX` / `STREX`：Atomic Fetch-Add
+
+### 场景
+
+多生产者 ring buffer 抢 slot：
+
+```c
+slot = atomic_fetch_add(&head, 1);
+```
+
+普通 `head++` 在多核下会丢更新。
+
+---
+
+### ARM 汇编示例：Fetch Add
+
+假设：
+
+```text
+r0 = &counter
+r1 = add_value
+返回:
+    r0 = old value
+```
+
+```asm
+Atomic_FetchAdd:
+1:
+    ldrex   r2, [r0]        ; old
+    add     r3, r2, r1      ; new = old + add_value
+    strex   r12, r3, [r0]
+    cmp     r12, #0
+    bne     1b
+
+    dmb
+    mov     r0, r2          ; return old
+    bx      lr
+```
+
+---
+
+### 用在哪里？
+
+| 场景 | 说明 |
+|---|---|
+| MPSC ring buffer | 多个 producer 抢 head index |
+| 引用计数 | buffer refcount |
+| 统计计数器 | error_count / timeout_count |
+| trace buffer | 多核抢日志写入位置 |
+
+注意：ring buffer 只 atomic 更新 `head` 还不够，slot 还要有 `WRITING/READY` 或 `seq`，否则 consumer 可能读到尚未写完的 descriptor。
+
+---
+
+## 28.5 `CLREX`：放弃独占访问
+
+### 场景
+
+执行 `LDREX` 后发现条件不满足，不打算 `STREX`，应该清除 exclusive 状态。
+
+---
+
+### ARM 汇编示例
+
+```asm
+TryLock:
+    ldrex   r1, [r0]
+    cmp     r1, #0
+    bne     busy
+
+    movs    r1, #1
+    strex   r2, r1, [r0]
+    cmp     r2, #0
+    bne     fail_retry
+
+    dmb
+    movs    r0, #1
+    bx      lr
+
+busy:
+    clrex                   ; abandon exclusive monitor
+    movs    r0, #0
+    bx      lr
+
+fail_retry:
+    movs    r0, #0
+    bx      lr
+```
+
+---
+
+### 用在哪里？
+
+| 场景 | 说明 |
+|---|---|
+| trylock 失败路径 | 读到 lock busy 后退出 |
+| CAS 比较失败 | expected 不匹配，退出 |
+| 异常/错误路径 | 中途放弃本次 atomic 序列 |
+| RTOS context switch | 某些实现会在任务切换时清理 exclusive 状态 |
+
+---
+
+## 28.6 `DMB` / `DSB` / `ISB`：不是 atomic，但 IPC 必须配合
+
+### 场景
+
+Core0 发 IPC 消息给 Core1。
+
+错误顺序：
+
+```text
+state = READY
+write payload
+trigger interrupt
+```
+
+正确顺序：
+
+```text
+write payload
+clean cache
+DMB/DSB
+state = READY
+DMB
+trigger interrupt
+```
+
+---
+
+### ARM 汇编示例
+
+```asm
+    ; write payload already done
+
+    dmb                     ; ensure payload writes ordered before state publish
+
+    movs    r1, #READY
+1:
+    ldrex   r2, [r0]        ; r0 = &state
+    strex   r3, r1, [r0]
+    cmp     r3, #0
+    bne     1b
+
+    dmb                     ; ensure state visible before doorbell
+    str     r4, [r5]        ; write doorbell register
+```
+
+---
+
+### 用在哪里？
+
+| barrier | 用途 |
+|---|---|
+| `DMB` | 保证前后的显式内存访问顺序 |
+| `DSB` | 等待前面的内存访问完成，常用于外设、cache、低功耗、复位前 |
+| `ISB` | 刷新指令流水线，常用于 MPU/系统控制寄存器修改后 |
+
+---
+
+# 29. AURIX / TriCore 原子指令应用举例
+
+> 下列汇编为 TriCore 风格。不同工具链可能写成 `a0/d0` 或 `%a0/%d0`，内联汇编约束也不同。核心语义不变。
+
+---
+
+## 29.1 `LDMST`：原子 bit-field 修改
+
+### 指令语义
+
+`LDMST` = Load-Modify-Store。
+
+它用一个扩展寄存器 `E[a]` 表示：
+
+```text
+D[a]     = value
+D[a+1]   = mask
+```
+
+执行效果：
+
+```text
+tmp = M[EA]
+M[EA] = (tmp & ~mask) | (value & mask)
+```
+
+所以它特别适合：
+
+```text
+只修改某几个 bit
+其他 bit 保持不变
+```
+
+---
+
+### 场景一：IPC event flag 原子置位
+
+假设：
+
+```text
+a0 = &g_ipc_event_flags
+设置 bit5 = 1
+```
+
+### AURIX 汇编：用 `IMASK + LDMST`
+
+```asm
+    imask   e0, #1, #5, #1      ; value=1, pos=5, width=1
+    ldmst   [a0]0, e0           ; atomic: flags.bit5 = 1
+    dsync                       ; data synchronization if used as release point
+```
+
+---
+
+### 场景二：IPC event flag 原子清位
+
+```asm
+    imask   e0, #0, #5, #1      ; value=0, pos=5, width=1
+    ldmst   [a0]0, e0           ; atomic: flags.bit5 = 0
+    dsync
+```
+
+---
+
+### 场景三：外设寄存器某个位域更新
+
+例如把某个控制寄存器 `[7:4]` 位域写成 `0b0011`：
+
+```asm
+    imask   e0, #3, #4, #4      ; value=3, pos=4, width=4
+    ldmst   [a0]0, e0           ; atomic field update
+    dsync
+```
+
+---
+
+### 用在哪里？
+
+| 场景 | 说明 |
+|---|---|
+| IPC event bitmap | 多个 core 同时 set/clear 不同 bit |
+| 外设普通 R/W 控制寄存器 | 修改位域，避免普通 RMW 丢 bit |
+| MCAL channel enable bitmap | set/clear channel enable |
+| error flag bitmap | 多个模块并发置错误位 |
+
+### 注意点
+
+`LDMST` 不返回旧值，所以它不适合做 test-and-set 类型的锁。需要“看旧值再决定是否拿锁”的场景，应使用 `SWAP.W`、`CMPSWAP.W` 或 `SWAPMSK.W`。
+
+---
+
+## 29.2 `SWAP.W`：原子交换，用于 spinlock
+
+### 指令语义
+
+`SWAP.W` 会把一个 data register 和内存 word 原子交换：
+
+```text
+tmp = M[EA]
+M[EA] = D[a]
+D[a] = tmp
+```
+
+所以如果：
+
+```text
+D[a] = 1
+lock 原来是 0
+```
+
+执行后：
+
+```text
+lock = 1
+D[a] = 0
+```
+
+表示成功拿锁。
+
+---
+
+### AURIX 汇编示例：SpinLock
+
+假设：
+
+```text
+a0 = &lock
+lock = 0 空闲
+lock = 1 已占用
+```
+
+```asm
+SpinLock:
+1:
+    mov     d0, #1
+    swap.w  [a0]0, d0       ; atomic swap: d0 = old lock, lock = 1
+    jnz     d0, 1b          ; old lock != 0, someone owns it
+    dsync                   ; acquire ordering
+    ret
+```
+
+---
+
+### AURIX 汇编示例：SpinUnlock
+
+```asm
+SpinUnlock:
+    dsync                   ; release ordering
+    mov     d0, #0
+    st.w    [a0]0, d0       ; lock = 0
+    ret
+```
+
+也可以用 `swap.w` 释放，但一般 owner 释放锁时普通 aligned store + `dsync` 就够，关键是拿锁必须是原子的。
+
+---
+
+### 用在哪里？
+
+| 场景 | 说明 |
+|---|---|
+| 多核共享 ring buffer | 保护 head/tail/count/desc 复合更新 |
+| 多核 MCAL 全局状态 | 保护复杂 driver object |
+| IPC mailbox 管理结构 | 保护多个字段一致性 |
+| Boot 多核启动同步 | secondary core 等待 boot core 放锁 |
+
+### 注意点
+
+`SWAP.W` 是简单的 test-and-set。高竞争下会造成总线压力。工程上建议：
+
+```text
+短临界区
+有限重试
+必要时 backoff
+必须有 timeout / deadlock 诊断
+```
+
+---
+
+## 29.3 `CMPSWAP.W`：CAS，用于状态机跳转
+
+### 指令语义
+
+`CMPSWAP.W` 用扩展寄存器 `E[a]`：
+
+```text
+D[a]     = new value
+D[a+1]   = compare value
+```
+
+执行效果：
+
+```text
+tmp = M[EA]
+
+if tmp == D[a+1]:
+    M[EA] = D[a]
+
+D[a] = tmp
+```
+
+也就是说执行后 `D[a]` 会变成旧内存值。判断是否成功，看返回的旧值是否等于 compare value。
+
+---
+
+### 场景一：Mailbox sender 抢占
+
+状态机：
+
+```text
+EMPTY -> WRITING
+```
+
+假设：
+
+```text
+a0 = &mbox->state
+EMPTY   = 0
+WRITING = 1
+```
+
+```asm
+TryAcquireMailbox:
+    mov     d0, #1              ; D0 = new value: WRITING
+    mov     d1, #0              ; D1 = compare value: EMPTY
+    cmpswap.w [a0]0, e0         ; if state == EMPTY, state = WRITING; D0 = old state
+    jne     d0, #0, busy        ; old != EMPTY, failed
+    dsync                       ; acquire
+    ret
+
+busy:
+    ; mailbox busy
+    ret
+```
+
+---
+
+### 场景二：Mailbox receiver 抢 READY
+
+状态机：
+
+```text
+READY -> PROCESSING
+```
+
+```asm
+TryProcessMailbox:
+    mov     d0, #3              ; new value: PROCESSING
+    mov     d1, #2              ; compare value: READY
+    cmpswap.w [a0]0, e0         ; D0 = old state
+    jne     d0, #2, not_ready
+    dsync
+    ; now receiver owns this mailbox
+    ret
+
+not_ready:
+    ret
+```
+
+---
+
+### 用在哪里？
+
+| 场景 | 状态跳转 |
+|---|---|
+| mailbox sender 抢占 | `EMPTY -> WRITING` |
+| mailbox receiver 抢占 | `READY -> PROCESSING` |
+| buffer ownership | `CPU_OWNED -> DMA_OWNED` |
+| HSM job slot | `FREE -> BUSY` |
+| driver init | `UNINIT -> INITING` |
+| lock-free state machine | compare expected, then update |
+
+### 注意点
+
+`CMPSWAP.W` 很适合状态机，不适合大段临界区。大段复杂结构还是用 spinlock 或 OS Spinlock。
+
+---
+
+## 29.4 `SWAPMSK.W`：位级 semaphore / 位图 slot 抢占
+
+### 指令语义
+
+`SWAPMSK.W` 类似带 mask 的 swap：
+
+```text
+D[a]     = value
+D[a+1]   = mask
+```
+
+执行效果：
+
+```text
+tmp = M[EA]
+M[EA] = (tmp & ~mask) | (value & mask)
+D[a] = tmp
+```
+
+与 `LDMST` 的关键区别：
+
+```text
+LDMST     不返回旧值
+SWAPMSK.W 返回旧值到 D[a]
+```
+
+所以 `SWAPMSK.W` 可以用于“看旧 bit 是否为 0，如果是 0 则抢占”的场景。
+
+---
+
+### 场景：32 个 bit 表示 32 个 IPC slot
+
+```text
+slot_bitmap bit = 0 表示 free
+slot_bitmap bit = 1 表示 busy
+```
+
+抢占 bit5：
+
+```asm
+TryAcquireSlot5:
+    mov     d0, #(1 << 5)       ; value: set bit5
+    mov     d1, #(1 << 5)       ; mask: only bit5
+    swapmsk.w [a0]0, e0         ; D0 = old bitmap, memory bit5 = 1
+    and     d2, d0, #(1 << 5)
+    jnz     d2, busy            ; old bit5 was 1, failed
+    dsync
+    ; acquired slot5
+    ret
+
+busy:
+    ret
+```
+
+释放 bit5 可以用 `LDMST` 清位：
+
+```asm
+    imask   e0, #0, #5, #1
+    ldmst   [a0]0, e0
+    dsync
+```
+
+---
+
+### 用在哪里？
+
+| 场景 | 说明 |
+|---|---|
+| IPC slot bitmap | 多个 core 抢空闲 slot |
+| bit semaphore | 一个 word 内放 32 个二值锁 |
+| resource allocation | channel/resource 位图分配 |
+| HSM queue slot | 抢 job descriptor slot |
+
+---
+
+## 29.5 `ST.T`：单 bit 原子写
+
+### 指令语义
+
+`ST.T` 对一个 byte 内的某个 bit 做原子写：
+
+```text
+M[EA].bit[bpos] = b
+其他 bit 不变
+```
+
+---
+
+### AURIX 汇编示例
+
+把地址 `0x90000000` 的 bit7 置 1：
+
+```asm
+    st.t    90000000H, #7H, #1H
+```
+
+把 bit7 清 0：
+
+```asm
+    st.t    90000000H, #7H, #0H
+```
+
+---
+
+### 用在哪里？
+
+| 场景 | 说明 |
+|---|---|
+| 单 bit semaphore | byte 内某个 bit 作为锁/标志 |
+| 特殊外设 bit | 某些 memory-mapped bit 操作 |
+| 小范围 absolute address bit 操作 | 地址范围满足 ST.T 编码限制时 |
+
+### 注意点
+
+`ST.T` 不是通用任意地址 pointer 版本的 bit-store。它的寻址范围和编码方式有限，工程上更常见的是 `IMASK + LDMST` 或 `SWAPMSK.W`。
+
+---
+
+# 30. ARM 与 AURIX 在同一 IPC 场景下的写法对比
+
+---
+
+## 30.1 Mailbox state：`EMPTY -> WRITING`
+
+### ARM 做法
+
+```asm
+1:
+    ldrex   r2, [r0]        ; state
+    cmp     r2, #EMPTY
+    bne     fail
+    movs    r3, #WRITING
+    strex   r12, r3, [r0]
+    cmp     r12, #0
+    bne     1b
+    dmb
+    ; success
+```
+
+### AURIX 做法
+
+```asm
+    mov     d0, #WRITING
+    mov     d1, #EMPTY
+    cmpswap.w [a0]0, e0
+    jne     d0, #EMPTY, fail
+    dsync
+    ; success
+```
+
+### 对比
+
+| 平台 | 特点 |
+|---|---|
+| ARM | `LDREX/STREX` 循环，失败重试 |
+| AURIX | `CMPSWAP.W` 单条完成比较交换，软件判断旧值 |
+
+---
+
+## 30.2 Event Bitmap：set event bit
+
+### ARM 做法
+
+```asm
+1:
+    ldrex   r2, [r0]
+    orr     r2, r2, r1
+    strex   r3, r2, [r0]
+    cmp     r3, #0
+    bne     1b
+    dmb
+```
+
+### AURIX 做法
+
+```asm
+    imask   e0, #1, #EVENT_POS, #1
+    ldmst   [a0]0, e0
+    dsync
+```
+
+### 对比
+
+| 平台 | 特点 |
+|---|---|
+| ARM | 通用，但要循环 |
+| AURIX | bit/field 操作直接 |
+
+---
+
+## 30.3 Spinlock
+
+### ARM 做法
+
+```asm
+1:
+    ldrex   r1, [r0]
+    cmp     r1, #0
+    bne     1b
+    movs    r1, #1
+    strex   r2, r1, [r0]
+    cmp     r2, #0
+    bne     1b
+    dmb
+```
+
+### AURIX 做法
+
+```asm
+1:
+    mov     d0, #1
+    swap.w  [a0]0, d0
+    jnz     d0, 1b
+    dsync
+```
+
+### 对比
+
+| 平台 | 特点 |
+|---|---|
+| ARM | 典型 exclusive sequence |
+| AURIX | `SWAP.W` 更接近传统 test-and-set |
+
+---
+
+# 31. 原子指令工程注意事项
+
+## 31.1 不要把 atomic 用在所有外设寄存器上
+
+外设寄存器可能是：
+
+| 类型 | 风险 |
+|---|---|
+| W1C | write 1 clear，RMW 可能误清 |
+| W1S | write 1 set，普通 RMW 语义不等于寄存器语义 |
+| read-clear | 读寄存器本身会清状态 |
+| FIFO | 读写会移动指针 |
+| command trigger | 写入会触发硬件动作 |
+
+外设寄存器优先级：
+
+```text
+专用 SET/CLR/TOGGLE 寄存器
+    >
+手册明确支持 atomic bit operation
+    >
+确认无副作用后使用 LDMST/LDREX-STREX
+    >
+禁止普通 RMW
+```
+
+---
+
+## 31.2 多核 ARM 必须确认 global exclusive monitor
+
+ARM 的 `LDREX/STREX` 多核是否可靠，不只看 CPU 指令，还要看：
+
+```text
+shared memory 是否 shareable
+interconnect / SRAM controller 是否支持 global exclusive monitor
+cache 是否一致
+MPU memory attribute 是否正确
+```
+
+如果没有 global exclusive monitor，不要用 `LDREX/STREX` 自己造多核锁。
+
+---
+
+## 31.3 AURIX 原子指令也要确认地址与权限
+
+AURIX 上以下指令通常要求 word-aligned operand：
+
+```text
+LDMST
+CMPSWAP.W
+SWAPMSK.W
+SWAP.W
+```
+
+并且目标地址必须有 read + write 权限。外设空间还要满足自然对齐和寄存器语义。
+
+---
+
+## 31.4 IPC 中不要只 atomic state，不处理 payload
+
+正确 IPC 发布顺序：
+
+```text
+write payload
+clean cache if cacheable
+DSB/DMB or DSYNC
+atomic publish state = READY
+trigger doorbell interrupt
+```
+
+接收顺序：
+
+```text
+receive doorbell
+atomic/acquire read state
+invalidate cache if cacheable
+read payload
+```
+
+---
+
+# 32. 原子指令总结表
+
+| 指令 | 平台 | 本质 | 典型应用 |
+|---|---|---|---|
+| `LDREX` | ARM | 独占读 | CAS、spinlock、atomic add 前半段 |
+| `STREX` | ARM | 条件独占写 | CAS、spinlock、atomic add 后半段 |
+| `CLREX` | ARM | 清独占状态 | trylock 失败、CAS expected 不匹配 |
+| `DMB` | ARM | 内存顺序屏障 | acquire/release、IPC 发布顺序 |
+| `DSB` | ARM | 数据同步屏障 | cache/外设/低功耗/复位前同步 |
+| `LDMST` | AURIX | masked atomic RMW | event bit、外设位域、flag bitmap |
+| `SWAP.W` | AURIX | atomic exchange | spinlock、test-and-set |
+| `CMPSWAP.W` | AURIX | compare-and-swap | mailbox state、buffer ownership |
+| `SWAPMSK.W` | AURIX | masked swap with old value returned | bit semaphore、slot bitmap |
+| `ST.T` | AURIX | atomic single bit store | bit semaphore、特定绝对地址 bit 操作 |
+
+---
+
+# 33. 指令级一句话记忆
+
+```text
+ARM 原子操作：
+    LDREX/STREX 是“观察 + 条件提交”，失败要重试。
+
+AURIX 原子操作：
+    LDMST 改 bit/field，
+    SWAP.W 拿锁，
+    CMPSWAP.W 做状态机，
+    SWAPMSK.W 抢 bit 资源，
+    ST.T 写单 bit。
+
+IPC 工程：
+    atomic 管 state/lock/head/tail，
+    barrier 管顺序，
+    cache 管可见性，
+    doorbell 管通知，
+    timeout 管异常闭环。
+```
+
+---
+
+# 34. 原子指令的“C 场景代码 + 汇编语义”对照
+
+> 前面章节已经有每条指令的汇编写法。本章把它们和真实工程 C 场景绑定起来。  
+> 阅读方式：先看 **C 业务代码**，再看 **背后的原子汇编语义**，最后看 **适用场景与限制**。
+
+说明：
+
+1. ARM 示例按 Cortex-M 常见 CMSIS intrinsic 表达：`__LDREXW()`、`__STREXW()`、`__CLREX()`、`__DMB()`。
+2. AURIX/TriCore 示例以内联汇编语义模板表达。TASKING、HighTec、LLVM TriCore 的 inline asm 约束不同，实际工程需要按工具链语法调整。
+3. 这些代码重点用于建立“C 场景 ↔ 原子指令”的映射，不建议直接替代 MCAL/OS 标准接口。
+
+---
+
+## 34.1 ARM：`LDREX/STREX` 实现 IPC Event Bitmap 原子置位
+
+### 工程场景
+
+多个 core、ISR 或 task 同时设置 IPC event flag：
+
+```text
+Core0 ISR      -> set RX event
+Core1 Task     -> set ERROR event
+HSM callback   -> set HSM_DONE event
+```
+
+普通写法：
+
+```c
+g_ipc_event_flags |= event_mask;
+```
+
+底层是 `load -> orr -> store`，多写入者并发时可能丢 bit。
+
+---
+
+### C 场景代码
+
+```c
+#include <stdint.h>
+#include <stdbool.h>
+
+#define IPC_EVENT_RX        (1u << 0)
+#define IPC_EVENT_TX_DONE   (1u << 1)
+#define IPC_EVENT_ERROR     (1u << 2)
+#define IPC_EVENT_HSM_DONE  (1u << 3)
+
+static volatile uint32_t g_ipc_event_flags;
+
+static inline void Ipc_SetEvent_Arm(volatile uint32_t *flags,
+                                    uint32_t event_mask)
+{
+    uint32_t old_val;
+    uint32_t new_val;
+    uint32_t status;
+
+    do
+    {
+        old_val = __LDREXW(flags);          /* 读旧值 + 建立 exclusive monitor */
+        new_val = old_val | event_mask;     /* 基于旧值合并新 event */
+        status  = __STREXW(new_val, flags); /* 尝试提交 */
+    } while (status != 0u);                 /* 失败说明中间被别人改过，重试 */
+
+    __DMB();                                /* release ordering */
+}
+
+void Hsm_DoneCallback(void)
+{
+    Ipc_SetEvent_Arm(&g_ipc_event_flags, IPC_EVENT_HSM_DONE);
+}
+```
+
+---
+
+### 对应 ARM 汇编语义
+
+```asm
+; r0 = &g_ipc_event_flags
+; r1 = event_mask
+
+1:
+    ldrex   r2, [r0]        ; old_val = *flags，并建立 exclusive monitor
+    orr     r2, r2, r1      ; new_val = old_val | event_mask
+    strex   r3, r2, [r0]    ; 尝试写回，r3=0 表示成功
+    cmp     r3, #0
+    bne     1b              ; 失败则重新读取最新 flags
+    dmb                     ; release ordering
+```
+
+### 适用场景
+
+| 场景 | 为什么适合 |
+|---|---|
+| IPC event bitmap | 多个发送者同时置 bit，不丢事件 |
+| ISR pending flag | 多中断源聚合到一个软件 flag |
+| Driver error bitmap | 多模块并发记录错误 |
+| 多核 notification flag | 多 core 通知 monitor core |
+
+---
+
+## 34.2 ARM：`LDREX/STREX` 实现 Event Fetch-And-Clear
+
+### 工程场景
+
+IPC task 要一次性取走所有 pending events，然后清零：
+
+```text
+old_events = event_flags;
+event_flags = 0;
+```
+
+如果普通读 + 普通清零，中间新来的事件可能被误清。
+
+---
+
+### C 场景代码
+
+```c
+static inline uint32_t Ipc_FetchAndClearEvents_Arm(volatile uint32_t *flags)
+{
+    uint32_t old_val;
+    uint32_t status;
+
+    do
+    {
+        old_val = __LDREXW(flags);       /* 取旧 events */
+        status  = __STREXW(0u, flags);   /* 尝试清零 */
+    } while (status != 0u);
+
+    __DMB();
+    return old_val;
+}
+
+void Ipc_EventTask(void)
+{
+    uint32_t events = Ipc_FetchAndClearEvents_Arm(&g_ipc_event_flags);
+
+    if ((events & IPC_EVENT_RX) != 0u)
+    {
+        /* process RX */
+    }
+
+    if ((events & IPC_EVENT_HSM_DONE) != 0u)
+    {
+        /* process HSM done */
+    }
+}
+```
+
+---
+
+### 对应 ARM 汇编语义
+
+```asm
+; r0 = &g_ipc_event_flags
+; return r0 = old_events
+
+1:
+    ldrex   r1, [r0]        ; r1 = old events
+    movs    r2, #0
+    strex   r3, r2, [r0]    ; 尝试 flags = 0
+    cmp     r3, #0
+    bne     1b
+
+    dmb
+    mov     r0, r1          ; 返回旧 events
+    bx      lr
+```
+
+### 适用场景
+
+| 场景 | 说明 |
+|---|---|
+| IPC event drain | task 一次性取走全部事件 |
+| ISR pending 聚合 | 后台任务批量处理 |
+| error bitmap 快照 | 读取错误快照并清空软件标志 |
+
+---
+
+## 34.3 ARM：`LDREX/STREX` 实现 Spinlock 保护复杂共享结构
+
+### 工程场景
+
+多核共享 queue 的一次更新涉及多个字段：
+
+```text
+queue->head
+queue->tail
+queue->count
+queue->desc[]
+```
+
+这不是一个单变量 atomic 能解决的，要用 spinlock 保护临界区。
+
+---
+
+### C 数据结构
+
+```c
+#define IPC_QUEUE_SIZE 64u
+
+typedef struct
+{
+    uint32_t cmd;
+    uint32_t len;
+    uint8_t payload[64];
+} IpcMsg_t;
+
+typedef struct
+{
+    volatile uint32_t lock;
+    volatile uint32_t head;
+    volatile uint32_t tail;
+    volatile uint32_t count;
+    IpcMsg_t desc[IPC_QUEUE_SIZE];
+} IpcQueue_t;
+```
+
+---
+
+### C 场景代码
+
+```c
+static inline void Ipc_SpinLock_Arm(volatile uint32_t *lock)
+{
+    uint32_t old_val;
+    uint32_t status;
+
+    do
+    {
+        do
+        {
+            old_val = __LDREXW(lock);
+        } while (old_val != 0u);
+
+        status = __STREXW(1u, lock);
+
+    } while (status != 0u);
+
+    __DMB();       /* acquire barrier */
+}
+
+static inline void Ipc_SpinUnlock_Arm(volatile uint32_t *lock)
+{
+    __DMB();       /* release barrier */
+    *lock = 0u;
+}
+
+int Ipc_QueuePush_Arm(IpcQueue_t *queue, const IpcMsg_t *msg)
+{
+    int ret = 0;
+
+    Ipc_SpinLock_Arm(&queue->lock);
+
+    if (queue->count >= IPC_QUEUE_SIZE)
+    {
+        ret = -1;
+    }
+    else
+    {
+        uint32_t idx = queue->head;
+        queue->desc[idx] = *msg;
+        queue->head = (idx + 1u) % IPC_QUEUE_SIZE;
+        queue->count++;
+    }
+
+    Ipc_SpinUnlock_Arm(&queue->lock);
+
+    return ret;
+}
+```
+
+---
+
+### 对应 ARM 汇编语义：Lock
+
+```asm
+; r0 = &queue->lock
+
+SpinLock:
+1:
+    ldrex   r1, [r0]        ; old_val = lock
+    cmp     r1, #0
+    bne     1b              ; lock != 0，继续等待
+
+    movs    r1, #1
+    strex   r2, r1, [r0]    ; 尝试 lock = 1
+    cmp     r2, #0
+    bne     1b
+
+    dmb                     ; acquire barrier
+    bx      lr
+```
+
+### 对应 ARM 汇编语义：Unlock
+
+```asm
+; r0 = &queue->lock
+
+SpinUnlock:
+    dmb                     ; release barrier
+    movs    r1, #0
+    str     r1, [r0]        ; lock = 0
+    bx      lr
+```
+
+### 适用场景
+
+| 场景 | 说明 |
+|---|---|
+| 多核 queue push/pop | 保护 head/tail/count/desc 一致性 |
+| mailbox 管理结构 | 多字段状态更新 |
+| MCAL 全局 driver object | 复杂状态保护 |
+| boot 多核同步 | 短临界区握手 |
+
+---
+
+## 34.4 ARM：CAS 实现 Mailbox 状态机跳转
+
+### 工程场景
+
+Mailbox sender 只有在 `EMPTY` 时才能抢占：
+
+```text
+EMPTY -> WRITING
+```
+
+Receiver 只有在 `READY` 时才能抢处理权：
+
+```text
+READY -> PROCESSING
+```
+
+这需要 compare-and-swap，而不是无条件写。
+
+---
+
+### C 状态与结构
+
+```c
+typedef enum
+{
+    IPC_MBOX_EMPTY      = 0u,
+    IPC_MBOX_WRITING    = 1u,
+    IPC_MBOX_READY      = 2u,
+    IPC_MBOX_PROCESSING = 3u,
+    IPC_MBOX_DONE       = 4u,
+    IPC_MBOX_ERROR      = 5u
+} IpcMboxState_t;
+
+typedef struct
+{
+    volatile uint32_t state;
+    volatile uint32_t seq;
+    volatile uint32_t cmd;
+    volatile uint32_t len;
+    uint8_t payload[256];
+    volatile uint32_t result;
+} IpcMailbox_t;
+```
+
+---
+
+### C 场景代码：CAS primitive
+
+```c
+static inline bool Ipc_CompareExchange_Arm(volatile uint32_t *addr,
+                                           uint32_t expected,
+                                           uint32_t desired)
+{
+    uint32_t old_val;
+    uint32_t status;
+
+    do
+    {
+        old_val = __LDREXW(addr);
+
+        if (old_val != expected)
+        {
+            __CLREX();
+            return false;
+        }
+
+        status = __STREXW(desired, addr);
+
+    } while (status != 0u);
+
+    __DMB();
+    return true;
+}
+```
+
+---
+
+### C 场景代码：Sender / Receiver
+
+```c
+int Ipc_TryBeginSend_Arm(IpcMailbox_t *mbox)
+{
+    if (!Ipc_CompareExchange_Arm(&mbox->state,
+                                 IPC_MBOX_EMPTY,
+                                 IPC_MBOX_WRITING))
+    {
+        return -1;  /* busy */
+    }
+
+    return 0;
+}
+
+int Ipc_TryBeginProcess_Arm(IpcMailbox_t *mbox)
+{
+    if (!Ipc_CompareExchange_Arm(&mbox->state,
+                                 IPC_MBOX_READY,
+                                 IPC_MBOX_PROCESSING))
+    {
+        return -1;  /* not ready */
+    }
+
+    return 0;
+}
+```
+
+---
+
+### 对应 ARM 汇编语义
+
+```asm
+; r0 = &state
+; r1 = expected
+; r2 = desired
+; return r0 = 1 success, 0 failed
+
+Atomic_CAS:
+1:
+    ldrex   r3, [r0]        ; old_val = state
+    cmp     r3, r1
+    bne     fail            ; old_val != expected，不允许写
+
+    strex   r12, r2, [r0]   ; 尝试 state = desired
+    cmp     r12, #0
+    bne     1b              ; 被别人打断，重试
+
+    dmb
+    movs    r0, #1
+    bx      lr
+
+fail:
+    clrex
+    movs    r0, #0
+    bx      lr
+```
+
+### 适用场景
+
+| 状态机 | CAS 语义 |
+|---|---|
+| `EMPTY -> WRITING` | sender 抢占 mailbox |
+| `READY -> PROCESSING` | receiver 抢占处理权 |
+| `FREE -> BUSY` | 抢 job slot |
+| `CPU_OWNED -> DMA_OWNED` | buffer ownership 转移 |
+| `UNINIT -> INITING` | driver init 互斥 |
+
+---
+
+## 34.5 ARM：MPSC Ring Buffer 抢 slot
+
+### 工程场景
+
+多个 producer 向一个 consumer 提交消息：
+
+```text
+Core0 producer
+Core1 producer
+ISR producer
+    ↓
+shared ring
+    ↓
+Core2 consumer
+```
+
+多个 producer 同时抢 `head`，需要 CAS 或 fetch-add。
+
+---
+
+### C 数据结构
+
+```c
+#define IPC_RING_SIZE 64u
+
+typedef enum
+{
+    IPC_SLOT_FREE    = 0u,
+    IPC_SLOT_WRITING = 1u,
+    IPC_SLOT_READY   = 2u
+} IpcSlotState_t;
+
+typedef struct
+{
+    volatile uint32_t state;
+    volatile uint32_t seq;
+    uint32_t cmd;
+    uint32_t len;
+    uint8_t payload[64];
+} IpcRingDesc_t;
+
+typedef struct
+{
+    volatile uint32_t head;
+    volatile uint32_t tail;
+    IpcRingDesc_t desc[IPC_RING_SIZE];
+} IpcRing_t;
+```
+
+---
+
+### C 场景代码：Reserve Slot
+
+```c
+static inline uint32_t Ipc_LoadAcquire_Arm(volatile uint32_t *addr)
+{
+    uint32_t val = *addr;
+    __DMB();
+    return val;
+}
+
+uint32_t Ipc_ReserveSlot_Arm(IpcRing_t *ring)
+{
+    uint32_t old_head;
+    uint32_t new_head;
+    uint32_t tail;
+
+    do
+    {
+        old_head = Ipc_LoadAcquire_Arm(&ring->head);
+        tail = Ipc_LoadAcquire_Arm(&ring->tail);
+
+        new_head = (old_head + 1u) % IPC_RING_SIZE;
+
+        if (new_head == tail)
+        {
+            return 0xFFFFFFFFu;  /* full */
+        }
+
+    } while (!Ipc_CompareExchange_Arm(&ring->head, old_head, new_head));
+
+    return old_head;
+}
+```
+
+---
+
+### C 场景代码：Producer 发布 slot
+
+```c
+int Ipc_RingSend_Arm(IpcRing_t *ring,
+                     uint32_t cmd,
+                     const uint8_t *payload,
+                     uint32_t len)
+{
+    uint32_t slot = Ipc_ReserveSlot_Arm(ring);
+
+    if (slot == 0xFFFFFFFFu)
+    {
+        return -1;  /* full */
+    }
+
+    IpcRingDesc_t *desc = &ring->desc[slot];
+
+    desc->state = IPC_SLOT_WRITING;
+    desc->cmd = cmd;
+    desc->len = len;
+
+    for (uint32_t i = 0; i < len; i++)
+    {
+        desc->payload[i] = payload[i];
+    }
+
+    /* 如果 desc/payload 是 cacheable shared memory：
+     *     Clean DCache(desc, sizeof(*desc));
+     */
+
+    __DMB();
+    desc->state = IPC_SLOT_READY;
+    __DMB();
+
+    /* Trigger remote doorbell interrupt. */
+
+    return 0;
+}
+```
+
+---
+
+### 对应 ARM 汇编语义：抢 `head`
+
+```asm
+; r0 = &ring->head
+; r1 = old_head
+; r2 = new_head
+
+1:
+    ldrex   r3, [r0]        ; r3 = current head
+    cmp     r3, r1
+    bne     fail            ; head 已被其他 producer 改掉
+
+    strex   r12, r2, [r0]   ; 尝试 head = new_head
+    cmp     r12, #0
+    bne     1b
+
+    dmb
+    ; success
+```
+
+### 场景结论
+
+Ring Buffer 不能只 atomic 更新 `head`。还需要：
+
+```text
+slot state = WRITING / READY
+sequence counter
+cache clean/invalidate
+doorbell interrupt
+timeout / overflow policy
+```
+
+否则 consumer 可能看到 `head` 已推进，但 slot 内容还没写完。
+
+---
+
+# 35. AURIX/TriCore：C 场景代码 + 汇编语义
+
+---
+
+## 35.1 AURIX：`LDMST` 实现 IPC Event Bit 原子置位
+
+### 工程场景
+
+多个 core 同时设置不同 event bit。`LDMST` 可以原子更新某个 bit，不破坏其他 bit。
+
+---
+
+### C 场景代码：语义封装
+
+```c
+#define IPC_EVENT_RX_POS        0u
+#define IPC_EVENT_ERROR_POS     5u
+#define IPC_EVENT_HSM_DONE_POS  9u
+
+static volatile uint32_t g_tricore_ipc_events;
+
+static inline void Ipc_SetEventBit_Aurix(volatile uint32_t *flags,
+                                         uint32_t bit_pos)
+{
+    /*
+     * 目标语义：
+     *     flags[bit_pos] = 1
+     *
+     * TriCore 推荐实现：
+     *     IMASK + LDMST
+     *
+     * 注意：下面是语义封装，实际 inline asm 约束需按工具链调整。
+     */
+    (void)flags;
+    (void)bit_pos;
+}
+
+void Hsm_DoneCallback_Aurix(void)
+{
+    Ipc_SetEventBit_Aurix(&g_tricore_ipc_events,
+                          IPC_EVENT_HSM_DONE_POS);
+}
+```
+
+---
+
+### 对应 AURIX 汇编语义
+
+```asm
+; a0 = flags
+; bit_pos = 9
+
+    imask   e0, #1, #9, #1      ; value=1, pos=9, width=1
+    ldmst   [a0]0, e0           ; atomic: flags.bit9 = 1
+    dsync
+```
+
+### 为什么是 `LDMST`？
+
+因为该场景不关心旧值，只要求：
+
+```text
+原子地把某一 bit 改成 1，其他 bit 保持不变。
+```
+
+---
+
+## 35.2 AURIX：`LDMST` 更新普通外设控制寄存器位域
+
+### 工程场景
+
+修改普通 R/W 控制寄存器的 `[7:4]` 位域，不影响其他 bit：
+
+```text
+CTRL.MODE[7:4] = 0x3
+```
+
+---
+
+### C 场景代码
+
+```c
+#define CTRL_MODE_POS      4u
+#define CTRL_MODE_WIDTH    4u
+#define CTRL_MODE_MASK     (0xFu << CTRL_MODE_POS)
+
+static inline void Reg_UpdateMode_Aurix(volatile uint32_t *reg,
+                                        uint32_t mode)
+{
+    /*
+     * 目标语义：
+     *     *reg = (*reg & ~CTRL_MODE_MASK) |
+     *            ((mode << CTRL_MODE_POS) & CTRL_MODE_MASK);
+     *
+     * 但这一组 read-modify-write 要由 LDMST 原子完成。
+     */
+    (void)reg;
+    (void)mode;
+}
+```
+
+---
+
+### 对应 AURIX 汇编语义
+
+```asm
+; a0 = reg
+; 设置 bit[7:4] = 3
+
+    imask   e0, #3, #4, #4      ; value=3, pos=4, width=4
+    ldmst   [a0]0, e0           ; atomic field update
+    dsync
+```
+
+### 注意
+
+只适合普通 R/W 控制寄存器。如果寄存器是 W1C、W1S、read-clear、FIFO、command trigger，不要直接套用普通 RMW 或 `LDMST`。
+
+---
+
+## 35.3 AURIX：`SWAP.W` 实现 Spinlock
+
+### 工程场景
+
+保护多核共享 queue / mailbox 管理结构：
+
+```text
+Core0 正在更新 queue->head/count/desc
+Core1 也想更新同一个 queue
+```
+
+需要 test-and-set lock。
+
+---
+
+### C 数据结构
+
+```c
+typedef struct
+{
+    volatile uint32_t lock;
+    volatile uint32_t head;
+    volatile uint32_t tail;
+    volatile uint32_t count;
+} IpcQueueCtrl_Aurix_t;
+```
+
+---
+
+### C 场景代码：语义封装
+
+```c
+static inline void Ipc_SpinLock_Aurix(volatile uint32_t *lock)
+{
+    uint32_t old_val;
+
+    do
+    {
+        /*
+         * 目标语义：
+         *     old_val = *lock;
+         *     *lock = 1;
+         *
+         * 以上 exchange 必须由 SWAP.W 原子完成。
+         */
+        old_val = 1u;  /* 这里表示“通过 SWAP.W 读回旧值”的占位语义 */
+
+    } while (old_val != 0u);
+
+    /* dsync: acquire ordering */
+}
+
+static inline void Ipc_SpinUnlock_Aurix(volatile uint32_t *lock)
+{
+    /* dsync: release ordering */
+    *lock = 0u;
+}
+
+int Ipc_QueuePush_Aurix(IpcQueueCtrl_Aurix_t *ctrl)
+{
+    int ret = 0;
+
+    Ipc_SpinLock_Aurix(&ctrl->lock);
+
+    if (ctrl->count >= 64u)
+    {
+        ret = -1;
+    }
+    else
+    {
+        ctrl->head = (ctrl->head + 1u) % 64u;
+        ctrl->count++;
+    }
+
+    Ipc_SpinUnlock_Aurix(&ctrl->lock);
+
+    return ret;
+}
+```
+
+---
+
+### 对应 AURIX 汇编语义：Lock
+
+```asm
+; a0 = lock
+
+SpinLock:
+1:
+    mov     d0, #1
+    swap.w  [a0]0, d0       ; d0 = old lock, lock = 1
+    jnz     d0, 1b          ; old lock != 0，继续等
+    dsync
+    ret
+```
+
+### 对应 AURIX 汇编语义：Unlock
+
+```asm
+; a0 = lock
+
+SpinUnlock:
+    dsync
+    mov     d0, #0
+    st.w    [a0]0, d0       ; lock = 0
+    ret
+```
+
+### 为什么不是 `LDMST`？
+
+`LDMST` 可以把 lock bit 设成 1，但不能返回旧值。抢锁必须知道：
+
+```text
+old lock == 0：抢锁成功
+old lock != 0：锁已经被别人持有
+```
+
+因此 spinlock 更适合 `SWAP.W`。
+
+---
+
+## 35.4 AURIX：`CMPSWAP.W` 实现 Mailbox 状态机
+
+### 工程场景
+
+Mailbox sender 要求：
+
+```text
+只有 state == EMPTY 时，才能写成 WRITING。
+```
+
+这不能用 `LDMST` 强行覆盖状态，否则会破坏 `READY / PROCESSING / DONE / ERROR` 等状态。
+
+---
+
+### C 场景代码：CAS 语义封装
+
+```c
+static inline bool Ipc_CompareExchange_Aurix(volatile uint32_t *addr,
+                                             uint32_t expected,
+                                             uint32_t desired)
+{
+    uint32_t old_val;
+
+    /*
+     * 目标语义：
+     *     old_val = *addr;
+     *     if (*addr == expected)
+     *         *addr = desired;
+     *
+     * 以上必须由 CMPSWAP.W 原子完成。
+     * CMPSWAP.W 执行后可通过 old_val == expected 判断成功。
+     */
+    old_val = expected;  /* 表示“由 CMPSWAP.W 返回旧值”的占位语义 */
+
+    return (old_val == expected);
+}
+
+int Ipc_TryBeginSend_Aurix(IpcMailbox_t *mbox)
+{
+    if (!Ipc_CompareExchange_Aurix(&mbox->state,
+                                   IPC_MBOX_EMPTY,
+                                   IPC_MBOX_WRITING))
+    {
+        return -1;  /* mailbox busy */
+    }
+
+    return 0;
+}
+
+int Ipc_TryBeginProcess_Aurix(IpcMailbox_t *mbox)
+{
+    if (!Ipc_CompareExchange_Aurix(&mbox->state,
+                                   IPC_MBOX_READY,
+                                   IPC_MBOX_PROCESSING))
+    {
+        return -1;  /* not ready */
+    }
+
+    return 0;
+}
+```
+
+---
+
+### 对应 AURIX 汇编语义：`EMPTY -> WRITING`
+
+```asm
+; a0 = &mbox->state
+; EMPTY   = 0
+; WRITING = 1
+
+TryAcquireMailbox:
+    mov     d0, #1              ; D0 = desired: WRITING
+    mov     d1, #0              ; D1 = expected: EMPTY
+    cmpswap.w [a0]0, e0         ; if state == EMPTY, state = WRITING; D0 = old state
+    jne     d0, #0, busy        ; old != EMPTY，失败
+    dsync
+    ret
+
+busy:
+    ret
+```
+
+### 对应 AURIX 汇编语义：`READY -> PROCESSING`
+
+```asm
+; READY      = 2
+; PROCESSING = 3
+
+TryProcessMailbox:
+    mov     d0, #3              ; desired: PROCESSING
+    mov     d1, #2              ; expected: READY
+    cmpswap.w [a0]0, e0
+    jne     d0, #2, not_ready
+    dsync
+    ret
+
+not_ready:
+    ret
+```
+
+### 适用场景
+
+| 场景 | 状态跳转 |
+|---|---|
+| mailbox sender 抢占 | `EMPTY -> WRITING` |
+| mailbox receiver 抢占 | `READY -> PROCESSING` |
+| buffer ownership | `CPU_OWNED -> DMA_OWNED` |
+| HSM job slot | `FREE -> BUSY` |
+| driver init | `UNINIT -> INITING` |
+
+---
+
+## 35.5 AURIX：`SWAP.W` 实现 Event Fetch-And-Clear
+
+### 工程场景
+
+consumer 需要原子取出事件并清零：
+
+```text
+old_events = event_flags;
+event_flags = 0;
+```
+
+如果普通读 + `LDMST` 清零，中间新来的 event 可能被误清。
+
+---
+
+### C 场景代码
+
+```c
+static inline uint32_t Ipc_FetchAndClearEvents_Aurix(volatile uint32_t *flags)
+{
+    uint32_t old_events;
+
+    /*
+     * 目标语义：
+     *     old_events = *flags;
+     *     *flags = 0;
+     *
+     * 以上 exchange 必须由 SWAP.W 原子完成。
+     */
+    old_events = 0u;  /* 表示“由 SWAP.W 返回旧 events”的占位语义 */
+
+    return old_events;
+}
+
+void Ipc_EventTask_Aurix(void)
+{
+    uint32_t events = Ipc_FetchAndClearEvents_Aurix(&g_tricore_ipc_events);
+
+    if ((events & (1u << IPC_EVENT_RX_POS)) != 0u)
+    {
+        /* process RX */
+    }
+
+    if ((events & (1u << IPC_EVENT_HSM_DONE_POS)) != 0u)
+    {
+        /* process HSM done */
+    }
+}
+```
+
+---
+
+### 对应 AURIX 汇编语义
+
+```asm
+; a0 = &event_flags
+; return d0 = old_events
+
+    mov     d0, #0
+    swap.w  [a0]0, d0       ; d0 = old_events, event_flags = 0
+    dsync
+```
+
+### 场景结论
+
+```text
+LDMST 适合 set/clear 某些 bit；
+SWAP.W 适合“取旧值 + 写新值”。
+```
+
+---
+
+## 35.6 AURIX：`SWAPMSK.W` 抢位图 slot
+
+### 工程场景
+
+一个 32-bit bitmap 表示 32 个 IPC slot：
+
+```text
+bit = 0: slot free
+bit = 1: slot busy
+```
+
+多个 core 同时抢 slot5。要求：
+
+```text
+如果旧 bit5 是 0，则设置 bit5=1，并返回成功；
+如果旧 bit5 是 1，则说明已被占用。
+```
+
+---
+
+### C 场景代码
+
+```c
+#define IPC_SLOT_NUM 32u
+
+static volatile uint32_t g_ipc_slot_bitmap;
+
+static inline bool Ipc_TryAcquireSlotBit_Aurix(volatile uint32_t *slot_bitmap,
+                                               uint32_t slot_id)
+{
+    uint32_t bit = (1u << slot_id);
+    uint32_t old_bitmap;
+
+    /*
+     * 目标语义：
+     *     old_bitmap = *slot_bitmap;
+     *     *slot_bitmap = (*slot_bitmap & ~bit) | bit;
+     *
+     * 以上 masked swap 必须由 SWAPMSK.W 原子完成。
+     */
+    old_bitmap = 0u;  /* 表示“由 SWAPMSK.W 返回旧 bitmap”的占位语义 */
+
+    return ((old_bitmap & bit) == 0u);
+}
+
+int Ipc_AllocSlot_Aurix(void)
+{
+    for (uint32_t slot = 0u; slot < IPC_SLOT_NUM; slot++)
+    {
+        if (Ipc_TryAcquireSlotBit_Aurix(&g_ipc_slot_bitmap, slot))
+        {
+            return (int)slot;
+        }
+    }
+
+    return -1;
+}
+```
+
+---
+
+### 对应 AURIX 汇编语义：抢 bit5
+
+```asm
+; a0 = &slot_bitmap
+; bit5 = 1 << 5
+
+TryAcquireSlot5:
+    mov     d0, #(1 << 5)       ; value: set bit5
+    mov     d1, #(1 << 5)       ; mask: only bit5
+    swapmsk.w [a0]0, e0         ; D0 = old bitmap, memory bit5 = 1
+    and     d2, d0, #(1 << 5)
+    jnz     d2, busy            ; old bit5 was 1，失败
+    dsync
+    ; success
+    ret
+
+busy:
+    ret
+```
+
+---
+
+### C 场景代码：释放 slot
+
+```c
+static inline void Ipc_ReleaseSlotBit_Aurix(volatile uint32_t *slot_bitmap,
+                                            uint32_t slot_id)
+{
+    /*
+     * 释放不需要知道旧值：
+     *     slot_bitmap[slot_id] = 0
+     *
+     * 所以可以用 LDMST 清 bit。
+     */
+    (void)slot_bitmap;
+    (void)slot_id;
+}
+```
+
+### 对应释放汇编语义
+
+```asm
+; a0 = &slot_bitmap
+; slot_id = 5
+
+    imask   e0, #0, #5, #1
+    ldmst   [a0]0, e0
+    dsync
+```
+
+---
+
+## 35.7 AURIX：`ST.T` 单 bit 写
+
+### 工程场景
+
+某些特殊场景下，需要对绝对地址的某个 bit 做单 bit 原子写。  
+注意：`ST.T` 受指令编码和地址形式限制，并不是最通用的 pointer-based bit operation。工程上更多使用 `IMASK + LDMST`。
+
+---
+
+### C 场景代码：语义封装
+
+```c
+static inline void BitStore_Aurix(volatile uint8_t *addr,
+                                  uint32_t bit_pos,
+                                  bool bit_val)
+{
+    /*
+     * 目标语义：
+     *     addr[0].bit[bit_pos] = bit_val;
+     *
+     * 如果地址和 bit_pos 满足 ST.T 编码要求，可由 ST.T 完成。
+     * 否则使用 LDMST 或受保护 RMW。
+     */
+    (void)addr;
+    (void)bit_pos;
+    (void)bit_val;
+}
+```
+
+---
+
+### 对应 AURIX 汇编语义
+
+```asm
+; 把地址 0x90000000 的 bit7 置 1
+
+    st.t    90000000H, #7H, #1H
+
+; 把地址 0x90000000 的 bit7 清 0
+
+    st.t    90000000H, #7H, #0H
+```
+
+---
+
+# 36. C 场景与原子指令选择表
+
+| 工程 C 场景 | ARM 推荐 | AURIX 推荐 | 原因 |
+|---|---|---|---|
+| `flags |= event` | `LDREX/STREX` atomic OR | `LDMST` set bit | 不关心旧值，只要不丢 bit |
+| `events = flags; flags = 0` | `LDREX/STREX` fetch-clear | `SWAP.W` | 需要返回旧值 |
+| `lock: 0 -> 1` | `LDREX/STREX` spinlock | `SWAP.W` | 需要 test-and-set |
+| `state: EMPTY -> WRITING` | `LDREX/STREX` CAS | `CMPSWAP.W` | 需要条件状态跳转 |
+| `head++` 抢 slot | `LDREX/STREX` fetch-add/CAS | `CMPSWAP.W` / `SWAPMSK.W` / spinlock | 多 producer 防丢更新 |
+| `bitmap bit 0->1 抢资源` | CAS loop | `SWAPMSK.W` | 需要知道旧 bit |
+| `field[7:4] = mode` | exclusive RMW 或临界区 | `LDMST` | masked RMW |
+| 复杂 queue push | spinlock | `SWAP.W` spinlock / OS Spinlock | 多字段一致性 |
+| 外设 W1C 清中断 | 不推荐普通 RMW | 不推荐普通 `LDMST` | 必须按寄存器语义写 |
+
+---
+
+## 36.1 最关键的工程判断
+
+看到一个 C 场景，先问三个问题：
+
+```text
+1. 我是否需要保留旧值的其他 bit？
+2. 我是否需要知道旧值是什么？
+3. 我是否只有在旧值满足条件时才允许写？
+```
+
+对应选择：
+
+```text
+只需要原子修改 bit/field:
+    AURIX LDMST
+    ARM LDREX/STREX RMW
+
+需要拿到旧值:
+    AURIX SWAP.W / SWAPMSK.W
+    ARM LDREX/STREX fetch_xxx
+
+需要条件跳转:
+    AURIX CMPSWAP.W
+    ARM LDREX/STREX CAS
+
+需要保护复杂结构:
+    spinlock / OS Spinlock / MCAL Spinlock
+```
+
+
 ## 12. 一句话记忆
 
 ```text
