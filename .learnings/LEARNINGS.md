@@ -8,6 +8,40 @@ Corrections, insights, and knowledge gaps captured during development.
 
 ---
 
+## [LRN-20260711-002] correction
+
+**Logged**: 2026-07-11T10:15:00+08:00
+**Priority**: high
+**Status**: active
+**Area**: workflow
+
+### Summary
+用户纠正：对于本仓库，"上传" / "推送" 默认直接推送到 `master` 分支，不需要创建功能分支或额外确认。
+
+### Details
+在调用 `git-upload-push` skill 时，脚本警告当前在默认分支 `master` 并建议创建功能分支。用户明确反馈：
+
+> "记住规则 除非我特别说明 上传都是master分支"
+
+这属于项目级约定：个人知识库项目，直接在 master 上迭代更轻量。
+
+### Suggested Action
+- 用户触发上传/推送意图时，直接执行 `git add -A && git commit -m "..." && git push origin master`
+- 不再主动建议创建功能分支
+- 若默认分支不是 master，需先确认用户意图
+- 已持久化到记忆：`memory/default-push-master.md`
+
+### Metadata
+- Source: user_feedback
+- Related Files: `.claude/skills/git-upload-push/scripts/git-upload-push.py`, `memory/default-push-master.md`
+- Tags: git, push, master, workflow, user_preference
+- Pattern-Key: workflow.push_to_master
+- Recurrence-Count: 1
+- First-Seen: 2026-07-11
+- Last-Seen: 2026-07-11
+
+---
+
 ## [LRN-20260711-001] best_practice
 
 **Logged**: 2026-07-11T10:00:00+08:00

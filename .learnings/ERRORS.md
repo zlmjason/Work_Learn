@@ -6,6 +6,44 @@ Command failures and integration errors.
 
 ---
 
+## [ERR-20260711-001] git_upload_push_windows_encoding
+
+**Logged**: 2026-07-11T10:10:00+08:00
+**Priority**: medium
+**Status**: active
+**Area**: tools
+
+### Summary
+`git-upload-push` skill 脚本在 Windows 中文路径仓库中执行 `git commit` 时因编码问题崩溃，无法完成自动推送。
+
+### Error
+```
+UnicodeDecodeError: 'gbk' codec can't decode byte 0xac in position 47: illegal multibyte sequence
+...
+File "...git-upload-push.py", line 33, in run
+    return result.stdout.strip()
+           ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'strip'
+```
+
+### Context
+- Command: `python .claude/skills/git-upload-push/scripts/git-upload-push.py push "..." --yes`
+- Environment: Windows 11, Git Bash, Python 3.13, 仓库路径含中文目录名
+- Expected: 自动完成 `git add -A` → `git commit` → `git push`
+- Actual: 脚本在读取 `git commit` 输出时因 GBK 解码失败而崩溃，commit 可能已执行但 push 未完成
+
+### Suggested Fix
+1. 临时方案：手动执行 `git add -A && git commit -m "..." && git push origin master`
+2. 修复脚本：在 `subprocess.run` 中显式指定 `encoding='utf-8'` 和 `errors='replace'`，避免依赖系统默认编码
+3. 同时处理 `master` 默认分支警告：即使 `--yes` 也应允许在默认分支推送，或增加 `--allow-master` 参数
+
+### Metadata
+- Reproducible: yes
+- Related Files: `.claude/skills/git-upload-push/scripts/git-upload-push.py`
+- See Also: LRN-20260711-001
+
+---
+
 ## [ERR-20260511-001] pip_install_summarize
 
 **Logged**: 2026-05-11T09:26:17+08:00
