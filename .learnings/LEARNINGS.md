@@ -8,6 +8,54 @@ Corrections, insights, and knowledge gaps captured during development.
 
 ---
 
+## [LRN-20260717-001] correction
+
+**Logged**: 2026-07-17T14:45:00+08:00
+**Priority**: high
+**Status**: active
+**Area**: workflow
+
+### Summary
+
+用户纠正工作方式： prefers 渐进式披露与事前确认。对于任何任务，若存在需要讨论的方案、风险或权衡，必须先与用户确认后再实施；除非用户已明确给出直接改动的指令。目标是实现“一次性成功”，避免事后缝补。
+
+### Details
+
+用户在讨论 OpenAI 提示词指南的启发后，明确反馈：
+
+> “我觉得基本的东西我都能做到，我更喜欢渐进式披露。我要求你做任何任务，如果你有任何觉得需要讨论的方案，都需要和我先确认，然后再开始实施。除非我明确的改动，意思就是我们要多些讨论和相互质疑，我希望的是实施后的一次性成功，而不是缝缝补补。”
+
+这意味着：
+
+- **不要默认直接执行**有多个可行方案、涉及文件重命名/删除、跨目录大规模改动、或可能破坏现有结构的任务。
+- **主动抛出选项和利弊**，让用户选择或拍板。
+- **接受相互质疑**：用户希望我对方案提出疑问，而不是一味顺从。
+- **一次做对优先于速度**：与其快速给出一个 80 分方案再迭代，不如先对齐再做 100 分方案。
+
+### Suggested Action
+
+- 接到任务后，先判断是否存在以下情况：
+  - 多方案可选
+  - 涉及删除、覆盖、重命名
+  - 跨目录/跨文件批量改动
+  - 与 CLAUDE.md 规范有模糊地带
+  - 可能影响现有链接、索引或 git 历史
+- 若存在，先用简短说明列出“我建议怎么做”以及“其他选项”，等待用户确认。
+- 实施过程中若发现新的不确定点，立即暂停并反馈，不擅自决定。
+- 已持久化到记忆：`memory/discuss-before-implement.md`
+
+### Metadata
+
+- Source: user_feedback
+- Related Files: `CLAUDE.md`, `memory/discuss-before-implement.md`
+- Tags: workflow, user_preference, progressive_disclosure, confirmation, quality
+- Pattern-Key: workflow.discuss_before_implement
+- Recurrence-Count: 1
+- First-Seen: 2026-07-17
+- Last-Seen: 2026-07-17
+
+---
+
 ## [LRN-20260711-002] correction
 
 **Logged**: 2026-07-11T10:15:00+08:00
