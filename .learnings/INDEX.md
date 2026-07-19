@@ -11,15 +11,15 @@
 
 ## 统计概览
 
-- **总条目数**: 12
-- **按状态**: accepted: 3, candidate: 3, open: 1, pending: 2, proposed: 1, resolved: 5, wont_fix: 1
+- **总条目数**: 19
+- **按状态**: accepted: 3, active: 5, candidate: 3, pending: 2, proposed: 1, resolved: 8, wont_fix: 1
 
 ## 各文件汇总
 
 | 文件 | 条目数 | 状态分布 |
 |------|--------|----------|
-| [LEARNINGS.md](./LEARNINGS.md) | 3 | pending: 2, resolved: 3 |
-| [ERRORS.md](./ERRORS.md) | 3 | open: 1, resolved: 1, wont_fix: 1 |
+| [LEARNINGS.md](./LEARNINGS.md) | 7 | active: 4, pending: 2, resolved: 3 |
+| [ERRORS.md](./ERRORS.md) | 6 | active: 1, resolved: 4, wont_fix: 1 |
 | [FEATURE_REQUESTS.md](./FEATURE_REQUESTS.md) | 0 | — |
 | [DECISIONS.md](./DECISIONS.md) | 3 | accepted: 3, proposed: 1 |
 | [PATTERNS.md](./PATTERNS.md) | 3 | candidate: 3, resolved: 1 |
@@ -28,15 +28,22 @@
 
 ### LEARNINGS.md
 
+- [LRN-20260717-001] correction
+- [LRN-20260711-002] correction
+- [LRN-20260711-001] best_practice
 - [LRN-20260511-005] best_practice
 - [LRN-20260511-002] knowledge_gap
 - [LRN-20260511-003] insight
+- [LRN-20260719-001] best_practice
 
 ### ERRORS.md
 
+- [ERR-20260711-001] git_upload_push_windows_encoding
 - [ERR-20260511-001] pip_install_summarize
 - [ERR-20260511-003] winget_install_tesseract_poppler
 - [ERR-20260630-004] npx_skills_install_github_timeout
+- [ERR-20260709-006] missing_pdf_libraries_claude_md_mismatch
+- [ERR-20260630-005] npx_skills_skill_name_not_found
 
 ### DECISIONS.md
 
@@ -52,4 +59,4 @@
 
 ---
 
-_Generated at: 2026-06-30T21:01:25.401033+08:00_
+_Generated at: 2026-07-19T21:22:15.049827+08:00_

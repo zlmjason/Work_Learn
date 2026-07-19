@@ -301,6 +301,11 @@ MarkDown_Learn/
 | obsidian-vault | `.claude/skills/obsidian-vault/` | 在 Obsidian 中搜索、创建、整理笔记 |
 | note-organizer | `.claude/skills/note-organizer/` | 按 CLAUDE.md 规范整理 Markdown 笔记目录与命名 |
 | skillify | `.claude/skills/skillify/` | 将当前会话的可重复流程捕获为新的 skill |
+| doc-review | `.claude/skills/doc-review/` | Markdown 笔记规范检查 |
+| mcu-note-creator | `.claude/skills/mcu-note-creator/` | 按规范创建 MCU 笔记 |
+| safespi-evaluator | `.claude/skills/safespi-evaluator/` | SafeSPI Rev 2.0 支持性五层评估 |
+| git-upload-push | `.claude/skills/git-upload-push/` | 一键 git add/commit/push（直接推 master） |
+| kb-workflow | `.claude/skills/kb-workflow/` | 工作流编排层：阶段→技能流水线表与"用前重读"纪律 |
 
 > **技能结构约定**：每个技能文件夹遵循多文件结构 — `SKILL.md`（入口与触发条件）、`reference.md`（详细用法）、`gotchas.md`（陷阱与失败模式）、`config.json`（配置）、`scripts/`（可执行脚本）。参考实现：`self-improving-agent`、`context-compress`。
 
@@ -393,6 +398,22 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 2. **评估是否晋升（Promote）**：
    - 如果某条学习具有跨任务通用性（非一次性问题），将其精简后追加到本文件或项目文档的合适章节。
    - 晋升后，在原记录中更新 `**Status**: promoted`。
+3. **月度 retro（每月一次，或 `.learnings/` 积累 10+ 条未处理记录时）**：
+   - 按 `self-improving-agent` SKILL.md 的「月度回顾」流程执行：聚类复发问题 → 产出 CLAUDE.md / skill 修订建议 → 用户确认后晋升并销账。
+
+### 5.4 常见借口与反模式（Shortcuts to Resist）
+
+以下"合理借口"在过往任务中反复导致返工。识别到自己产生这些想法时，按右栏执行：
+
+| 借口 | 为什么错 / 正确做法 |
+|------|---------------------|
+| "先放 Inbox 以后再整理" | Inbox 只进不出就失去意义。可以临时存放，但同一会话内应完成归档（kb-workflow 流水线 A4），或明确告知用户待办 |
+| "文件名大概对就行" | 命名规范就是为防跨层同名混淆，差一个前缀就失效。对照 §2.2 命名表逐字核对 |
+| "直接改原笔记内容" | 违反 §8.1 第 3 条。保留原文，在下方新增"整理版"或"补充理解" |
+| "这个 skill 上次读过，凭记忆用" | 上下文压缩后内容可能已丢失。每个阶段开始前重读对应 SKILL.md（见 kb-workflow「用前重读纪律」） |
+| "用户需求够清楚，直接做" | 存在多方案、删除/重命名、批量改动时必须先确认（LRN-20260717-001）。一次性成功优先于速度 |
+| "检查脚本大概能过，跳过 doc-review" | 一分钟的检查跳过后，归档返工要动 git 历史，成本翻倍 |
+| "记录过 learning 就算改进了" | 记录≠改进。按 §5.3 月度 retro 把复发问题转化为 CLAUDE.md / skill 的实际修订 |
 
 ---
 
@@ -423,7 +444,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 | 子目录 | 内容 |
 |--------|------|
 | `references/knowledge-base/` | MCU 架构、通信协议、诊断、外设测试、功能安全、区域架构等参考资料 |
-| `skills/` | 可用技能（find-skills、pdf、summarize、self-improving-agent、docx-cn、mineru-pdf-parser、note-organizer） |
+| `skills/` | 可用技能（完整清单与触发时机见 §4.1） |
 
 ---
 
@@ -493,6 +514,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 | 2026-06-05 | 新增第 8 节"Obsidian 知识库管理规范"；本地技能目录从 `skills/` 迁移至 `.claude/skills/`，新增 docx-cn、mineru-pdf-parser 登记 |
 | 2026-06-05 | **工作区重构**：建立车规 MCU 技术栈分层架构（Hardware / Middleware / Application）；目录全英文化；Peripherals 按功能（Comm/Timer/IO/Storage）拆分；Core 按架构（AURIX/ARM/Comparison）细分；新增 AUTOSAR 和 FreeRTOS 完整目录框架；制定文件命名规范 |
 | 2026-07-05 | 新增本地技能 `note-organizer`：按 CLAUDE.md 目录与命名规范自动整理 Markdown 笔记；将两篇原子操作笔记归档至 `01_Hardware_硬件层/01_Core/03_Comparison/` |
+| 2026-07-19 | 借鉴 google/agents-cli 的 skill 工程模式（LRN-20260719-001）：新增 `kb-workflow` 编排技能（阶段→技能流水线表 + 用前重读纪律）；为 5 个技能描述补充负向触发边界；新增 §5.4 反模式表；§5.3 增加月度 retro 闭环；§4.1 技能表补齐遗漏登记 |
 | 2026-06-05 | **深度细分**：Hardware 层全部细化（Memory→RAM/Flash/Cache/MPU、System→Clock/Power/Reset/Bus/DMA/Interrupt、Boot→Bootloader/BootROM/FirmwareUpdate、Peripherals/Comm→SPI/I2C/CAN/LIN/UART/Ethernet/FlexRay/Intercore、Timer→GPT/PWM/ICU/WDG、IO→GPIO/ADC/DAC、Multicore→Lockstep/Resource/Intercore、Debug→CoreSight/Trace/JTAG/CrossTrigger）；新增 `04_Safety_功能安全`（ISO26262/E2E/SafetyMonitor/Lockstep）和 `05_Tools_工具链`（Compiler/Debugger/Flash/Trace/HIL_SIL）；AUTOSAR 全部细化到模块级（CAN/LIN/SPI/Ethernet/FlexRay/UDS/XCP、DEM/DET/UDS/DTC/OBD、OS/EcuM/BswM/SchM/ComM/Nm、E2E/SafeSPI/SafeT/Testing）；FreeRTOS 细化到子模块级（Tasks/Scheduler/Lists/Queues、Semaphores/Mutexes/EventGroups/StreamBuffers、Heap/Stack/MPU、Tick/Timers/Delays、PortLayer/Interrupts/Hooks）；文件命名规则扩展至 28 条覆盖全部层次 |
 
 ---

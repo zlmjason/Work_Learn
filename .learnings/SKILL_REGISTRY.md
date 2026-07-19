@@ -10,15 +10,22 @@
 
 | Skill | 路径 | 用途 | 来源 Learning | 状态 |
 |-------|------|------|---------------|------|
+| autoresearch | `.claude/skills/autoresearch/` | 有量化指标的自动迭代优化 | — | active |
 | context-compress | `.claude/skills/context-compress/` | 上下文压缩与摘要 | — | active |
 | docx-cn | `.claude/skills/docx-cn/` | Word 文档处理 | — | active |
 | doc-review | `.claude/skills/doc-review/` | Markdown 规范检查 | PAT-skill-folder-structure | active |
 | find-skills | `.claude/skills/find-skills/` | 搜索/安装外部技能 | — | active |
+| git-upload-push | `.claude/skills/git-upload-push/` | 一键 git add/commit/push | — | active |
+| impeccable | `.claude/skills/impeccable/` | 前端 UI 设计与打磨 | — | active |
+| kb-workflow | `.claude/skills/kb-workflow/` | 工作流编排层：阶段→技能流水线 | LRN-20260719-001 | active |
 | mcu-note-creator | `.claude/skills/mcu-note-creator/` | 按规范创建 MCU 笔记 | — | active |
 | mineru-pdf-parser | `.claude/skills/mineru-pdf-parser/` | PDF/Word/PPT/Excel 转 Markdown | — | active |
+| note-organizer | `.claude/skills/note-organizer/` | 笔记归档与命名规范 | — | active |
+| obsidian-vault | `.claude/skills/obsidian-vault/` | Obsidian 双链与索引管理 | — | active |
 | pdf | `.claude/skills/pdf/` | PDF 处理指南 | — | active |
 | safespi-evaluator | `.claude/skills/safespi-evaluator/` | SafeSPI 支持性评估 | — | active |
 | self-improving-agent | `.claude/skills/self-improving-agent/` | 持续改进日志 | — | active |
+| skillify | `.claude/skills/skillify/` | 会话流程捕获为新 skill | — | active |
 | summarize | `.claude/skills/summarize/` | 内容提取/摘要 | LRN-20260511-005 | active |
 
 ---
@@ -29,6 +36,7 @@
 |-------------|-------|------|
 | LRN-20260511-005 | summarize | 无 API Key 时内容提取与 LLM 摘要解耦 |
 | PAT-skill-folder-structure | doc-review 等 | Skill 单文件膨胀，重构为多文件结构 |
+| LRN-20260719-001 | kb-workflow | 借鉴 google/agents-cli：阶段→技能编排层 + 用前重读纪律 |
 
 ---
 

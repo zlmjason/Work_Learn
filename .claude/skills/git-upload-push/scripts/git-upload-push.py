@@ -24,6 +24,8 @@ def run(cmd, cwd=None, check=True):
         cwd=cwd,
         shell=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
     )
     if check and result.returncode != 0:

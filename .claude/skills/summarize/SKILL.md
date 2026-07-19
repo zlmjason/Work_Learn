@@ -1,6 +1,6 @@
 ---
 name: summarize
-description: Extract and summarize content from URLs, local files, PDFs, and YouTube videos. Trigger when the user asks to summarize a webpage, article, PDF, video, or any document; or mentions 'TL;DR', 'summary', 'extract content'. This project has no third-party LLM API key, so default to --print-content mode and let Kimi summarize.
+description: Extract and summarize content from URLs, local files, PDFs, and YouTube videos. Trigger when the user asks to summarize a webpage, article, PDF, video, or any document; or mentions 'TL;DR', 'summary', 'extract content'. This project has no third-party LLM API key, so default to --print-content mode and let Kimi summarize. Do NOT use for high-fidelity conversion of PDF/Word/PPT/Excel where tables, formulas, and layout must be preserved (use mineru-pdf-parser).
 metadata:
 ---
 

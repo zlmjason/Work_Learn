@@ -1,6 +1,6 @@
 ---
 name: note-organizer
-description: Organize Markdown notes into the correct directory and rename them according to the project's CLAUDE.md conventions. Use when the user drops a new .md file in the workspace root or Inbox and wants it placed under the proper layer with a canonical filename.
+description: Organize Markdown notes into the correct directory and rename them according to the project's CLAUDE.md conventions. Use when the user drops a new .md file in the workspace root or Inbox and wants it placed under the proper layer with a canonical filename. Do NOT use for creating new notes from scratch (use mcu-note-creator), for content/format compliance review (use doc-review), or for Obsidian wikilink and index-note management (use obsidian-vault).
 metadata:
 ---
 

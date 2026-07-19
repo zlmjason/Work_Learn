@@ -408,6 +408,19 @@ grep -l "Area\*\*: backend" .learnings/*.md
 - Link related entries
 - Escalate recurring issues
 
+### 月度回顾（Monthly Retro）— 关闭改进闭环
+
+**记录 ≠ 改进。** 每月一次（或 pending/active 条目积累 10+ 时）执行 retro，把 `.learnings/` 的存量转化为对 CLAUDE.md 和 skill 的实际修订。借鉴 google/agents-cli 的 Quality Flywheel（Analyze → Propose → Confirm → Promote → Verify）。
+
+1. **聚类（Analyze）**：通读 `LEARNINGS.md`、`ERRORS.md`、`PATTERNS.md` 中 Status 为 pending/active 的条目，按主题聚类（如"编码问题"、"命名混淆"、"流程跳过"）。优先处理 `Recurrence-Count >= 3` 或出现在 2+ 不同任务中的模式。
+2. **产出建议（Propose）**：对每个聚类产出**一条可执行的修订建议**，目标三选一：
+   - `.claude/CLAUDE.md` 新增/修改规则（高频复发问题写入 §5.4 反模式表）
+   - 某个 skill 的 SKILL.md / reference.md 修订
+   - 新 skill 提案（走 `skillify` 或手动创建）
+3. **用户确认（Confirm）**：列出建议清单，经用户确认后再动手（遵循 LRN-20260717-001：方案先确认，一次性成功优先）。
+4. **晋升与销账（Promote & Close）**：执行修订；源条目标记 `promoted`/`resolved`；涉及 skill 时更新 `SKILL_REGISTRY.md`；运行 `update-index.py` 刷新索引。
+5. **验证（Verify）**：后续任务中观察同类问题是否复发；复发则升级优先级，并考虑更强约束（晋升进 CLAUDE.md 正文或 §5.4）。
+
 ## Detection Triggers
 
 Automatically log when you notice:

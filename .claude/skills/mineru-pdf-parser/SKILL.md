@@ -1,6 +1,6 @@
 ---
 name: mineru-pdf-parser
-description: Convert PDF, Word, PPT, Excel, and images to structured Markdown via MinerU cloud API. Preserves headings, tables, LaTeX formulas, and multi-column layouts. Trigger when the user mentions "PDF to Markdown", "Word to Markdown", "parse document", "extract document content", "PPT to text", "convert document", or needs document structure preservation.
+description: Convert PDF, Word, PPT, Excel, and images to structured Markdown via MinerU cloud API. Preserves headings, tables, LaTeX formulas, and multi-column layouts. Trigger when the user mentions "PDF to Markdown", "Word to Markdown", "parse document", "extract document content", "PPT to text", "convert document", or needs document structure preservation. Do NOT use for quick content extraction from webpages or YouTube, or when only a rough summary is needed (use summarize).
 metadata:
   requires:
     - python3

@@ -335,3 +335,35 @@ Workarounds:
 ---
 
 
+
+---
+
+## [LRN-20260719-001] best_practice
+
+**Logged**: 2026-07-19T21:22:14+08:00
+**Priority**: medium
+**Status**: active
+**Area**: docs
+
+### Summary
+
+从 google/agents-cli（Google 官方 agent 开发 CLI + skills 套件，5.2k stars）移植四个 skill 工程模式到本知识库：阶段→技能编排层、skill 描述负向触发、反模式表、月度 retro 闭环。
+
+### Details
+
+分析 google/agents-cli 仓库后确认：其 CLI（ADK/GCP 部署）与本知识库无直接关系，不建议安装；但其 workflow/eval 两个 skill 的工程设计是同类规范（SKILL.md + references/）的成熟实现，有四处可借鉴：
+
+1. **阶段→技能编排表 + 用前重读纪律**：context compaction 会丢弃已读 skill 内容，每阶段开始前须重读。→ 已落地为 `kb-workflow` skill（流水线 A 新资料入库 / B Inbox 清理 / C 笔记迭代 / D 持续改进）。
+2. **描述中的负向触发**（"Do NOT use for X, use Y"）：消除边界模糊 skill 的误触发。→ 已更新 note-organizer / mcu-note-creator / obsidian-vault / summarize / mineru-pdf-parser。
+3. **"Common Shortcuts to Resist" 反模式表**：列出 agent 常用借口及对策。→ 已落地为 CLAUDE.md §5.4。
+4. **Quality Flywheel（Analyze→Propose→Confirm→Promote→Verify）**：记录≠改进，需定期把 .learnings/ 转化为实际修订。→ 已落地为 self-improving-agent「月度回顾」+ CLAUDE.md §5.3 第 3 条。
+
+### Suggested Action
+
+已实施完毕。后续在月度 retro 中复盘四个模式的实际效果；若 kb-workflow 流水线与实际工作方式有出入，优先更新该 skill 而非绕过它。
+
+### Metadata
+
+- Source: best_practice
+- Related Files: `.claude/skills/kb-workflow/SKILL.md`, `.claude/CLAUDE.md`, `.claude/skills/self-improving-agent/SKILL.md`, `.learnings/SKILL_REGISTRY.md`
+- See Also: LRN-20260717-001

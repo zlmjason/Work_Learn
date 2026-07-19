@@ -1,6 +1,6 @@
 ---
 name: mcu-note-creator
-description: Create new automotive MCU knowledge base notes following project conventions. Trigger when the user asks to create a new note, asks where to place a topic, or mentions "new note", "create note", "这个该放哪", "怎么命名".
+description: Create new automotive MCU knowledge base notes following project conventions. Trigger when the user asks to create a new note, asks where to place a topic, or mentions "new note", "create note", "这个该放哪", "怎么命名". Do NOT use for moving or renaming existing notes (use note-organizer) or for reviewing existing notes against conventions (use doc-review).
 metadata:
 ---
 
