@@ -10,7 +10,7 @@ Command failures and integration errors.
 
 **Logged**: 2026-07-11T10:10:00+08:00
 **Priority**: medium
-**Status**: active
+**Status**: resolved
 **Area**: tools
 
 ### Summary
@@ -41,6 +41,11 @@ AttributeError: 'NoneType' object has no attribute 'strip'
 - Reproducible: yes
 - Related Files: `.claude/skills/git-upload-push/scripts/git-upload-push.py`
 - See Also: LRN-20260711-001
+
+### Resolution
+- **Resolved**: 2026-07-19
+- **Commit**: fa7fc06
+- **Notes**: 按 Suggested Fix 第 2 条修复——`subprocess.run` 显式指定 `encoding="utf-8", errors="replace"`；已用中文 commit message 实测推送成功，GBK 崩溃不再出现。第 3 条（master 警告）确认现有逻辑已满足：`--yes` 时仅警告不阻断，符合用户直推 master 的偏好。
 
 ---
 
