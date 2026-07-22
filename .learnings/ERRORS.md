@@ -289,3 +289,39 @@ Or search for another skill creator helper if `skillify` is not the intended one
 
 ---
 
+
+---
+
+## [ERR-20260719-001] bash_heredoc_backtick_substitution
+
+**Logged**: 2026-07-19
+**Priority**: medium
+**Status**: resolved
+**Area**: tools
+
+### Summary
+向 Markdown 文件追加内容时，未加引号的 heredoc（`<< EOF`）导致文中反引号路径被 bash 当作命令替换执行，内容被吞并产生大量 "command not found" 噪音。
+
+### Error
+```
+.claude/CLAUDE.md: line 5: ---: command not found
+.claude/skills/autoresearch/SKILL.md: line 2: name:: command not found
+...
+```
+写入结果的 `**文件**: ` 一行中 4 个反引号路径全部消失，变成空逗号列表。
+
+### Context
+- Command: `cat >> file << EOF`（heredoc 含 `$TS` 变量与多个反引号包裹的路径）
+- Environment: Windows 11 Git Bash
+- 原因：未加引号的 heredoc 会同时展开 `$变量` **和**反引号命令替换；被"执行"的是 Markdown 文档，逐行报错但无副作用
+
+### Suggested Fix
+含 Markdown 反引号的内容一律用带引号的定界符 `<< 'EOF'`（全不展开）；如确需变量展开，先对反引号转义 `\``，或改用 Write/Edit 工具写文件。
+
+### Metadata
+- Reproducible: yes
+- Related Files: 本次追加操作（Work 仓库 `.learnings/LEARNINGS.md` 已手动修复）
+
+### Resolution
+- **Resolved**: 2026-07-19
+- **Notes**: 当场发现并用 Edit 修复被吞行；本条用 `<< 'EOF'` 写入验证通过。
