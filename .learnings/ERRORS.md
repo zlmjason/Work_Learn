@@ -325,3 +325,44 @@ Or search for another skill creator helper if `skillify` is not the intended one
 ### Resolution
 - **Resolved**: 2026-07-19
 - **Notes**: 当场发现并用 Edit 修复被吞行；本条用 `<< 'EOF'` 写入验证通过。
+
+---
+
+## [ERR-20260726-001] github_push_network_blocked
+
+**Logged**: 2026-07-26T23:35:00+08:00
+**Priority**: medium
+**Status**: pending
+**Area**: infra
+
+### Summary
+git push 到 GitHub 全面失败：SSH 22 端口超时、SSH 443 端口连接重置、HTTPS 推送反复被重置（TLS EOF / HTTP2 framing / connect timeout），本机无代理可用。提交已安全保存在本地 master，待网络恢复后补推。
+
+### Error
+```
+ssh: connect to host github.com port 22: Connection timed out
+ssh -p 443 git@ssh.github.com → Connection reset by 20.205.243.160 port 443
+git push https://... → Recv failure: Connection was reset
+                     → TLS connect error: unexpected eof while reading
+                     → Failed to connect to github.com port 443 after 21078 ms
+                     → Error in the HTTP2 framing layer
+git -c http.version=HTTP/1.1 push → SSL_read: unexpected eof while reading
+```
+
+### Context
+- Command: `git push`（SSH 远程与一次性 HTTPS URL 均试过，共 6 次尝试，含强制 HTTP/1.1）
+- Environment: Windows 11, Git Bash, 国内网络；本机 7890/7897/10809/1080/10808/8889 端口均无代理监听
+- 对比现象：`curl -sI https://github.com` 曾返回 200——主页可达但 git 推送（POST 大数据）被针对性重置，符合 GFW 间歇性/按流量特征干扰
+- 本地提交 `f67ce4c` 已在 master，内容未丢失
+
+### Suggested Fix
+1. 网络恢复后直接 `git push origin master`（参照 ERR-20260630-004，同类问题曾自行恢复）
+2. 若用户有可用的系统代理/VPN，启动后用 `git -c http.proxy=http://127.0.0.1:<port> push origin master` 推送
+3. 不建议通过第三方 GitHub 镜像站推送（凭据需经镜像中转，有泄露风险）
+
+### Metadata
+- Reproducible: yes (under current network conditions)
+- Related Files: 无（网络层问题）
+- See Also: ERR-20260630-004
+- Pattern-Key: network.github_unreachable
+- Recurrence-Count: 2
