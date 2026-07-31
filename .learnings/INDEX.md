@@ -12,14 +12,14 @@
 ## 统计概览
 
 - **总条目数**: 22
-- **按状态**: accepted: 3, active: 5, candidate: 3, pending: 3, proposed: 1, resolved: 10, wont_fix: 1
+- **按状态**: accepted: 3, active: 5, candidate: 3, pending: 2, proposed: 1, resolved: 11, wont_fix: 1
 
 ## 各文件汇总
 
 | 文件 | 条目数 | 状态分布 |
 |------|--------|----------|
 | [LEARNINGS.md](./LEARNINGS.md) | 8 | active: 5, pending: 2, resolved: 3 |
-| [ERRORS.md](./ERRORS.md) | 8 | pending: 1, resolved: 6, wont_fix: 1 |
+| [ERRORS.md](./ERRORS.md) | 8 | resolved: 7, wont_fix: 1 |
 | [FEATURE_REQUESTS.md](./FEATURE_REQUESTS.md) | 0 | — |
 | [DECISIONS.md](./DECISIONS.md) | 3 | accepted: 3, proposed: 1 |
 | [PATTERNS.md](./PATTERNS.md) | 3 | candidate: 3, resolved: 1 |
@@ -62,4 +62,4 @@
 
 ---
 
-_Generated at: 2026-07-26T23:39:31.983658+08:00_
+_Generated at: 2026-07-31T19:56:29.784020+08:00_

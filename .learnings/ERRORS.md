@@ -332,8 +332,12 @@ Or search for another skill creator helper if `skillify` is not the intended one
 
 **Logged**: 2026-07-26T23:35:00+08:00
 **Priority**: medium
-**Status**: pending
+**Status**: resolved
 **Area**: infra
+
+### Resolution
+- **Resolved**: 2026-07-31
+- **Notes**: 网络自行恢复后 SSH 推送一次成功（`989f514..d996bc9 master -> master`），与 ERR-20260630-004 同模式：GFW 干扰为间歇性，无需改配置，等待恢复后重试即可。
 
 ### Summary
 git push 到 GitHub 全面失败：SSH 22 端口超时、SSH 443 端口连接重置、HTTPS 推送反复被重置（TLS EOF / HTTP2 framing / connect timeout），本机无代理可用。提交已安全保存在本地 master，待网络恢复后补推。
