@@ -43,9 +43,90 @@
 
 ---
 
-## 2. 文档规范
+## 2. 核心工作原则与协作规范
 
-### 2.1 写作风格
+### 2.1 第一性原理
+
+分析任何问题、设计方案、修改代码或生成文档时，**优先从问题最基础、最不可再拆解的事实、约束、目标和因果关系出发，逐层推导结论**，不直接套用经验结论、现成模板或表面相似案例。
+
+#### 工作方式
+
+1. **明确问题本质目标**
+   - 用户真正想解决什么问题？交付物是什么？成功标准是什么？
+   - 区分必须满足的内容 vs 可选优化
+
+2. **拆解基础事实和硬约束**
+   - 已知输入、技术边界、平台/工具链/接口/文件结构/规范要求
+   - 哪些条件不可变？哪些假设需显式说明？
+
+3. **区分事实、推断和假设**
+   - 确定事实 → 直接使用
+   - 合理推断 → 标明依据
+   - 不确定信息 → 不臆造；说明缺失，在可继续范围内给出最稳妥方案
+
+4. **从底层机制推导方案**
+   - 不只说"通常这样做"，要解释**为什么**这样做
+   - 说明方案如何满足目标、约束和边界条件
+   - 多方案时比较适用条件、优缺点和风险
+
+5. **避免机械套模板**
+   - 不为完整而堆砌无关内容
+   - 不照搬通用答案；每一部分必须服务于当前问题
+
+6. **输出必须可执行**
+   - 代码任务 → 可直接落地的文件、函数、接口、配置或修改点
+   - 工程设计 → 清晰的模块划分、接口边界、状态机、错误处理和测试点
+   - 文档任务 → 结构清楚，术语统一，内容能直接进入正式文档
+   - 问题排查 → 验证步骤、判断依据和下一步动作
+
+#### 回答原则
+
+- 先判断问题本质，再给结论
+- 先列约束，再设计方案
+- 先保证正确性，再考虑简洁性
+- 先满足核心功能，再扩展优化
+- **不编造**不存在的接口、寄存器、文件、参数、API 或工具能力
+- 不确定时明确指出，不用模糊措辞掩盖
+- 复杂任务按 **"目标 → 约束 → 推导 → 方案 → 风险 → 验证"** 顺序输出
+
+### 2.2 行动规范（人机协作边界）
+
+1. **执行前可提出异议**
+   - 用户下达指令时，若我发现明显风险、逻辑矛盾或存在更优方案，**应先说明问题和替代建议，再执行或等待确认**
+   - 不盲目服从已知会导致数据丢失、安全漏洞、环境破坏的命令
+   - 简单明确且无风险的指令直接执行，不提无关异议
+
+2. **判断型任务：先分析，后等决策**
+   - 用户要求"判断/决定/评估"时，**先独立完成完整分析**，给出：
+     - 分析依据（事实 + 推断）
+     - 各选项的利弊与风险
+     - 推荐方案及理由
+   - **最终决策权归用户**，我给出"建议做"而非"决定做"
+   - 用户明确说"你决定"时，才直接执行
+
+3. **方案变更时单独说明**
+   - 执行过程中发现原方案不可行或有更优路径时，**暂停并清晰说明**：
+     - 原方案的问题
+     - 新方案的优势
+     - 需要用户确认还是我可以直接调整
+   - 不在用户不知情的情况下擅自更改既定方案
+
+### 2.3 协作规范（六条思维纪律）
+
+1. **先想后做**：非平凡任务先交 5 步以内计划，标出最没把握的 1-2 步
+2. **分层推进**：对齐问题空间 → 枚举方案 → 只细化选定方案，不一次性甩成品
+3. **分层表达**：输出按"一句话权衡 → 任务拆解 → 细节按需展开"组织
+4. **讲得清楚才算做完**：复杂方案能向"新同事"讲清；配合用户复述直到顺为止
+5. **思考外化**：复杂推理出表格/思维树，长文落盘，checkpoint 写文件
+6. **不确定性分级**：收尾列"防跑偏三件事"，输出按 ✅确定/🟡模糊/❓未验证 分级
+
+结果出错时按**三分法**定位根因（目标误解 / 约束漏了 / 思路偏了），再对症处理。
+
+---
+
+## 3. 文档规范
+
+### 3.1 写作风格
 
 - **主要语言**：中文。技术术语保留英文（如 `Cortex-M7`、`SCU`、`SPI`、`MPU`）。
 - **标题层级**：`#` 用于文档标题，`##` 用于章节，`###` 用于小节。
@@ -53,7 +134,7 @@
 - **图表**：使用 Mermaid 语法绘制架构图和流程图，确保语法正确。
 - **文件命名**：使用下划线 `_` 作为分隔符，禁止空格。
 
-### 2.2 文件组织
+### 3.2 文件组织
 
 - 新增主题优先放入对应层次目录；如无合适目录，按技术栈层次新建。
 - 文件命名规范：见下方「文件命名规则」。
@@ -259,15 +340,15 @@ MarkDown_Learn/
 
 ---
 
-## 3. 关键内容模式
+## 4. 关键内容模式
 
-### 3.1 内核手册
+### 4.1 内核手册
 
 `01_Hardware_硬件层/01_Core/` 目录按架构细分（`01_AURIX_TC3xx/`、`02_ARM_Cortex/`、`03_Comparison/`），包含按 19 章大纲组织的 MCU 内核手册（`Automotive_MCU_Core_Manual_Outline_Section_Writing_Guide.md`）。章节涵盖：编程模型、特权模式、上下文管理、复位/启动、中断、异常、内存模型、缓存、保护机制、FPU/DSP、调试/跟踪、时序、多核、低功耗、移植指南。
 
 编辑或创建内核文档时，遵循此大纲结构，并按 MCU 架构放入对应子目录（AURIX 放 `01_AURIX_TC3xx/`，ARM 放 `02_ARM_Cortex/`）。
 
-### 3.2 SafeSPI 分析
+### 4.2 SafeSPI 分析
 
 `01_Hardware_硬件层/05_Peripherals/01_Communication/HW_Periph_Comm_SafeSPI_Origin_Background_13K_MCU_Support_Analysis.md` 提供了评估 MCU SPI 控制器是否符合 SafeSPI Rev 2.0 规范的完整框架。采用分层分析方法：
 
@@ -281,9 +362,9 @@ MarkDown_Learn/
 
 ---
 
-## 4. 工具与技能
+## 5. 工具与技能
 
-### 4.1 本地技能
+### 5.1 本地技能
 
 本地技能存放于 `.claude/skills/`：
 
@@ -309,7 +390,7 @@ MarkDown_Learn/
 
 > **技能结构约定**：每个技能文件夹遵循多文件结构 — `SKILL.md`（入口与触发条件）、`reference.md`（详细用法）、`gotchas.md`（陷阱与失败模式）、`config.json`（配置）、`scripts/`（可执行脚本）。参考实现：`self-improving-agent`、`context-compress`。
 
-### 4.2 summarize（内容提取）
+### 5.2 summarize（内容提取）
 
 **位置**：`.claude/skills/summarize/summarize.py`（Windows 原生 Python 脚本）。
 
@@ -331,7 +412,7 @@ python .claude/skills/summarize/summarize.py "path/to/file.pdf" --print-content
 
 **Windows 包装器**：`%USERPROFILE%\.local\bin\summarize.cmd` 提供相同 CLI 接口。
 
-### 4.3 PDF 处理
+### 5.3 PDF 处理
 
 Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 
@@ -346,7 +427,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 **已安装**：`pypdf`、`pdfplumber`、`reportlab`、`pandas`、`openpyxl`、`pytesseract`（仅 Python 库）。
 **未安装**：Tesseract-OCR 引擎、poppler（`pdftoppm`）。
 
-### 4.4 MinerU PDF 解析
+### 5.4 MinerU PDF 解析
 
 `.claude/skills/mineru-pdf-parser/` 提供基于 MinerU 云端 API 的文档解析，支持 PDF/Word/PPT/Excel/图片转结构化 Markdown，保留标题层级、表格结构、公式、多栏排版。
 
@@ -355,11 +436,11 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 
 ---
 
-## 5. 代理工作流
+## 6. 代理工作流
 
 以下要求**不区分是否新会话**，每次接到用户任务时都必须执行。
 
-### 5.1 任务开始前 — 回顾学习档案
+### 6.1 任务开始前 — 回顾学习档案
 
 1. **读取 `.learnings/` 目录下的三个文件**：
    - `.learnings/LEARNINGS.md` — 过往修正、洞察、最佳实践
@@ -371,7 +452,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
    - 在回复中简要提及（例如："根据之前的记录 `LRN-2026...`，我已知..."）。
    - 避免重复犯同样的错误。
 
-### 5.2 任务进行中 — 实时记录
+### 6.2 任务进行中 — 实时记录
 
 在任务执行过程中，一旦触发以下场景，**必须立即记录**，不要等到任务结束：
 
@@ -391,7 +472,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 
 **禁止**：不要在记录中写入密钥、Token、密码、完整配置文件或命令输出的完整转录。使用摘要或脱敏片段。
 
-### 5.3 任务结束后 — 总结与提升
+### 6.3 任务结束后 — 总结与提升
 
 1. **检查本次任务是否有值得记录的学习点**：
    - 如果任务中犯了错误、被纠正、或发现了可复用的模式，确保已记录。
@@ -401,23 +482,23 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 3. **月度 retro（每月一次，或 `.learnings/` 积累 10+ 条未处理记录时）**：
    - 按 `self-improving-agent` SKILL.md 的「月度回顾」流程执行：聚类复发问题 → 产出 CLAUDE.md / skill 修订建议 → 用户确认后晋升并销账。
 
-### 5.4 常见借口与反模式（Shortcuts to Resist）
+### 6.4 常见借口与反模式（Shortcuts to Resist）
 
 以下"合理借口"在过往任务中反复导致返工。识别到自己产生这些想法时，按右栏执行：
 
 | 借口 | 为什么错 / 正确做法 |
 |------|---------------------|
 | "先放 Inbox 以后再整理" | Inbox 只进不出就失去意义。可以临时存放，但同一会话内应完成归档（kb-workflow 流水线 A4），或明确告知用户待办 |
-| "文件名大概对就行" | 命名规范就是为防跨层同名混淆，差一个前缀就失效。对照 §2.2 命名表逐字核对 |
-| "直接改原笔记内容" | 违反 §8.1 第 3 条。保留原文，在下方新增"整理版"或"补充理解" |
+| "文件名大概对就行" | 命名规范就是为防跨层同名混淆，差一个前缀就失效。对照 §3.2 命名表逐字核对 |
+| "直接改原笔记内容" | 违反 §9.1 第 3 条。保留原文，在下方新增"整理版"或"补充理解" |
 | "这个 skill 上次读过，凭记忆用" | 上下文压缩后内容可能已丢失。每个阶段开始前重读对应 SKILL.md（见 kb-workflow「用前重读纪律」） |
 | "用户需求够清楚，直接做" | 存在多方案、删除/重命名、批量改动时必须先确认（LRN-20260717-001）。一次性成功优先于速度 |
 | "检查脚本大概能过，跳过 doc-review" | 一分钟的检查跳过后，归档返工要动 git 历史，成本翻倍 |
-| "记录过 learning 就算改进了" | 记录≠改进。按 §5.3 月度 retro 把复发问题转化为 CLAUDE.md / skill 的实际修订 |
+| "记录过 learning 就算改进了" | 记录≠改进。按 §6.3 月度 retro 把复发问题转化为 CLAUDE.md / skill 的实际修订 |
 
 ---
 
-## 6. 环境依赖
+## 7. 环境依赖
 
 | 工具/库 | 状态 | 说明 |
 |---------|------|------|
@@ -437,22 +518,22 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 
 ---
 
-## 7. .claude/ 目录说明
+## 8. .claude/ 目录说明
 
 `.claude/` 为辅助资料区，供回答车规 MCU 相关问题时按需参考。
 
 | 子目录 | 内容 |
 |--------|------|
 | `references/knowledge-base/` | MCU 架构、通信协议、诊断、外设测试、功能安全、区域架构等参考资料 |
-| `skills/` | 可用技能（完整清单与触发时机见 §4.1） |
+| `skills/` | 可用技能（完整清单与触发时机见 §5.1） |
 
 ---
 
-## 8. Obsidian 知识库管理规范
+## 9. Obsidian 知识库管理规范
 
 以下规则适用于管理本仓库对应的 Obsidian Vault，确保知识库的结构化、可维护性与安全性。
 
-### 8.1 总原则
+### 9.1 总原则
 
 | 编号 | 规则 |
 |------|------|
@@ -468,7 +549,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 | 10 | 投资、AI 产业链、个股跟踪内容放入 `03_AI产业链投资`。 |
 | 11 | AI 工具、Agent、Claude Code、Obsidian 相关内容放入 `91_Tools_AI工具链`。 |
 
-### 8.2 笔记格式
+### 9.2 笔记格式
 
 每篇知识型笔记尽量采用以下结构：
 
@@ -494,7 +575,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 ## Agent 整理记录
 ```
 
-### 8.3 安全要求
+### 9.3 安全要求
 
 | 编号 | 规则 |
 |------|------|
@@ -505,7 +586,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 
 ---
 
-## 9. 更新记录
+## 10. 更新记录
 
 | 日期 | 更新内容 |
 |------|---------|
@@ -514,6 +595,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 | 2026-06-05 | 新增第 8 节"Obsidian 知识库管理规范"；本地技能目录从 `skills/` 迁移至 `.claude/skills/`，新增 docx-cn、mineru-pdf-parser 登记 |
 | 2026-06-05 | **工作区重构**：建立车规 MCU 技术栈分层架构（Hardware / Middleware / Application）；目录全英文化；Peripherals 按功能（Comm/Timer/IO/Storage）拆分；Core 按架构（AURIX/ARM/Comparison）细分；新增 AUTOSAR 和 FreeRTOS 完整目录框架；制定文件命名规范 |
 | 2026-07-05 | 新增本地技能 `note-organizer`：按 CLAUDE.md 目录与命名规范自动整理 Markdown 笔记；将两篇原子操作笔记归档至 `01_Hardware_硬件层/01_Core/03_Comparison/` |
+| 2026-08-04 | 借鉴 Jason_HPC_Work-main 工作区：新增 §2「核心工作原则与协作规范」，包含第一性原理、行动规范、协作规范（六条思维纪律）；后续章节编号顺延 |
 | 2026-07-19 | 借鉴 google/agents-cli 的 skill 工程模式（LRN-20260719-001）：新增 `kb-workflow` 编排技能（阶段→技能流水线表 + 用前重读纪律）；为 5 个技能描述补充负向触发边界；新增 §5.4 反模式表；§5.3 增加月度 retro 闭环；§4.1 技能表补齐遗漏登记 |
 | 2026-06-05 | **深度细分**：Hardware 层全部细化（Memory→RAM/Flash/Cache/MPU、System→Clock/Power/Reset/Bus/DMA/Interrupt、Boot→Bootloader/BootROM/FirmwareUpdate、Peripherals/Comm→SPI/I2C/CAN/LIN/UART/Ethernet/FlexRay/Intercore、Timer→GPT/PWM/ICU/WDG、IO→GPIO/ADC/DAC、Multicore→Lockstep/Resource/Intercore、Debug→CoreSight/Trace/JTAG/CrossTrigger）；新增 `04_Safety_功能安全`（ISO26262/E2E/SafetyMonitor/Lockstep）和 `05_Tools_工具链`（Compiler/Debugger/Flash/Trace/HIL_SIL）；AUTOSAR 全部细化到模块级（CAN/LIN/SPI/Ethernet/FlexRay/UDS/XCP、DEM/DET/UDS/DTC/OBD、OS/EcuM/BswM/SchM/ComM/Nm、E2E/SafeSPI/SafeT/Testing）；FreeRTOS 细化到子模块级（Tasks/Scheduler/Lists/Queues、Semaphores/Mutexes/EventGroups/StreamBuffers、Heap/Stack/MPU、Tick/Timers/Delays、PortLayer/Interrupts/Hooks）；文件命名规则扩展至 28 条覆盖全部层次 |
 
