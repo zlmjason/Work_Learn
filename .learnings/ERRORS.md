@@ -6,6 +6,82 @@ Command failures and integration errors.
 
 ---
 
+## [ERR-20260804-001] git_push_github_connection_timeout
+
+**Logged**: 2026-08-04T12:00:00+08:00
+**Priority**: medium
+**Status**: open
+**Area**: infra
+
+### Summary
+`git push` 到 GitHub 时连接超时/被重置，无法完成远程推送。
+
+### Error
+```
+fatal: unable to access 'https://github.com/zlmjason/Work_Learn.git/':
+Failed to connect to github.com port 443 after 21060 ms: Timed out
+
+fatal: unable to access 'https://github.com/zlmjason/Work_Learn.git/':
+OpenSSL SSL_read: Connection was reset, errno 10054
+```
+
+### Context
+- Command: `git push`
+- Environment: Windows 10 Pro, Git Bash, 无代理
+- Expected: 本地 commit 推送到 origin/master
+- Actual: 连接建立失败，21 秒后超时；重试时被服务器重置
+
+### Suggested Fix
+1. 等待网络恢复后重试 `git push`
+2. 检查本地网络或 DNS 是否能解析 github.com
+3. 如有可用代理，配置 Git 代理：
+   ```bash
+   git config --global http.proxy http://proxy:port
+   git config --global https.proxy http://proxy:port
+   ```
+
+### Metadata
+- Reproducible: yes (under current network conditions)
+- Related Files: `.claude/skills/git-upload-push/scripts/git-upload-push.py`
+- See Also: ERR-20260630-004
+
+---
+
+## [ERR-20260804-002] git_upload_push_chinese_commit_message_garbled
+
+**Logged**: 2026-08-04T12:00:00+08:00
+**Priority**: medium
+**Status**: open
+**Area**: tools
+
+### Summary
+`git-upload-push` skill 脚本在 Windows 下处理中文 commit message 时仍出现乱码，疑似 ERR-20260711-001 的修复未完全覆盖当前场景。
+
+### Error
+```
+[master 41733b8] docs: �鵵 Loop Engineering IEEE ����������Ŀ¼
+```
+commit message 中的中文字符被替换为乱码方块。
+
+### Context
+- Command: `python .claude/skills/git-upload-push/scripts/git-upload-push.py push "docs: 归档 Loop Engineering IEEE 论文至附件目录" --yes`
+- Environment: Windows 10 Pro, Git Bash, Python 3.13
+- Expected: commit message 正确显示中文
+- Actual: 中文字符编码损坏，显示为乱码
+
+### Suggested Fix
+1. 临时方案：commit message 使用纯 ASCII/英文，避免中文编码问题
+2. 修复脚本：检查 `subprocess.run` 的 `encoding` 参数是否同时覆盖 `stdin` 写入路径；必要时对 commit message 先 encode 为 UTF-8 再传入
+3. 在 Windows 上设置环境变量 `PYTHONIOENCODING=utf-8` 后再调用脚本
+4. 验证：用中文 commit message 重跑脚本，确认 `git log` 输出正确
+
+### Metadata
+- Reproducible: yes
+- Related Files: `.claude/skills/git-upload-push/scripts/git-upload-push.py`
+- See Also: ERR-20260711-001
+
+---
+
 ## [ERR-20260711-001] git_upload_push_windows_encoding
 
 **Logged**: 2026-07-11T10:10:00+08:00
