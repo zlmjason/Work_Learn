@@ -1,0 +1,31 @@
+{
+  "name": "docx-cn",
+  "version": "1.1.0",
+  "note": "Word (.docx) 文档处理指南，支持创建、读取、编辑。",
+  "dependencies": {
+    "required": ["pandoc"],
+    "npm": ["docx"],
+    "optional": ["LibreOffice", "Poppler (pdftoppm)"]
+  },
+  "scripts": {
+    "unpack": "python scripts/office/unpack.py document.docx unpacked/",
+    "pack": "python scripts/office/pack.py unpacked/ output.docx --original document.docx",
+    "validate": "python scripts/office/validate.py doc.docx",
+    "accept_changes": "python scripts/accept_changes.py input.docx output.docx",
+    "comment": "python scripts/comment.py unpacked/ 0 \"Comment text\"",
+    "convert_doc_to_docx": "python scripts/office/soffice.py --headless --convert-to docx document.doc",
+    "convert_to_pdf": "python scripts/office/soffice.py --headless --convert-to pdf document.docx"
+  },
+  "criticalRules": [
+    "docx-js 默认 A4，显式设置页面尺寸",
+    "列表使用 LevelFormat.BULLET，不用 Unicode 项目符号",
+    "表格同时设置 columnWidths 和 cell width，使用 WidthType.DXA",
+    "表格 shading 使用 ShadingType.CLEAR",
+    "ImageRun 必须传 type",
+    "PageBreak 必须放在 Paragraph 内",
+    "文本中不要用 \\n，用多个 Paragraph",
+    "标题使用 HeadingLevel 以便 TOC 识别",
+    "编辑 XML 时保留 w:rPr",
+    "批注范围标记与 w:r 同级"
+  ]
+}

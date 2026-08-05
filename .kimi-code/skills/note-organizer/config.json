@@ -1,0 +1,121 @@
+{
+  "name": "note-organizer",
+  "version": "1.0.0",
+  "description": "Organize Markdown notes into canonical directories with canonical filenames per CLAUDE.md conventions.",
+  "layers": {
+    "hardware": {
+      "root": "01_Hardware_硬件层",
+      "prefix": "HW_",
+      "subdirs": {
+        "core_aurix": "01_Core/01_AURIX_TC3xx",
+        "core_arm": "01_Core/02_ARM_Cortex",
+        "core_comparison": "01_Core/03_Comparison",
+        "memory": "02_Memory",
+        "system": "03_System",
+        "boot": "04_Boot",
+        "peripherals_comm": "05_Peripherals/01_Communication",
+        "peripherals_timer": "05_Peripherals/02_Timer",
+        "peripherals_io": "05_Peripherals/03_IO",
+        "peripherals_storage": "05_Peripherals/04_Storage",
+        "multicore": "06_Multicore",
+        "debug": "07_Debug",
+        "packaging": "08_Packaging"
+      }
+    },
+    "middleware": {
+      "root": "02_Middleware_中间件层",
+      "subdirs": {
+        "autosar_comm": "01_AUTOSAR/01_Communication",
+        "autosar_memory": "01_AUTOSAR/02_Memory",
+        "autosar_io": "01_AUTOSAR/03_IO",
+        "autosar_timer": "01_AUTOSAR/04_Timer",
+        "autosar_storage": "01_AUTOSAR/05_Storage",
+        "autosar_diag": "01_AUTOSAR/06_Diagnostics",
+        "autosar_system": "01_AUTOSAR/07_System",
+        "autosar_safety": "01_AUTOSAR/08_Safety",
+        "autosar_mcu": "01_AUTOSAR/09_MCU",
+        "freertos_kernel": "02_FreeRTOS/01_Kernel",
+        "freertos_sync": "02_FreeRTOS/02_Synchronization",
+        "freertos_memory": "02_FreeRTOS/03_Memory",
+        "freertos_timing": "02_FreeRTOS/04_Timing",
+        "freertos_port": "02_FreeRTOS/05_Port"
+      }
+    },
+    "application": {
+      "root": "03_Application_应用层"
+    },
+    "safety": {
+      "root": "04_Safety_功能安全",
+      "prefix": "Safety_"
+    },
+    "tools": {
+      "root": "05_Tools_工具链",
+      "prefix": "Tools_"
+    },
+    "archive": {
+      "root": "90_Archive_归档"
+    },
+    "attachments": {
+      "root": "99_Attachments_附件"
+    },
+    "inbox": {
+      "root": "00_Inbox_临时收集"
+    },
+    "ai_tools": {
+      "root": "91_Tools_AI工具链"
+    }
+  },
+  "namingRules": {
+    "separator": "_",
+    "forbiddenChars": [" ", "\t", "\n", "\r"],
+    "uppercaseAbbreviations": [
+      "SPI", "I2C", "IIC", "CAN", "CANFD", "LIN", "UART", "USART", "ETH",
+      "ADC", "DAC", "GPIO", "DIO", "PWM", "GPT", "ICU", "WDG", "DMA",
+      "MPU", "MCU", "CPU", "RAM", "Flash", "EEPROM", "NVRAM", "Fee", "Ea",
+      "IPC", "CRC", "E2E", "UDS", "DEM", "DET", "DTC", "OBD", "OS", "EcuM",
+      "BswM", "SchM", "ComM", "Nm", "XCP", "CCP", "SMU", "SCU", "SRI", "SPB",
+      "FPI", "LMU", "DSPR", "PSPR", "HSM", "GTM", "GETH", "JTAG", "DAP",
+      "ETM", "MTB", "TSN", "FlexRay", "SafeSPI", "FreeRTOS", "AUTOSAR",
+      "ISO26262", "ASIL", "FMEDA", "HIL", "SIL", "GCC"
+    ]
+  },
+  "prefixMap": {
+    "Hardware_Core_AURIX": "AURIX_TC3xx_Core_",
+    "Hardware_Core_ARM_M7": "ARM_M7_Core_",
+    "Hardware_Core_ARM_R52": "ARM_R52_Core_",
+    "Hardware_Core_Comparison": "Core_Comparison_",
+    "Hardware_Memory": "HW_Mem_",
+    "Hardware_System": "HW_Sys_",
+    "Hardware_Boot": "HW_Boot_",
+    "Hardware_Periph_Comm_SPI": "HW_Periph_Comm_SPI_",
+    "Hardware_Periph_Comm_I2C": "HW_Periph_Comm_I2C_",
+    "Hardware_Periph_Comm_CAN": "HW_Periph_Comm_CAN_",
+    "Hardware_Periph_Comm_LIN": "HW_Periph_Comm_LIN_",
+    "Hardware_Periph_Comm_UART": "HW_Periph_Comm_UART_",
+    "Hardware_Periph_Comm_Ethernet": "HW_Periph_Comm_Ethernet_",
+    "Hardware_Periph_Comm_FlexRay": "HW_Periph_Comm_FlexRay_",
+    "Hardware_Periph_Comm_Intercore": "HW_Periph_Comm_Intercore_",
+    "Hardware_Periph_Timer": "HW_Periph_Timer_",
+    "Hardware_Periph_IO": "HW_Periph_IO_",
+    "Hardware_Periph_Storage": "HW_Periph_Storage_",
+    "Hardware_Multicore": "HW_MC_",
+    "Hardware_Debug": "HW_Debug_",
+    "Hardware_Packaging": "HW_Packaging_",
+    "AUTOSAR_Communication": "AUTOSAR_Comm_",
+    "AUTOSAR_Memory": "AUTOSAR_Mem_",
+    "AUTOSAR_IO": "AUTOSAR_IO_",
+    "AUTOSAR_Timer": "AUTOSAR_Timer_",
+    "AUTOSAR_Storage": "AUTOSAR_Storage_",
+    "AUTOSAR_Diagnostics": "AUTOSAR_Diag_",
+    "AUTOSAR_System": "AUTOSAR_Sys_",
+    "AUTOSAR_Safety": "AUTOSAR_Safety_",
+    "AUTOSAR_MCU": "AUTOSAR_MCU_",
+    "FreeRTOS_Kernel": "FreeRTOS_Kernel_",
+    "FreeRTOS_Sync": "FreeRTOS_Sync_",
+    "FreeRTOS_Memory": "FreeRTOS_Mem_",
+    "FreeRTOS_Timing": "FreeRTOS_Timing_",
+    "FreeRTOS_Port": "FreeRTOS_Port_",
+    "Safety": "Safety_",
+    "Tools": "Tools_"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "pdf",
+  "version": "1.1.0",
+  "note": "本 Skill 只提供指南和示例代码，无运行时配置。",
+  "installedLibraries": [
+    "pypdf",
+    "pdfplumber",
+    "reportlab",
+    "pandas",
+    "openpyxl",
+    "pytesseract"
+  ],
+  "missingSystemDependencies": [
+    {
+      "name": "Tesseract-OCR 引擎",
+      "reason": "pytesseract 需要系统级 Tesseract 引擎才能 OCR 扫描件",
+      "status": "暂缓安装"
+    },
+    {
+      "name": "poppler (pdftotext/pdfimages)",
+      "reason": "pdf2image 和命令行工具需要 poppler",
+      "status": "暂缓安装"
+    }
+  ],
+  "preferredLibraries": {
+    "mergeSplit": "pypdf",
+    "extractText": "pdfplumber",
+    "extractTables": "pdfplumber + pandas",
+    "createPdf": "reportlab",
+    "ocrScanned": "pytesseract + pdf2image (需系统依赖)"
+  }
+}

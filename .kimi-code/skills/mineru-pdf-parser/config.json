@@ -1,0 +1,14 @@
+{
+  "name": "mineru-pdf-parser",
+  "version": "1.1.0",
+  "note": "api_token 不再内置。请通过环境变量 MINERU_API_TOKEN 设置，或在调用时显式传入。",
+  "api_token": null,
+  "default_mode": "flash",
+  "supported_formats": [
+    ".pdf", ".doc", ".docx", ".ppt", ".pptx",
+    ".xls", ".xlsx", ".png", ".jpg", ".jpeg", ".tiff", ".bmp"
+  ],
+  "output_formats": ["md", "html", "docx"],
+  "requires": ["python3", "mineru-open-sdk"],
+  "optional": ["markdown", "python-docx", "PyMuPDF"]
+}

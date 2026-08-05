@@ -1,0 +1,28 @@
+{
+  "name": "safespi-evaluator",
+  "version": "1.0.0",
+  "note": "按 SafeSPI Rev 2.0 从 5 个层次评估 MCU SPI 控制器支持性。",
+  "fullReferencePath": "01_Hardware_硬件层/05_Peripherals/01_Communication/01_SPI/HW_Periph_Comm_SafeSPI_Origin_Background_13K_MCU_Support_Analysis.md",
+  "evaluationLayers": [
+    "物理/IO 层",
+    "SPI 传输层",
+    "SafeSPI 逻辑层",
+    "协议行为",
+    "监听/监控"
+  ],
+  "requirementCategories": [
+    "Physical/IO",
+    "Timing",
+    "SPI Transfer Mode",
+    "Logical Layer/Frame Format",
+    "Protocol Behavior",
+    "Fault Management/Diagnostics",
+    "Monitor/Listener"
+  ],
+  "statusSymbols": {
+    "pass": "[✅]",
+    "partial": "[⚠️]",
+    "fail": "[❌]",
+    "unknown": "[?]"
+  }
+}

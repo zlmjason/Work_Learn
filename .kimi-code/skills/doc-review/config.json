@@ -1,0 +1,45 @@
+{
+  "name": "doc-review",
+  "version": "1.0.0",
+  "note": "检查 Markdown 笔记是否符合项目规范。",
+  "checkCategories": [
+    "filename",
+    "heading_structure",
+    "required_sections",
+    "code_block_language",
+    "technical_terms",
+    "directory_placement",
+    "todo_fixme",
+    "wiki_links"
+  ],
+  "requiredSections": [
+    "核心问题",
+    "结论",
+    "关键机制"
+  ],
+  "allTemplateSections": [
+    "核心问题",
+    "结论",
+    "背景",
+    "关键机制",
+    "应用场景",
+    "关联笔记",
+    "待补充问题",
+    "标签",
+    "Agent 整理记录"
+  ],
+  "technicalTerms": [
+    "Cortex-M7", "Cortex-R52", "AURIX", "TriCore",
+    "SPI", "QSPI", "I2C", "CAN", "CAN-FD", "LIN", "UART", "Ethernet", "FlexRay",
+    "ADC", "DAC", "GPIO", "PWM", "GPT", "ICU", "WDG",
+    "DMA", "MPU", "SCU", "RAM", "Flash", "Cache",
+    "AUTOSAR", "FreeRTOS", "ISO 26262", "E2E",
+    "DEM", "DET", "UDS", "DTC", "OBD",
+    "OS", "EcuM", "BswM", "SchM"
+  ],
+  "filenamePrefixes": [
+    "HW_", "AUTOSAR_", "FreeRTOS_", "Safety_", "Tools_",
+    "AURIX_TC3xx_", "ARM_M7_", "Core_Comparison_"
+  ],
+  "todoMarkers": ["TODO", "FIXME", "待验证"]
+}
