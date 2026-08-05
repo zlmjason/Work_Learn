@@ -11,15 +11,15 @@
 
 ## 统计概览
 
-- **总条目数**: 22
-- **按状态**: accepted: 3, active: 5, candidate: 3, pending: 2, proposed: 1, resolved: 11, wont_fix: 1
+- **总条目数**: 25
+- **按状态**: accepted: 3, active: 5, candidate: 3, open: 2, pending: 2, proposed: 1, resolved: 12, wont_fix: 1
 
 ## 各文件汇总
 
 | 文件 | 条目数 | 状态分布 |
 |------|--------|----------|
 | [LEARNINGS.md](./LEARNINGS.md) | 8 | active: 5, pending: 2, resolved: 3 |
-| [ERRORS.md](./ERRORS.md) | 8 | resolved: 7, wont_fix: 1 |
+| [ERRORS.md](./ERRORS.md) | 11 | open: 2, resolved: 8, wont_fix: 1 |
 | [FEATURE_REQUESTS.md](./FEATURE_REQUESTS.md) | 0 | — |
 | [DECISIONS.md](./DECISIONS.md) | 3 | accepted: 3, proposed: 1 |
 | [PATTERNS.md](./PATTERNS.md) | 3 | candidate: 3, resolved: 1 |
@@ -39,6 +39,9 @@
 
 ### ERRORS.md
 
+- [ERR-20260805-001] git_bash_minimal_path_python_grep_missing
+- [ERR-20260804-001] git_push_github_connection_timeout
+- [ERR-20260804-002] git_upload_push_chinese_commit_message_garbled
 - [ERR-20260711-001] git_upload_push_windows_encoding
 - [ERR-20260511-001] pip_install_summarize
 - [ERR-20260511-003] winget_install_tesseract_poppler
@@ -62,4 +65,4 @@
 
 ---
 
-_Generated at: 2026-07-31T19:56:29.784020+08:00_
+_Generated at: 2026-08-05T22:47:35.177790+08:00_

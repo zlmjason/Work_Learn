@@ -6,6 +6,40 @@ Command failures and integration errors.
 
 ---
 
+## [ERR-20260805-001] git_bash_minimal_path_python_grep_missing
+
+**Logged**: 2026-08-05T16:00:00+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: infra
+
+### Summary
+Claude Code Bash 工具的 Git Bash 环境 PATH 不完整：`python` 及基础 Unix 工具（`grep`、`tail`）均 command not found（exit 127），但脚本内部调用的 `git` 可用。
+
+### Error
+```
+/usr/bin/bash: line 1: python: command not found
+/usr/bin/bash: line 1: grep: command not found
+/usr/bin/bash: line 1: tail: command not found
+```
+
+### Context
+- Command: `python .claude/skills/git-upload-push/scripts/git-upload-push.py status`；`grep -n ... | tail -5`
+- Environment: Windows 11, Claude Code VSCode 扩展内嵌 Bash 工具
+- Expected: python 在 PATH 中（CLAUDE.md §7 声明 Python 已安装）
+- Actual: exit 127。Python 实际位于 `C:\Users\11064\AppData\Local\Programs\Python\Python313\python.exe`，未加入该 shell 的 PATH
+
+### Suggested Fix
+1. **Python 调用一律用全路径**：`/c/Users/11064/AppData/Local/Programs/Python/Python313/python <script>`（已验证可用）
+2. **文本搜索/读取用 Claude Code 内置工具**（Grep / Read / Glob），不要在 Bash 里调 grep/tail/sed
+3. 长期方案：将 Python313 目录加入用户 PATH 环境变量（需重启终端生效）
+
+### Metadata
+- 复发关联：与 [ERR-20260709-006]（PDF 库缺失，同一 Python 环境）同源，均为本地 Python 环境未规范化
+- 首次触发场景：git-upload-push skill 执行
+
+---
+
 ## [ERR-20260804-001] git_push_github_connection_timeout
 
 **Logged**: 2026-08-04T12:00:00+08:00
