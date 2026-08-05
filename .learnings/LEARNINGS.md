@@ -367,3 +367,40 @@ Workarounds:
 - Source: best_practice
 - Related Files: `.claude/skills/kb-workflow/SKILL.md`, `.claude/CLAUDE.md`, `.claude/skills/self-improving-agent/SKILL.md`, `.learnings/SKILL_REGISTRY.md`
 - See Also: LRN-20260717-001
+
+---
+
+## [LRN-20260726-001] correction
+
+**Logged**: 2026-07-26T23:26:50+08:00
+**Priority**: low
+**Status**: active
+**Area**: docs
+
+### Summary
+
+用户纠正：将外部内容内化到项目规范文档（如 CLAUDE.md）时，不要在正文或更新记录中标注来源出处（"自 XX 工作区引入"、"内化自 XX 手册"），内容应直接作为本项目自有规则呈现。
+
+### Details
+
+2026-07-26 将外部工作区的协作手册与第一性原理整合进 CLAUDE.md §5.0 时，在小节引言和 §9 更新记录中注明了内容来源。用户反馈：
+
+> "其实你没有必要说这个从哪来的"
+
+已移除 §5.0 引言中的出处说明，§9 更新记录改为只描述变更内容本身。
+
+### Suggested Action
+
+- 内化/吸收外部内容到项目规范文档时，正文不写来源标注，文档应读起来像项目自有规则
+- §9 更新记录只写"加了什么"，不写"从哪来的"
+- 若来源信息确有追溯价值，记入 `.learnings/` 而非规范文档正文
+
+### Metadata
+
+- Source: user_feedback
+- Related Files: `.claude/CLAUDE.md`
+- Tags: docs, style, provenance, user_preference
+- Pattern-Key: docs.no_provenance_annotation
+- Recurrence-Count: 1
+- First-Seen: 2026-07-26
+- Last-Seen: 2026-07-26

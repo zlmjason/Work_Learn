@@ -590,6 +590,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 
 | 日期 | 更新内容 |
 |------|---------|
+| 2026-07-26 | 新增 §5.0「思维与协作纪律」：总原则三问、第一性原理（工作方式 6 步、回答原则）、人机协作边界 3 条、六条思维纪律、出错三分法；checkpoint 约定与 ERR 根因分类为新立项目约定 |
 | 2026-05-11 | 初始版本：整合 find-skills、pdf、self-improving-agent、summarize 四个技能 |
 | 2026-05-17 | 融合 CLAUDE.md 与 AGENTS.md，精简 .claude/ 目录适配知识库项目 |
 | 2026-06-05 | 新增第 8 节"Obsidian 知识库管理规范"；本地技能目录从 `skills/` 迁移至 `.claude/skills/`，新增 docx-cn、mineru-pdf-parser 登记 |
