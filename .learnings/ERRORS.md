@@ -23,18 +23,25 @@ Failed to connect to github.com port 443 after 21060 ms: Timed out
 
 fatal: unable to access 'https://github.com/zlmjason/Work_Learn.git/':
 OpenSSL SSL_read: Connection was reset, errno 10054
+
+# 另一次重试时 Git Bash 自身崩溃
+0 [main] bash (29040) ...: *** fatal error - add_item ("\??\C:\Program Files\Git", "/", ...) failed, errno 1
 ```
 
 ### Context
 - Command: `git push`
 - Environment: Windows 10 Pro, Git Bash, 无代理
 - Expected: 本地 commit 推送到 origin/master
-- Actual: 连接建立失败，21 秒后超时；重试时被服务器重置
+- Actual: 
+  - 连接建立失败，21 秒后超时
+  - 重试时被服务器重置（errno 10054）
+  - 某次重试时 Git Bash 进程自身崩溃，未到达网络层
 
 ### Suggested Fix
 1. 等待网络恢复后重试 `git push`
 2. 检查本地网络或 DNS 是否能解析 github.com
-3. 如有可用代理，配置 Git 代理：
+3. 尝试重启 Git Bash / VS Code 窗口，排除 shell 状态异常
+4. 如有可用代理，配置 Git 代理：
    ```bash
    git config --global http.proxy http://proxy:port
    git config --global https.proxy http://proxy:port
