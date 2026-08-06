@@ -2,7 +2,7 @@
 
 > 原文：*Loop Engineering: The Anthropic Playbook for Designing Systems That Prompt Your Agents* (2026 Working Note on Agentic Software Engineering Practice)
 > 作者/整理：HuaShu，基于 Addy Osmani、Peter Steinberger、Boris Cherny、Prithvi Rajasekaran、Steve Kaliski 等人的公开论述
-> 来源：[PDF 原文](../../../99_Attachments_附件/Loop-Engineering-IEEE/Loop-Engineering-IEEE.pdf) · [MinerU 提取 Markdown 原文](../../../99_Attachments_附件/Loop-Engineering-IEEE/Loop-Engineering-IEEE.md)
+> 来源：[PDF 原文](../../../99_Attachments_附件/AI_Agent/Loop-Engineering-IEEE/Loop-Engineering-IEEE.pdf) · [MinerU 提取 Markdown 原文](../../../99_Attachments_附件/AI_Agent/Loop-Engineering-IEEE/Loop-Engineering-IEEE.md)
 
 ---
 

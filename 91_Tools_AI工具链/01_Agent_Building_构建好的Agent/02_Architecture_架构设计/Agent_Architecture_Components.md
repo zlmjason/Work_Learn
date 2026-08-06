@@ -131,7 +131,7 @@ Harness 为模型提供脚手架，模型也要为 Harness 做适配。
 - [[Agent_Skill_Development_Guide]] — Skill Library 详细设计
 - [[Agent_Memory_Learning_System]] — Memory Systems 详细设计
 - [[Agent_Tools_MCP_Integration]] — Action Interface 详细设计
-- [论文分析笔记](../99_Attachments_附件/50738_Agent_Systems_with_Harne/50738_Agent_Systems_with_Harne_分析笔记.md)
+- [论文分析笔记](../50738_Agent_Systems_with_Harne_分析笔记.md)
 
 ## 标签
 

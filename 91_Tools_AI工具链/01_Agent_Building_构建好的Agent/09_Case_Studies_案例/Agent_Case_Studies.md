@@ -91,7 +91,7 @@
 - [[Agent_Skill_Development_Guide]] — Skill 设计方法
 - [[Agent_Memory_Learning_System]] — 持续学习机制
 - [[Agent_Evaluation_Metrics]] — 评估维度
-- [论文分析笔记](../99_Attachments_附件/50738_Agent_Systems_with_Harne/50738_Agent_Systems_with_Harne_分析笔记.md)
+- [论文分析笔记](../50738_Agent_Systems_with_Harne_分析笔记.md)
 
 ## 标签
 

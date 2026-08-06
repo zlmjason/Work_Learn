@@ -83,7 +83,7 @@ Agent 评估应从 **正确性、效率、可解释性、安全性、用户体�
 
 - [[Agent_Design_Core_Principles]] — 评估原则来源
 - [[Agent_Case_Studies]] — 具体案例评估
-- [论文分析笔记](../99_Attachments_附件/50738_Agent_Systems_with_Harne/50738_Agent_Systems_with_Harne_分析笔记.md)
+- [论文分析笔记](../50738_Agent_Systems_with_Harne_分析笔记.md)
 
 ## 标签
 

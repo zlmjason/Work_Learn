@@ -55,7 +55,7 @@ Agent 应该在什么程度上自主？什么时候必须征求人类意见？
 
 - [[Agent_Design_Core_Principles]] — 边界明确原则
 - [[Agent_Evaluation_Metrics]] — 协作体验评估
-- [论文分析笔记](../99_Attachments_附件/50738_Agent_Systems_with_Harne/50738_Agent_Systems_with_Harne_分析笔记.md)
+- [论文分析笔记](../50738_Agent_Systems_with_Harne_分析笔记.md)
 
 ## 标签
 

@@ -91,7 +91,7 @@ Agent 没有真正的长期记忆，如何设计机制让它"越用越聪明"？
 - [[Agent_Skill_Development_Guide]] — 从 Learning 到 Skill 的晋升路径
 - [[self-improving-agent]] — 本仓库的持续改进 Skill
 - [[context-compress]] — 短期记忆压缩工具
-- [论文分析笔记](../99_Attachments_附件/50738_Agent_Systems_with_Harne/50738_Agent_Systems_with_Harne_分析笔记.md)
+- [论文分析笔记](../50738_Agent_Systems_with_Harne_分析笔记.md)
 
 ## 标签
 

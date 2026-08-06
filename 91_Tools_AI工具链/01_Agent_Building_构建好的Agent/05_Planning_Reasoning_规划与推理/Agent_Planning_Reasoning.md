@@ -95,7 +95,7 @@ Observe（观察）
 
 - [[Agent_Architecture_Components]] — Workflow 在 Harness 架构中的位置
 - [[Agent_Tools_MCP_Integration]] — 工具调用辅助推理
-- [论文分析笔记](../99_Attachments_附件/50738_Agent_Systems_with_Harne/50738_Agent_Systems_with_Harne_分析笔记.md)
+- [论文分析笔记](../50738_Agent_Systems_with_Harne_分析笔记.md)
 
 ## 标签
 

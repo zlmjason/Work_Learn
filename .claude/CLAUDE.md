@@ -548,6 +548,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 | 9 | 生物医学、论文、动脉粥样硬化相关内容放入 `02_Biomed_动脉粥样硬化`。 |
 | 10 | 投资、AI 产业链、个股跟踪内容放入 `03_AI产业链投资`。 |
 | 11 | AI 工具、Agent、Claude Code、Obsidian 相关内容放入 `91_Tools_AI工具链`。 |
+| 12 | 笔记层（01-05、91 等主题目录）与 `99_Attachments_附件` 按**角色**分界，不按文件类型：消化后的产出（精读/伴读/总结/分析笔记、专题体系）进笔记层，按主题组织、持续迭代；原始素材（PDF 原件、MinerU 原始解析 full.md+images、图片）进 `99_Attachments_附件`，按资料来源组织、入库后不再改动。引用方向单向：笔记 → 附件。移动附件内任何文件前必须 grep 找全引用，移动后逐条校验链接可解析。 |
 
 ### 9.2 笔记格式
 
@@ -590,6 +591,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 
 | 日期 | 更新内容 |
 |------|---------|
+| 2026-08-06 | §9.1 新增规则 12：明确笔记层与 `99_Attachments_附件` 的角色边界（消化产出 vs 原始素材）、单向引用方向、移动附件的引用校验要求；`91_Tools_AI工具链` 新增 `02_Google_Agent_Whitepapers_Google白皮书`、`03_AI_Startup_AI原生创业`；附件按主题分为 `AI_Agent/`、`Memory_存储器/`、`IC_Design_芯片设计/` |
 | 2026-07-26 | 新增 §5.0「思维与协作纪律」：总原则三问、第一性原理（工作方式 6 步、回答原则）、人机协作边界 3 条、六条思维纪律、出错三分法；checkpoint 约定与 ERR 根因分类为新立项目约定 |
 | 2026-05-11 | 初始版本：整合 find-skills、pdf、self-improving-agent、summarize 四个技能 |
 | 2026-05-17 | 融合 CLAUDE.md 与 AGENTS.md，精简 .claude/ 目录适配知识库项目 |

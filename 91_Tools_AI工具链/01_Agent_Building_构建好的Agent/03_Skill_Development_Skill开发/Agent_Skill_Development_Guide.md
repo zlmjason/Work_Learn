@@ -262,7 +262,7 @@ Project Convention (.claude/CLAUDE.md)
 - [[Agent_Architecture_Components]] — Skill 在 Harness 架构中的位置
 - [[self-improving-agent]] — 持续学习与 Skill 晋升机制
 - [[context-compress]] — 本仓库 Skill 实例
-- [论文分析笔记](../99_Attachments_附件/50738_Agent_Systems_with_Harne/50738_Agent_Systems_with_Harne_分析笔记.md)
+- [论文分析笔记](../50738_Agent_Systems_with_Harne_分析笔记.md)
 
 ## 标签
 

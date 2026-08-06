@@ -404,3 +404,35 @@ Workarounds:
 - Recurrence-Count: 1
 - First-Seen: 2026-07-26
 - Last-Seen: 2026-07-26
+
+## [LRN-20260806-001] knowledge_gap/attachment-move-link-integrity
+
+**Logged**: 2026-08-06
+**Priority**: medium
+**Status**: active
+**Area**: docs
+
+### Summary
+
+对 `99_Attachments_附件` 做分类移动时发现：`01_Agent_Building_构建好的Agent` 下 10 处指向附件的相对链接深度本就错误（少一级 `../`，移动前即已失效），本次移动附件时一并修正并引入链接解析校验。
+
+### Details
+
+- 深度 3 的笔记（如 `01_Design_Principles_设计原则/xxx.md`）中原链接为 `../99_Attachments_附件/...`，正确应为 `../../../99_Attachments_附件/...`
+- 附件目录按主题分为 `AI_Agent/`、`Memory_存储器/`、`IC_Design_芯片设计/` 三类，移动后批量更新了 13 处引用
+
+### Suggested Action
+
+- 移动/重命名 `99_Attachments_附件` 内任何文件前，先 `grep -rn "99_Attachments_附件/<文件名>" --include="*.md"` 找全引用
+- 移动后用脚本逐条校验相对链接能否解析到真实文件（os.path.normpath + exists），不要只改不验
+- 写新附件链接时注意相对深度：笔记在 `91_Tools_AI工具链/XX/笔记.md`（深度2）用 `../../`，在其子目录（深度3）用 `../../../`
+
+### Metadata
+
+- Source: discovery
+- Related Files: `99_Attachments_附件/`, `91_Tools_AI工具链/01_Agent_Building_构建好的Agent/`
+- Tags: docs, links, attachments, verification
+- Pattern-Key: docs.verify_links_after_attachment_move
+- Recurrence-Count: 1
+- First-Seen: 2026-08-06
+- Last-Seen: 2026-08-06
