@@ -436,3 +436,37 @@ Workarounds:
 - Recurrence-Count: 1
 - First-Seen: 2026-08-06
 - Last-Seen: 2026-08-06
+
+## [LRN-20260809-001] best_practice/python-reinstall-314
+
+**Logged**: 2026-08-09
+**Priority**: high
+**Status**: active
+**Area**: infra
+
+### Summary
+
+用户误删了系统 Python（Python313 目录被清空），导致所有 PDF/MinerU/summarize 脚本失效。已重装 Python 3.14.7（华为云镜像下载官方安装包），全部文档处理库在新环境装齐。
+
+### Details
+
+- 新 Python 路径：`C:\Users\11064\AppData\Local\Programs\Python\Python314\python.exe`（旧的 Python313 路径已废弃）
+- 已装库：pypdf、pdfplumber、reportlab、pandas、openpyxl、pytesseract、pdf2image、requests、beautifulsoup4、mineru-open-sdk（import 名为 `mineru`）、PyMuPDF
+- 国内加速：安装包用 `mirrors.huaweicloud.com/python/`，pip 用 `pypi.tuna.tsinghua.edu.cn/simple`；GitHub 直连（uv python install）会卡死
+- Git Bash 调 cmd.exe 注意两个坑：`/c` 会被路径转换吃掉（需 `MSYS2_ARG_CONV_EXCL="*"`）；cmd 内执行文件要用 Windows 全路径
+- MinerU Token 已通过 setx 持久化到用户环境变量 `MINERU_API_TOKEN`
+
+### Suggested Action
+
+- 后续会话中 Python 调用优先直接用 `python`（PATH 已注册，新终端生效）；若 shell 是旧会话则用 Python314 全路径
+- ERR-20260805-001 中的 Python313 全路径 workaround 作废，以本条为准
+
+### Metadata
+
+- Source: user_action + fix
+- Related Files: `.claude/skills/mineru-pdf-parser/`, `.claude/skills/summarize/`
+- Tags: infra, python, environment, mirror
+- Pattern-Key: infra.python314_reinstall
+- Recurrence-Count: 1
+- First-Seen: 2026-08-09
+- Last-Seen: 2026-08-09

@@ -123,4 +123,27 @@ LLM 三条全违反。但关键洞察：**这三条都不必对"大脑"提要求
 
 ---
 
-*下一讲：Agents vs Models 官方对比表 + 厨师类比 → ReAct 循环拆解*
+## 八、补充理解（2026-08-06 伴读讨论）
+
+### 1. 概念考古：Agent 不是 2024 年发明的
+
+| 时代 | 时间 | 代表 | "大脑" |
+|------|------|------|--------|
+| 学术奠基期 | 1986–2000s | Minsky《Society of Mind》(1986)、Wooldridge & Jennings 经典定义 (1995)、BDI 架构、MAS 研究 | 符号推理、手写规则 |
+| 强化学习期 | 1998–2016+ | Sutton & Barto RL 体系、AlphaGo (2016) | 专用 RL policy |
+| LLM 复活期 | 2022–至今 | ReAct 论文 (2022-10) → AutoGPT (2023-03) → 各家白皮书 (2024) → MCP/A2A | 通用语言模型 |
+
+**血缘证据**：Wooldridge & Jennings (1995) 的定义 = autonomy + reactivity + **pro-activeness** + social ability——白皮书的 Autonomous/Proactive 两关键词**原封不动继承自 30 年前**。Russell & Norvig《AIMA》(1995) 更是整本书按 agent 组织："通过传感器感知环境、通过执行器作用于环境的实体"。
+
+**为什么 2023–2024 爆发**：agent = 感知 + 决策 + 执行，三块拼图里感知（API）和执行（工具）早就成熟，**决策（通用推理能力）一直是瓶颈**。LLM 是第一个通用推理引擎，补上最后一块拼图，经典概念瞬间复活。🚗 类比线控转向：概念 1990 年代就有，要素不齐躺了三十年，要素齐备后才量产。
+
+### 2. "acting upon it" 逐词拆解
+
+- **语法**：`it` = the world；`act upon` 带明确作用对象 = **对世界本身施加动作**，与 observing 构成闭环
+- **分水岭**：改变世界 ≠ 描述世界。Model 输出关于世界的文本（世界没变）；Agent 通过工具造成真实状态变更（世界变了）。判据：运行完之后世界上有没有某个比特因为它而不同
+- **学术血缘**：observing ↔ sensors，acting upon ↔ actuators——白皮书是 Russell & Norvig 定义的逐词翻译；LLM Agent 的"执行器"就是工具调用
+- **深层**：严格说**模型从不 act**——模型只生成 token，真实因果链是：模型文本 → 编排层放行 → 工具执行 → 数据库事务提交。文本通道与动作通道分离，才有地方装闸门/权限/审计（Propose & Dispose 的另一种表述）。🚗 类比：没有输出驱动级的 ECU——算得再快，PWM 悬空，没人叫它控制系统
+
+---
+
+*下一讲：[第 2 讲：Agents vs Models 能力边界 + 认知架构 + ReAct 拆解](Agent_Google_Whitepaper_伴读笔记_第2讲_Agents_vs_Models_认知架构_ReAct.md) ✅ 已完结*

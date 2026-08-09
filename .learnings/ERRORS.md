@@ -487,3 +487,29 @@ git -c http.version=HTTP/1.1 push → SSL_read: unexpected eof while reading
 - See Also: ERR-20260630-004
 - Pattern-Key: network.github_unreachable
 - Recurrence-Count: 2
+
+## [ERR-20260809-001] mineru_api_200_page_limit
+
+**Logged**: 2026-08-09
+**Priority**: medium
+**Status**: resolved
+**Area**: tools
+
+### Summary
+
+MinerU 云端 API 单文件上限 200 页，252 页的扫描书直接提交报错 `number of pages exceeds limit (200 pages), please split the file and try again`。
+
+### Suggested Fix
+
+1. 大 PDF 先用 pypdf 按 ≤200 页切块（PdfWriter 逐块写出）
+2. 逐块调 `doc_to_md.py`，输出 `full_partN.md`
+3. `cat` 按序合并为 `full.md`；图片目录为哈希命名，多块共用 `images/` 无冲突
+4. 合并验证后删除中间 part 文件
+
+### Metadata
+
+- Reproducible: yes
+- Related Files: `.claude/skills/mineru-pdf-parser/scripts/doc_to_md.py`
+- Pattern-Key: mineru.page_limit_split
+- Recurrence-Count: 1
+- First-Seen: 2026-08-09
