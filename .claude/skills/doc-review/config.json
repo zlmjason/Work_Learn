@@ -37,9 +37,17 @@
     "DEM", "DET", "UDS", "DTC", "OBD",
     "OS", "EcuM", "BswM", "SchM"
   ],
+  "strictTemplateDirs": [
+    "01_Hardware_硬件层",
+    "02_Middleware_中间件层",
+    "03_Application_应用层",
+    "04_Safety_功能安全",
+    "05_Tools_工具链"
+  ],
   "filenamePrefixes": [
     "HW_", "AUTOSAR_", "FreeRTOS_", "Safety_", "Tools_",
-    "AURIX_TC3xx_", "ARM_M7_", "Core_Comparison_"
+    "AURIX_TC3xx_", "ARM_M7_", "Core_Comparison_",
+    "Agent_", "AI_"
   ],
   "todoMarkers": ["TODO", "FIXME", "待验证"]
 }

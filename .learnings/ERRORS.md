@@ -513,3 +513,37 @@ MinerU 云端 API 单文件上限 200 页，252 页的扫描书直接提交报�
 - Pattern-Key: mineru.page_limit_split
 - Recurrence-Count: 1
 - First-Seen: 2026-08-09
+
+## [ERR-20260806-001] environment/gitbash_python_store_stub
+
+**Logged**: 2026-08-06
+**Priority**: high
+**Status**: resolved
+**Area**: tools
+
+### Summary
+
+Git Bash (MSYS2) 中 `python` / `python3` 解析到 WindowsApps 的 App Execution Alias 占位 stub，执行报 `cannot execute: required file not found`。所有依赖裸 `python` 的 hook 命令与脚本调用在 Git Bash 下直接失败，须用 `py -3`。
+
+### Details
+
+- `which python` → `/c/Users/11064/AppData/Local/Microsoft/WindowsApps/python`（PATH 排位最前，为 Store 别名 stub）
+- MSYS2 无法执行 App Execution Alias reparse point（已知限制）；cmd 下 `where python` 同样只有该 stub
+- 实际解释器：`C:\Users\11064\AppData\Local\Programs\Python\Python314\python.exe`（3.14.7），由 `py -3` 启动器正确解析
+- 影响面：`.claude/settings.json` 的 hook 命令、所有以 `python xxx.py` 形式写的用法（若经 Git Bash 执行）
+- 暴露场景：配置 PostToolUse hook 时裸 `python` 完全无法运行脚本
+
+### Suggested Fix
+
+1. Git Bash / hook 场景一律 `py -3 script.py`
+2. hook 命令实例：`py -3 "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/doc_review_on_md_edit.py"`
+3. 文档中 `python` 示例若在 Git Bash 执行失败，替换为 `py -3`
+
+### Metadata
+
+- Reproducible: yes
+- Related Files: `.claude/settings.json`, `.claude/hooks/doc_review_on_md_edit.py`
+- See Also: ERR-20260805-001（同为 Git Bash 环境 PATH/工具可见性问题）
+- Pattern-Key: env.gitbash_python_stub
+- Recurrence-Count: 1
+- First-Seen: 2026-08-06

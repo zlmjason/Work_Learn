@@ -136,7 +136,7 @@ CoT 子技术：self-consistency（多链投票）、active-prompt、multimodal 
 
 两跳问题：`create_react_agent(model, tools)` 一行起 ReAct Agent。
 
-```
+```txt
 Human:  Texas Longhorns 上周和谁比赛？对方球队的体育场地址是什么？
 AI:     [Action] search(query="Texas Longhorns football schedule")
 Tool:   {...NCAA, Georgia, Date...}                        ← Observation 1

@@ -93,12 +93,14 @@ def check_filename(file_path: Path, cfg: dict[str, Any]) -> tuple[str, list[str]
         msgs.append(f"文件名包含空格: {name}")
         status = "fail"
 
-    # 检查是否有合法前缀
-    has_prefix = any(name.startswith(prefix) for prefix in cfg.get("filenamePrefixes", []))
-    if not has_prefix and not file_path.parent.name.startswith(("00_", "90_", "99_")):
-        msgs.append(f"文件名缺少项目约定前缀: {name}")
-        if status == "pass":
-            status = "warn"
+    # 索引/说明类特殊文件豁免前缀检查
+    if name not in ("INDEX.md", "README.md"):
+        # 检查是否有合法前缀
+        has_prefix = any(name.startswith(prefix) for prefix in cfg.get("filenamePrefixes", []))
+        if not has_prefix and not file_path.parent.name.startswith(("00_", "90_", "99_")):
+            msgs.append(f"文件名缺少项目约定前缀: {name}")
+            if status == "pass":
+                status = "warn"
 
     # 检查缩写是否大写：查找常见小写缩写
     lower_terms = [t for t in cfg.get("technicalTerms", []) if len(t) >= 2 and t.lower() in name.lower() and t not in name]
@@ -148,7 +150,7 @@ def check_heading_structure(content: str) -> tuple[str, list[str]]:
     return status, msgs
 
 
-def check_required_sections(content: str, cfg: dict[str, Any]) -> tuple[str, list[str]]:
+def check_required_sections(content: str, cfg: dict[str, Any], enforce: bool = True) -> tuple[str, list[str]]:
     required = cfg.get("requiredSections", [])
     all_sections = cfg.get("allTemplateSections", [])
 
@@ -159,8 +161,13 @@ def check_required_sections(content: str, cfg: dict[str, Any]) -> tuple[str, lis
     status = "pass"
 
     if missing_required:
-        msgs.append(f"缺少必要章节: {missing_required}")
-        status = "fail"
+        if enforce:
+            msgs.append(f"缺少必要章节: {missing_required}")
+            status = "fail"
+        else:
+            # 非 MCU 笔记层（如 91_Tools 系列笔记）允许自定义模板，降级为提醒
+            msgs.append(f"缺少必要章节（非 MCU 笔记层，降级提醒）: {missing_required}")
+            status = "warn"
 
     missing_optional = [s for s in all_sections if s not in present_all]
     if missing_optional and status == "pass":
@@ -173,9 +180,19 @@ def check_required_sections(content: str, cfg: dict[str, Any]) -> tuple[str, lis
 
 
 def check_code_blocks(content: str, skill_doc: bool = False) -> tuple[str, list[str]]:
-    # 匹配 ``` 开头的代码块
-    blocks = re.findall(r"```(\w*)\n", content)
-    unnamed = sum(1 for lang in blocks if not lang.strip())
+    # 逐行扫描围栏：只统计"开围栏"行，闭合行 ``` 不计入
+    # （旧实现用 findall 匹配所有围栏行，会把每个闭合行误计为未标注代码块）
+    unnamed = 0
+    in_block = False
+    for line in content.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            if in_block:
+                in_block = False
+            else:
+                in_block = True
+                if not stripped[3:].strip():
+                    unnamed += 1
 
     msgs = []
     status = "pass"
@@ -303,6 +320,11 @@ def review_file(file_path: Path, cfg: dict[str, Any]) -> ReviewResult:
 
     skill_doc = is_skill_doc(file_path)
 
+    # 必要章节检查的强制范围：仅 MCU 笔记层目录（config.json strictTemplateDirs）
+    path_norm = str(file_path).replace("\\", "/")
+    strict_dirs = cfg.get("strictTemplateDirs", [])
+    enforce_required = any(f"/{d}/" in path_norm for d in strict_dirs) if strict_dirs else True
+
     # 通用检查（所有 Markdown 文件）
     checks = [
         ("标题结构", check_heading_structure(content)),
@@ -317,7 +339,7 @@ def review_file(file_path: Path, cfg: dict[str, Any]) -> ReviewResult:
         checks = [
             ("文件名", check_filename(file_path, cfg)),
             ("标题结构", check_heading_structure(content)),
-            ("必要章节", check_required_sections(content, cfg)),
+            ("必要章节", check_required_sections(content, cfg, enforce_required)),
             ("代码块语言", check_code_blocks(content, skill_doc)),
             ("技术术语", check_technical_terms(content, cfg)),
             ("目录放置", check_directory_placement(file_path, cfg)),

@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "py -3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/doc_review_on_md_edit.py\"",
+            "timeout": 30,
+            "statusMessage": "doc-review 自动检查"
+          }
+        ]
+      }
+    ]
+  }
+}

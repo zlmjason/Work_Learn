@@ -493,7 +493,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 | "直接改原笔记内容" | 违反 §9.1 第 3 条。保留原文，在下方新增"整理版"或"补充理解" |
 | "这个 skill 上次读过，凭记忆用" | 上下文压缩后内容可能已丢失。每个阶段开始前重读对应 SKILL.md（见 kb-workflow「用前重读纪律」） |
 | "用户需求够清楚，直接做" | 存在多方案、删除/重命名、批量改动时必须先确认（LRN-20260717-001）。一次性成功优先于速度 |
-| "检查脚本大概能过，跳过 doc-review" | 一分钟的检查跳过后，归档返工要动 git 历史，成本翻倍 |
+| "检查脚本大概能过，跳过 doc-review" | 一分钟的检查跳过后，归档返工要动 git 历史，成本翻倍（2026-08-06 起已由 PostToolUse hook 自动执行，跳过已不可能） |
 | "记录过 learning 就算改进了" | 记录≠改进。按 §6.3 月度 retro 把复发问题转化为 CLAUDE.md / skill 的实际修订 |
 
 ---
@@ -503,7 +503,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 | 工具/库 | 状态 | 说明 |
 |---------|------|------|
 | Node.js / npx | 已安装 | 用于技能发现（`npx skills`） |
-| Python | 已安装 | 用于 PDF 处理和 summarize 脚本 |
+| Python | 已安装 | 用于 PDF 处理和 summarize 脚本；⚠️ Git Bash 中 `python`/`python3` 为 WindowsApps 占位 stub（无法执行），一律用 `py -3`（ERR-20260806-001） |
 | pypdf | 已安装 | — |
 | pdfplumber | 已安装 | — |
 | reportlab | 已安装 | — |
@@ -591,6 +591,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 
 | 日期 | 更新内容 |
 |------|---------|
+| 2026-08-06 | 新增 PostToolUse hook 自动规范检查（过程检验硬护栏化）：`.claude/hooks/doc_review_on_md_edit.py` 在 Edit/Write 仓库内笔记后自动运行 doc-review 并将问题注入上下文（登记于 `.claude/settings.json`，排除附件/Inbox/归档等目录）；doc-review 校准：修复代码块闭合围栏误计 bug、必要章节 fail 限定 MCU 笔记层（新增 `strictTemplateDirs` 配置）、文件名前缀白名单补 `Agent_`/`AI_`、豁免 INDEX.md/README.md；§7 记录 Git Bash 须用 `py -3`（ERR-20260806-001） |
 | 2026-08-06 | §9.1 新增规则 12：明确笔记层与 `99_Attachments_附件` 的角色边界（消化产出 vs 原始素材）、单向引用方向、移动附件的引用校验要求；`91_Tools_AI工具链` 新增 `02_Google_Agent_Whitepapers_Google白皮书`、`03_AI_Startup_AI原生创业`；附件按主题分为 `AI_Agent/`、`Memory_存储器/`、`IC_Design_芯片设计/` |
 | 2026-07-26 | 新增 §5.0「思维与协作纪律」：总原则三问、第一性原理（工作方式 6 步、回答原则）、人机协作边界 3 条、六条思维纪律、出错三分法；checkpoint 约定与 ERR 根因分类为新立项目约定 |
 | 2026-05-11 | 初始版本：整合 find-skills、pdf、self-improving-agent、summarize 四个技能 |
