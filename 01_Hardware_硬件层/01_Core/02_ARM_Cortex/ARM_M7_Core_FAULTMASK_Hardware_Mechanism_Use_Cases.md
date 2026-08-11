@@ -12,11 +12,11 @@
 - 普通 IRQ、SysTick、PendSV、SVC 以及所有可配置 Fault 都不能激活；
 - HardFault 也不能抢占，因为它的优先级同样是 `-1`；
 - 只有优先级更高的 NMI（`-2`）以及 Reset（`-3`）仍然有效；
-- Fault 检测并没有被关闭，CFSR/HFSR 等状态仍可能更新；
-- 同步、必须立即处理的 Fault 通常导致 Lockup；
-- 异步 BusFault 可以先进入 Pending，不会仅因暂时无法响应而立即 Lockup；
-- 从除 NMI 外的异常执行 Exception Return 时，硬件自动清除 `FAULTMASK`；
-- `MPU_CTRL.HFNMIENA` 和 `SCB_CCR.BFHFNMIGN` 可以改变优先级 `-1/-2` 下的 MPU 与数据 BusFault 行为。
+- **Fault 检测并没有被关闭，CFSR/HFSR 等状态仍可能更新；**
+- **同步、必须立即处理的 Fault 通常导致 Lockup；**
+- **异步 BusFault 可以先进入 Pending，不会仅因暂时无法响应而立即 Lockup；**
+- **从除 NMI 外的异常执行 Exception Return 时，硬件自动清除 `FAULTMASK`；**
+- <u>`MPU_CTRL.HFNMIENA` 和 `SCB_CCR.BFHFNMIGN` 可以改变优先级 `-1/-2` 下的 MPU 与数据 BusFault 行为</u>。**（这里没理解）**
 
 因此，`FAULTMASK` 的设计定位不是普通临界区，而是：
 
@@ -24,7 +24,7 @@
 
 工程上可用一句话记忆：
 
-> `BASEPRI` 用于 RTOS 临界区，`PRIMASK` 用于普通全局关中断，`FAULTMASK` 用于系统已经异常之后的最后一级受控处理。
+> **`BASEPRI` 用于 RTOS 临界区，`PRIMASK` 用于普通全局关中断，`FAULTMASK` 用于系统已经异常之后的最后一级受控处理。**
 
 ---
 
@@ -155,7 +155,7 @@ ARM 的选择是：
 
 1. 平时让 MemManage、BusFault、UsageFault 使用可配置优先级；
 2. 只有进入极端恢复阶段时，由软件显式设置 `FAULTMASK`；
-3. 通过异常返回自动清零，尽量把提升限制在当前 Handler 生命周期内。
+3. 通过异常返回自动清零，**尽量把提升限制在当前 Handler 生命周期内**。
 
 这是一种“默认可调度、必要时临时升级”的设计。
 
@@ -181,8 +181,8 @@ flowchart TD
 
 这也解释了两个看似矛盾的现象：
 
-- `FAULTMASK=1` 时发生精确 Fault，可能立即 Lockup；
-- `FAULTMASK=1` 时发生异步 BusFault，却可能只 Pending，CPU 继续执行。
+- **`FAULTMASK=1` 时发生精确 Fault，可能立即 Lockup；**
+- **`FAULTMASK=1` 时发生异步 BusFault，却可能只 Pending，CPU 继续执行**。
 
 ---
 
