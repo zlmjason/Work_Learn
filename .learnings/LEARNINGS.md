@@ -470,3 +470,39 @@ Workarounds:
 - Recurrence-Count: 1
 - First-Seen: 2026-08-09
 - Last-Seen: 2026-08-09
+
+## [LRN-20260815-001] correction/output_format
+
+**Logged**: 2026-08-15T00:00:00+08:00
+**Priority**: high
+**Status**: active
+**Area**: workflow
+
+### Summary
+
+用户反馈：VSCode 扩展对话界面不渲染 LaTeX 公式（`$$...$$`）和 Mermaid 图，显示为原始源码。对话内输出必须改用纯文本公式与 ASCII 字符画。
+
+### Details
+
+在 SoC 精读会话中，导读里用了 `$$...$$` LaTeX 公式和 ```mermaid 代码块，用户看不到渲染效果，指出"我看这个公式都没渲染"。
+
+分界规则：
+
+- **对话内输出**（聊天消息）：公式用纯文本（如 `CPU 时间 = IC × CPI × Tclk`），图用 ASCII 字符画、表格、代码块——这些能正常渲染
+- **落盘的笔记文件**（.md）：继续用 Mermaid + LaTeX——Obsidian 端能正常渲染，不牺牲笔记质量
+
+### Suggested Action
+
+- 今后对话中一律不用 `$$...$$`、`$...$`、```mermaid 代码块
+- 需要画图时用 ASCII 字符画（├─ └─ │ → 等字符）或 Markdown 表格
+- 笔记文件不受此限制
+
+### Metadata
+
+- Source: user_feedback
+- Related Files: `.claude/CLAUDE.md`
+- Tags: output_format, rendering, vscode
+- Pattern-Key: workflow.chat_rendering_limits
+- Recurrence-Count: 1
+- First-Seen: 2026-08-15
+- Last-Seen: 2026-08-15
