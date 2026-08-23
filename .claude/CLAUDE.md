@@ -386,6 +386,7 @@ MarkDown_Learn/
 | mcu-note-creator | `.claude/skills/mcu-note-creator/` | 按规范创建 MCU 笔记 |
 | safespi-evaluator | `.claude/skills/safespi-evaluator/` | SafeSPI Rev 2.0 支持性五层评估 |
 | git-upload-push | `.claude/skills/git-upload-push/` | 一键 git add/commit/push（直接推 master） |
+| purpose-driven-book-study | `.claude/skills/purpose-driven-book-study/` | 目的驱动型精读：按问题主线学书籍/标准/长文档，阶段化沉淀 |
 | kb-workflow | `.claude/skills/kb-workflow/` | 工作流编排层：阶段→技能流水线表与"用前重读"纪律 |
 
 > **技能结构约定**：每个技能文件夹遵循多文件结构 — `SKILL.md`（入口与触发条件）、`reference.md`（详细用法）、`gotchas.md`（陷阱与失败模式）、`config.json`（配置）、`scripts/`（可执行脚本）。参考实现：`self-improving-agent`、`context-compress`。
@@ -591,6 +592,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 
 | 日期 | 更新内容 |
 |------|---------|
+| 2026-08-15 | 新增技能 `purpose-driven-book-study`（GPT 版 skill 内化为 Claude Code 多文件格式：SKILL.md+reference+gotchas+config+模板，绑定本库命名/doc-review/附件规则/对话渲染限制；另产出 Kimi Code 自包含指令版 `references/kimi-code-instruction.md`；GPT 原件归档 `90_Archive_归档/`）；§6 记录对话渲染限制（LRN-20260815-001：对话内禁 LaTeX/Mermaid，公式纯文本、图用 ASCII） |
 | 2026-08-06 | 新增 PostToolUse hook 自动规范检查（过程检验硬护栏化）：`.claude/hooks/doc_review_on_md_edit.py` 在 Edit/Write 仓库内笔记后自动运行 doc-review 并将问题注入上下文（登记于 `.claude/settings.json`，排除附件/Inbox/归档等目录）；doc-review 校准：修复代码块闭合围栏误计 bug、必要章节 fail 限定 MCU 笔记层（新增 `strictTemplateDirs` 配置）、文件名前缀白名单补 `Agent_`/`AI_`、豁免 INDEX.md/README.md；§7 记录 Git Bash 须用 `py -3`（ERR-20260806-001） |
 | 2026-08-06 | §9.1 新增规则 12：明确笔记层与 `99_Attachments_附件` 的角色边界（消化产出 vs 原始素材）、单向引用方向、移动附件的引用校验要求；`91_Tools_AI工具链` 新增 `02_Google_Agent_Whitepapers_Google白皮书`、`03_AI_Startup_AI原生创业`；附件按主题分为 `AI_Agent/`、`Memory_存储器/`、`IC_Design_芯片设计/` |
 | 2026-07-26 | 新增 §5.0「思维与协作纪律」：总原则三问、第一性原理（工作方式 6 步、回答原则）、人机协作边界 3 条、六条思维纪律、出错三分法；checkpoint 约定与 ERR 根因分类为新立项目约定 |

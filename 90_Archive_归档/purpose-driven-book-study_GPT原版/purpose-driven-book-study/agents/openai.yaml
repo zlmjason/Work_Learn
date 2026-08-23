@@ -1,0 +1,14 @@
+interface:
+  display_name: 目的驱动型精读
+  short_description: 按问题主线精读技术书籍，关联当前工作并沉淀阶段性总结文档
+  default_prompt: Use $purpose-driven-book-study to build a purpose-driven learning
+    path for this book and connect each stage to my current work.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

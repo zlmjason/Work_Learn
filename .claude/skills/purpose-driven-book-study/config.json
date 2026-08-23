@@ -1,0 +1,32 @@
+{
+  "name": "purpose-driven-book-study",
+  "version": "1.0.0",
+  "note": "目的驱动型精读：按问题主线学技术书籍/标准/长文档，阶段化沉淀 Markdown 总结。",
+  "docs": {
+    "routeDoc": "00-学习路线与问题地图.md",
+    "stageDocPattern": "阶段NN-主题总结.md",
+    "finalDoc": "全书综合总结与实践路线.md",
+    "templates": "references/document-templates.md"
+  },
+  "sourceLabels": ["原书观点", "解读", "延伸", "验证"],
+  "uncertaintyMarks": {
+    "confirmed": "✅",
+    "fuzzy": "🟡",
+    "unverified": "❓"
+  },
+  "readingDepths": ["精读", "支撑读", "略读", "暂缓"],
+  "teachUnitSequence": ["提问", "原书立场", "机制", "证据", "边界", "挑战", "迁移", "验证"],
+  "chatOutput": {
+    "latex": false,
+    "mermaid": false,
+    "diagram": "ascii",
+    "reason": "LRN-20260815-001 对话界面不渲染 LaTeX/Mermaid"
+  },
+  "kbConventions": {
+    "noteTemplate": "CLAUDE.md §9.2",
+    "naming": "CLAUDE.md §3.2",
+    "materialVsProduct": "CLAUDE.md §9.1 规则 12（素材入附件，产出入笔记层）",
+    "reviewHook": "doc-review（PostToolUse 自动执行）",
+    "confirmBeforeBatch": "LRN-20260717-001 先确认后实施"
+  }
+}
