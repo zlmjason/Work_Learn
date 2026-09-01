@@ -506,3 +506,34 @@ Workarounds:
 - Recurrence-Count: 1
 - First-Seen: 2026-08-15
 - Last-Seen: 2026-08-15
+
+## [LRN-20260830-001] best_practice/ads_build_settings_materialized_in_debug_dir
+
+**Logged**: 2026-08-30
+**Priority**: medium
+**Status**: open
+**Area**: tools
+
+### Summary
+
+ADS（Eclipse + com.infineon.aurix.buildsystem）会把工程内**所有文件夹自动加入 include 路径**，且排除编译（Exclude from Build）的目录会同时从 include 路径自动生成中消失。GUI 设置的真实生效结果物化在 `Debug/TASKING_C_C___Compiler-Include_paths.opt` 与各 `subdir.mk` 中——远程排障时直接读这些文件即可验证用户实际配置，无需猜测 GUI 状态。
+
+### Details
+
+- 实例：TC397 FreeRTOS 工程编译失败 E219，根因是 ADS 自动加入的 `portable/GCC/TC3` 排在 `portable/Tasking/TC3` 之前，`portmacro.h` 被 GCC 版抢先命中（其内 `#include <machine/intrinsics.h>` 为 GNU/newlib 头，TASKING 无此文件）
+- 官方 TC375 例程的 .cproject 即以"排除 portable/GCC 目录"方式解决同一问题（其 exclusion 列表含 portable/GCC、heap_2~5）
+- FreeRTOS 的 port 选择机制 = 编译期目录选择（哪个 port 目录进 include/编译列表就用哪个），非 #ifdef
+- 验证命令：`cat Debug/*Include_paths.opt`；查参与编译的源文件看 `Debug/**/subdir.mk`；查排除是否生效看 `.cproject` 的 `excluding="..."` 列表
+- 陷阱：Exclude from Build 必须作用于**源路径**（`OS/...`）；Project Explorer 中 `Debug/` 下的同名目录是构建产物镜像，错排它不生效（已踩：ERR 记录见会话 2026-08-30）
+- 直接改 .cproject 时须先关闭 ADS——Eclipse 持有内存副本，GUI 任何设置变更会把旧配置写回覆盖手工修改
+
+### Suggested Action
+
+- SX（HighTec 移植）阶段复用：GCC 工程则反过来排除 portable/Tasking
+- 指导 ADS GUI 操作时，给"排除清单"优先于"添加路径"（自动扫描使手动加路径常非必需）
+
+### Metadata
+
+- Related Files: TC397_Platform_Jason/ADS/FreeRTOS（库外工程）
+- See Also: FreeRTOS_00_学习路线与问题地图.md S0/SX 阶段
+- Pattern-Key: tools.ads_include_autogen

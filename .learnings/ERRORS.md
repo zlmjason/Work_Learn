@@ -547,3 +547,36 @@ Git Bash (MSYS2) 中 `python` / `python3` 解析到 WindowsApps 的 App Executio
 - Pattern-Key: env.gitbash_python_stub
 - Recurrence-Count: 1
 - First-Seen: 2026-08-06
+
+## [ERR-20260830-001] integration/wechat_article_fetch_all_channels_blocked
+
+**Logged**: 2026-08-30
+**Priority**: medium
+**Status**: open
+**Area**: tools
+
+### Summary
+
+抓取微信公众号文章（mp.weixin.qq.com）全部渠道失败：Exa MCP 未配置、Jina Reader 被 CAPTCHA 拦截（空响应）、summarize 脚本仅获取到验证页、Camoufox 工具未安装、WebFetch 域名安全校验失败。agent-reach 的 web 类推荐链路在本机全部不可用。
+
+### Details
+
+- `mcporter list`：仅配置 douyin、MiniMax 两个 MCP server，且均 offline；无 exa
+- `curl r.jina.ai/<微信URL>`：空输出（与 web.md 文档所述 CAPTCHA 拦截一致）
+- `summarize.py --print-content`：requests+bs4 拿到的是微信反爬验证/引导页碎片，无正文
+- `~/.agent-reach/tools/wechat-article-for-ai/`：不存在（Camoufox 方案需额外安装浏览器）
+- WebFetch：`Unable to verify if domain mp.weixin.qq.com is safe to fetch`
+
+### Suggested Fix
+
+1. 短期：请用户复制正文 / 存为 PDF 后走 mineru-pdf-parser 或 summarize 本地文件路径
+2. 中期（需用户决策）：配置 Exa MCP（需 API key）或安装 agent-reach 的 wechat-article-for-ai（Camoufox 浏览器，较重）
+3. 配置完成后在 agent-reach web.md 或本文件补充可用链路验证结果
+
+### Metadata
+
+- Reproducible: yes
+- Related Files: `.claude/skills/agent-reach/references/web.md`, `.claude/skills/summarize/summarize.py`
+- Pattern-Key: integration.wechat_antibot
+- Recurrence-Count: 1
+- First-Seen: 2026-08-30
