@@ -122,3 +122,20 @@ client = MinerU("your-token")
 **表现**：网络不稳定或数据敏感时仍坚持用云端 API。
 
 **正确做法**：敏感数据或频繁调用场景，考虑本地部署 `magic-pdf`（需 GPU）。详见 [`reference.md`](./reference.md)「替代方案」。
+
+---
+
+## 11. 超过 200 页的 PDF 被 API 直接拒绝
+
+**表现**：提交后任务报 `number of pages exceeds limit (200 pages), please split the file and try again`。
+
+**原因**：MinerU 云端 API 单文件上限 200 页，与文件体积无关。
+
+**正确做法**：用 `doc_to_md_split.py` 自动完成「切块 → 逐块精准模式解析 → 合并 `full.md` → 清理中间产物」，图片哈希命名多块共用一个 `images/` 无冲突：
+
+```bash
+py -3 scripts/doc_to_md_split.py 大书.pdf --check   # 预演：只看切块计划，不调 API
+py -3 scripts/doc_to_md_split.py 大书.pdf           # 正式转换（断点续跑：已完成的块自动跳过）
+```
+
+若中途失败，重跑同一命令即可续传；全部块成功后才合并 `full.md`，不会产出半成品。

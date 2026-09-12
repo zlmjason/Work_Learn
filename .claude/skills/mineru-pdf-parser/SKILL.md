@@ -28,8 +28,9 @@ metadata:
 |------|------|
 | 单文件转换 | `python .claude/skills/mineru-pdf-parser/scripts/doc_to_md.py <文件路径>` |
 | 批量转换 | `python .claude/skills/mineru-pdf-parser/scripts/doc_to_md.py --batch <目录>` |
+| **大 PDF（超 200 页）** | `py -3 .claude/skills/mineru-pdf-parser/scripts/doc_to_md_split.py <文件路径>`（自动切块 → 逐块解析 → 合并 `full.md`，支持断点续跑与 `--check` 预演） |
 | 输出 HTML/Word | 加上 `-f html` 或 `-f docx` |
-| 需要图片 | 脚本会自动提取并更新引用，但 flash 模式不返回图片数据 |
+| 需要图片 | token 模式 `extract()` 自动随 `save_markdown(with_images=True)` 落盘 `images/`（哈希命名）；flash 模式不返回图片 |
 | 缺少 API Token | 设置环境变量 `MINERU_API_TOKEN`，或使用免登录 flash 模式 |
 
 ## 支持格式
@@ -58,8 +59,9 @@ mineru-pdf-parser/
 ├── gotchas.md    ← 常见陷阱与失败模式
 ├── config.json   ← 配置与依赖说明
 └── scripts/
-    ├── doc_to_md.py  ← 通用文档转换脚本
-    └── pdf_to_md.py  ← PDF 专用脚本
+    ├── doc_to_md.py        ← 通用文档转换脚本
+    ├── doc_to_md_split.py  ← 大 PDF（>200 页）切块 + 转换 + 合并
+    └── pdf_to_md.py        ← PDF 专用脚本
 ```
 
 ## 常见陷阱

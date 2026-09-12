@@ -580,3 +580,88 @@ Git Bash (MSYS2) 中 `python` / `python3` 解析到 WindowsApps 的 App Executio
 - Pattern-Key: integration.wechat_antibot
 - Recurrence-Count: 1
 - First-Seen: 2026-08-30
+
+---
+
+## [ERR-20260911-001] integration/mineru_token_expired_401
+
+**Logged**: 2026-09-11T23:32:00+08:00
+**Priority**: high
+**Status**: resolved
+**Area**: tools
+
+### Resolution
+
+- **Resolved**: 2026-09-11T23:35:00+08:00
+- **Notes**: 用户在 mineru.net 后台生成新 token（新格式为 `sk-` 前缀 51 字符，旧格式为 402 字符 JWT），`setx` 后脚本从注册表回退读取、认证通过，批量转换正常运行。经验证：新 token 提交/查询均正常，200 页块约 2 分钟完成。
+
+### Summary
+
+MinerU API Token（JWT）已过期，全量转换批次首个文件提交即被拒：`401 Unauthorized`。Token 本身配置正确（402 字符 JWT），仅需更换新 token，无需改脚本或配置。
+
+### Error
+
+```
+httpx.HTTPStatusError: Client error '401 Unauthorized' for url 'https://mineru.net/api/v4/file-urls/batch'
+```
+
+### Details
+
+- JWT payload 解码：签发 2026-05-16 10:33，exp = 2026-08-14 10:33（有效期约 90 天）
+- 2026-08-09 转换 SoC 书时仍在有效期内，之后失效
+- 诊断方法：base64url 解码 JWT 第二段读 `exp` 字段（`datetime.fromtimestamp(exp)`），不打印 token 内容
+- 本机无其他 token 来源（`.mineru`、`settings.json` env 均无）
+
+### Suggested Action
+
+1. 登录 <https://mineru.net/apiManage/token> 生成新 token
+2. `setx MINERU_API_TOKEN "<新token>"`；注意当前 VSCode/终端会话不继承新环境变量——`doc_to_md_split.py` 已加 Windows 注册表回退读取（`HKCU\Environment\MINERU_API_TOKEN`），无需重启
+3. 重跑 `doc_to_md_split.py`（断点续跑：已完成的块自动跳过）
+4. 长期：MinerU token 有效期约 90 天，过期前主动更换
+
+### Metadata
+
+- Reproducible: yes
+- Related Files: `.claude/skills/mineru-pdf-parser/scripts/doc_to_md_split.py`
+- Pattern-Key: integration.mineru_token_expiry
+- Recurrence-Count: 1
+- First-Seen: 2026-09-11
+
+---
+
+## [ERR-20260911-002] tools/bash_exit_code_after_command_substitution
+
+**Logged**: 2026-09-11T23:32:00+08:00
+**Priority**: medium
+**Status**: open
+**Area**: tools
+
+### Summary
+
+批量运行日志中 `echo "... $(date '+%F %T') EXIT=$? ..."` 恒显示 `EXIT=0`，掩盖了脚本真实失败。同一词内 bash 按**从左到右**执行展开：`$(date)` 命令行替换先执行并把 `$?` 置为 date 的退出码（0），其后的 `$?` 拿到的已不是上一条命令的退出码。
+
+### Error
+
+```
+[已崩溃的 Python 脚本]  ... traceback ...
+===== 2026-09-11 23:27:29 EXIT=0 : ...   ← 实际应为 EXIT=1
+```
+
+### Details
+
+- 场景：后台批处理日志用一行 echo 同时打时间戳与退出码
+- bash 展开展开顺序中，命令替换与参数展开按词内从左到右进行，命令替换会改写 `$?`
+- 后果：失败被记录为成功，排障时误判
+
+### Suggested Action
+
+- 紧跟上一条命令立刻存码：`cmd; rc=$?; echo "... EXIT=$rc ..."`
+- 或使用 `set -e` / `||` 显式处理失败
+
+### Metadata
+
+- Reproducible: yes
+- Related Files: 本次 MinerU 批处理 runner（一次性命令）
+- Pattern-Key: tools.bash_exit_code_clobber
+- Recurrence-Count: 1
+- First-Seen: 2026-09-11

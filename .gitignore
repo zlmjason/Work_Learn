@@ -13,3 +13,9 @@ Thumbs.db
 *.swp
 *~
 __pycache__/
+
+# 超 GitHub 100MiB 单文件上限的原始素材（本地保留，解析产物 full.md/images 正常入库）
+99_Attachments_附件/Processor_Architecture_处理器架构/Definitive_Guide_ARM_Cortex-M3_M4_Yiu/*.pdf
+
+# 转换中间产物
+_parts/

@@ -537,3 +537,65 @@ ADS（Eclipse + com.infineon.aurix.buildsystem）会把工程内**所有文件�
 - Related Files: TC397_Platform_Jason/ADS/FreeRTOS（库外工程）
 - See Also: FreeRTOS_00_学习路线与问题地图.md S0/SX 阶段
 - Pattern-Key: tools.ads_include_autogen
+
+## [LRN-20260831-001] correction/stage_lesson_must_persist_immediately
+
+**Logged**: 2026-08-31
+**Priority**: high
+**Status**: open
+**Area**: workflow
+
+### Summary
+
+学习路线课程在对话里讲完但未落盘笔记，用户指正"这个没有讲吧"。按 purpose-driven-book-study 步骤 6（阶段收尾落盘）与本库规范，**没落盘 = 没完成**。讲授与落盘必须同阶段完成，不能留"只在对话里"的课程。
+
+### Details
+
+- 实例：SP Port 深潜第 1 课（CSA/上下文切换）2026-08-30 对话讲授完毕，未创建阶段笔记；次日用户质疑后补写 `05_Port/01_PortLayer/FreeRTOS_Port_TC3xx_Context_Switch_CSA.md`
+- 对话内容随上下文压缩/会话结束丢失，用户无法回看——讲授价值归零
+- 根因：任务收尾时优先做了 commit/路线更新，漏了课程笔记这个主产出
+
+### Suggested Action
+
+- 每次讲授类输出（课/阶段）结束前，自问"这课的笔记文件是哪个"，没有就当场写
+- 路线文档的进度日志只在对应笔记落盘后才允许记"已讲/完成"
+
+### Metadata
+
+- Related Files: `.claude/skills/purpose-driven-book-study/reference.md`（步骤 6）
+- Pattern-Key: workflow.lesson_persistence
+
+## [LRN-20260911-001] best_practice/big_pdf_split_pipeline_scriptified
+
+**Logged**: 2026-09-11
+**Priority**: medium
+**Status**: active
+**Area**: tools
+
+### Summary
+
+把 ERR-20260809-001 的手工「切块 → 逐块解析 → 合并」流程脚本化为 `doc_to_md_split.py`（入 mineru-pdf-parser 技能 scripts/）。首次全量实战：7 本大书、3393 页、20 个切块全部成功，总耗时约 15 分钟。
+
+### Details
+
+- **关键设计**：每个切块用独立 `submit()` 获得独立 batch_id，结果与块一一对应（不依赖服务端返回顺序），同时各块在服务端并行解析——实测 195 页块约 60–175s，5–6 块并行提交后约 3 分钟全部完成
+- **断点续跑**：已存在且非空的 `full_partNN.md` 自动跳过；`_parts/` 切块文件复用（首轮 Token 失效中断后，二轮直接复用未重切）
+- **原子性**：全部块成功才合并 `full.md`；失败保留中间产物、非零退出，可重跑续传
+- **图片**：token 模式 `save_markdown(with_images=True)` 落盘哈希命名图片，多块共用同一 `images/` 无冲突（实测单本最多 930 张）
+- **质量抽检法**：真图注（行首 `Figure N-M` 且非正文引用）与「图片引用/表格承载」配对率——TRM 样本 32 图注 = 18 图 + 14 表格 + 0 丢失；另查 `(cid:\d+)` 残留评估 OCR 质量（Yiu 书：0 残留）
+- **容错**：401 立即中止不重试（重试无意义）；Windows 注册表回退读取 token（`setx` 后免重启终端/VSCode）
+- 本次转换产物统计：full.md 共 ~94k 行、2917 张图（含原 PDF 共 297MB，其中 Yiu 原书 105.8MB 超 GitHub 100MiB 上限已 gitignore，仅本地保留）
+
+### Suggested Action
+
+- 以后所有 >200 页文档直接 `doc_to_md_split.py`，不再手工切块
+- 转换完成后的默认抽检：真图注配对率 + cid 残留，两者任一异常再人工细查
+
+### Metadata
+
+- Source: best_practice
+- Related Files: `.claude/skills/mineru-pdf-parser/scripts/doc_to_md_split.py`, `.claude/skills/mineru-pdf-parser/gotchas.md`
+- See Also: ERR-20260809-001, ERR-20260911-001, ERR-20260911-002
+- Pattern-Key: tools.mineru_split_pipeline
+- Recurrence-Count: 1
+- First-Seen: 2026-09-11
