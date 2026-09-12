@@ -136,6 +136,7 @@
 | 2026-08-30 | S0 代码合入 | 工程已建 git 并推送 GitHub（zlmjason/TC397_FreeRTOS，initial commit `834d8f6`）：OS 层+双任务闪灯代码就位，待 ADS 界面配置编译 | 无调整 |
 | 2026-08-30 | **S0 建成** ✅ | 排障两个真实 bug（port include 撞车；SYSCALL trap hook 缺失致 yield 变空操作、Tmr Svc 独占）；验收三条全过；提交 `f588fb5` | **port 深潜（SX 核心）提前至 S0 后**：刚调通 syscall 链路，学习动机与上下文最新鲜；S1 概念随讲随补 |
 | 2026-08-30 | 工具链决策：单轨 ADS | 用户拍板放弃 HighTec + UDE；SX 移植里程碑转型为 SP Port 深潜系列（第 1 课：上下文切换 / CSA 机制已讲） | 「关键机制 §3」双轨段改写；SX/S8 行同步更新；两条 HighTec 相关假设关闭 |
+| 2026-08-31 | SP 第 1 课落盘补记 | 用户指正"讲了但没沉淀"——补写 `FreeRTOS_Port_TC3xx_Context_Switch_CSA.md`；LED1+LED2 上板确认全闪 | 新增纪律：课程讲授与笔记落盘必须同阶段完成（LRN-20260831-001） |
 
 ## 待补充问题
 
@@ -146,6 +147,9 @@
 
 ## 关联笔记
 
+- [[FreeRTOS_Port_TC3xx_PortLayer_Full_Walkthrough]]（SP 主参考：port.c/portmacro.h 逐行注解 + 全流程图）
+- [[FreeRTOS_Port_TC3xx_Context_Switch_CSA]]（SP 第 1 课：任务切换 = 换 CSA 链）
+- [[Core_Comparison_Exception_CallStack_M7_vs_TC3xx]]（SP 硬件地基：M7 vs TC3xx 异常模型与调用栈对比）
 - [[Core_Comparison_CPU_Pipeline_M7_TC3xx_Engineering]]（M7 vs TC3xx 流水线工程对比，跨架构对照方法同源）
 - `01_Hardware_硬件层/01_Core/01_AURIX_TC3xx/`（TriCore 内核手册，CSA/中断/异常章节为 S2/S5/SX 硬件依据）
 - `01_Hardware_硬件层/00_SoC_Design_Book_精读/`（目的驱动精读方法论的参考实现）
