@@ -396,6 +396,7 @@ MarkDown_Learn/
 | git-upload-push | `.kimi-code/skills/git-upload-push/` | 一键 git add/commit/push（直接推 master） |
 | purpose-driven-book-study | `.kimi-code/skills/purpose-driven-book-study/` | 目的驱动型精读：按问题主线学书籍/标准/长文档，阶段化沉淀 |
 | kb-workflow | `.kimi-code/skills/kb-workflow/` | 工作流编排层：阶段→技能流水线表与"用前重读"纪律 |
+| aurix-build-analyze | `.kimi-code/skills/aurix-build-analyze/` | AURIX TC3xx（ADS/TASKING）工程编译与 map/ELF/HEX 链接产物分析 |
 
 > **技能结构约定**：每个技能文件夹遵循多文件结构 — `SKILL.md`（入口与触发条件）、`reference.md`（详细用法）、`gotchas.md`（陷阱与失败模式）、`config.json`（配置）、`scripts/`（可执行脚本）。参考实现：`self-improving-agent`、`context-compress`。
 

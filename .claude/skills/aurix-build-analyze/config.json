@@ -1,0 +1,54 @@
+{
+  "name": "aurix-build-analyze",
+  "version": "1.0.0",
+  "note": "AURIX TC3xx (ADS/TASKING) 编译与链接产物分析。路径为当前工作站默认值，可通过 CLI 参数或环境覆盖。",
+  "project": {
+    "path": "C:/Users/11064/Desktop/TC397_Platform_Jason/ADS/FreeRTOS",
+    "workspace": "C:/Users/11064/Desktop/TC397_Platform_Jason/ADS",
+    "eclipse_project": "FreeRTOS",
+    "build_config": "Debug",
+    "ads_exe": "C:/Infineon/AURIX-Studio-1.7.2/AURIX-studioc.exe",
+    "make": "C:/Infineon/AURIX-Studio-1.7.2/plugins/com.infineon.aurix.tools_1.7.2/build_system/tools/make/make.exe",
+    "toolchain_bin": "C:/Infineon/AURIX-Studio-1.7.2/plugins/com.infineon.aurix.tools_1.7.2/build_system/tools/Compilers/Tasking_1.1r8/ctc/bin"
+  },
+  "artifacts": {
+    "elf": "FreeRTOS.elf",
+    "map": "FreeRTOS.map",
+    "hex": "FreeRTOS.hex"
+  },
+  "expected": {
+    "device_macro": "__CPU__=tc39xb",
+    "entry_symbol": "_START",
+    "csa_size_bytes": 8192,
+    "csa_cores": [0, 1, 2, 3, 4, 5],
+    "required_symbols": [
+      "_START",
+      "core0_main",
+      "vPortSyscallHandler",
+      "vPortSystemContextHandler",
+      "vPortSystemTickHandler",
+      "vPortEnterCritical",
+      "vPortExitCritical",
+      "vTaskSwitchContext"
+    ],
+    "freertos_symbols": [
+      "pxCurrentTCB",
+      "vTaskSwitchContext",
+      "vPortSyscallHandler",
+      "vPortSystemTickHandler"
+    ],
+    "trap_reference": {
+      "symbol": "vPortSyscallHandler",
+      "referenced_by": "IfxCpu_Trap.o"
+    },
+    "heap_section": "ucHeap"
+  },
+  "thresholds": {
+    "freshness_tolerance_sec": 120,
+    "min_free_memory_bytes": 1024
+  },
+  "report": {
+    "exclude_memories": ["mpe:dfls0", "mpe:ucb", "mpe:edmem"],
+    "group_order": ["flash", "dsp", "dlmu", "lmu"]
+  }
+}
