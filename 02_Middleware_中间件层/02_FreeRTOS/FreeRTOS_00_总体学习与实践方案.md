@@ -196,7 +196,7 @@ S0 的实战结论：四件套缺任何一件都可能出现"编译链接全过�
 | 级别 | 素材 | 用途 |
 |---|---|---|
 | 精读 | 《Mastering the FreeRTOS Real Time Kernel》（官方免费书）；FreeRTOS 源码 tasks.c / queue.c 关键章节；TASKING TC3xx port.c；iLLD 官方例程 | 机制与证据的主来源 |
-| 支撑读 | 九页知识长图（主线骨架）；FreeRTOS 官网 API 文档；TC3xx 用户手册（STM / 中断 / CSA 章节） | 概念速查与硬件依据 |
+| 支撑读 | 九页知识长图（主线骨架）；FreeRTOS 官网 API 文档；TC3xx 用户手册（章节索引见 [[AURIX_TC3xx_Manual_Library_Index]]） | 概念速查与硬件依据 |
 | 略读 | FreeRTOS 论坛 TC397 多核/SMP 讨论；21ic 中文移植教程 | 移植期参考 |
 | 暂缓 | SafeRTOS 内部、IoT 云平台集成 | 触发条件：工作出现对应需求 |
 
@@ -265,11 +265,13 @@ S0 的实战结论：四件套缺任何一件都可能出现"编译链接全过�
 2. SafeRTOS / 功能安全视角是否扩展为独立阶段（触发条件：工作出现对应需求）。
 3. HighTec GCC + UDE 环境如需回归（触发条件：公司项目强制要求），恢复路径：SP 深潜内容照旧有效，另加 GCC port 集成实验（`git restore --source=834d8f6 -- OS/FreeRTOS/portable/GCC/`）。
 4. 是否引入第二块板/多核实验环境（触发条件：S9 多核实践需要）。
+5. **共享数据迁移到 LMU（暂缓，多核阶段再议）**：当前 FreeRTOS 堆与内核数据位于 DSRAM0（37,457 B：heap_1.o 32,772 B、libc heap 4,160 B、tasks/timers/port 等约 500 B），单核快速路径合理。触发条件：S9 双核 AMP 或出现跨核共享需求；届时改 LSL 将 `ucHeap` 与内核共享数据放入 LMU，并用 `analyze.py` 核归属检查复测。记录日期 2026-10-19。
 
 ## 关联笔记
 
 - [[FreeRTOS_01_学习TODO]]（知识支点跟踪清单）
 - [[FreeRTOS_02_实践TODO]]（板级实验跟踪清单）
+- [[AURIX_TC3xx_Manual_Library_Index]]（官方手册索引：按任务查手册与章节号）
 - [[FreeRTOS_Port_TC3xx_PortLayer_Full_Walkthrough]]（SP 主参考：port.c/portmacro.h 逐行注解 + 全流程图）
 - [[FreeRTOS_Port_TC3xx_Context_Switch_CSA]]（SP1：任务切换 = 换 CSA 链）
 - [[Core_Comparison_Exception_CallStack_M7_vs_TC3xx]]（SP 硬件地基：M7 vs TC3xx 异常模型与调用栈对比）
