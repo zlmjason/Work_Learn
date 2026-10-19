@@ -15,7 +15,7 @@
 
 ## 背景
 
-- 本笔记是 FreeRTOS × TC397 学习路线「SP Port 深潜」系列第 1 课的落盘总结，路线总图见 [[FreeRTOS_00_学习路线与问题地图]]。
+- 本笔记是 FreeRTOS × TC397 学习路线「SP Port 深潜」系列第 1 课的落盘总结，路线总图见 [[FreeRTOS_00_总体学习与实践方案]]。
 - 依托工程：`TC397_Platform_Jason/ADS/FreeRTOS`（git: zlmjason/TC397_FreeRTOS），FreeRTOS 内核 V10.5.1，TASKING port（`OS/FreeRTOS/portable/Tasking/TC3/port.c`），ADS + TASKING Lite。
 - 学习契机：S0 排障（SYSCALL trap hook 缺失致 yield 空转）实战接触了 syscall 链路后，趁热系统拆解上下文切换机制。
 - 文中行号对应 commit `f588fb5` 的 port.c。
@@ -87,7 +87,7 @@ S0 的 bug：TC397 空壳工程的 Ifx_Cfg.h 缺 hook 定义 → iLLD 用默认�
 
 ## 关联笔记
 
-- [[FreeRTOS_00_学习路线与问题地图]]（路线总图，SP 系列归属）
+- [[FreeRTOS_00_总体学习与实践方案]]（路线总图，SP 系列归属）
 - `01_Hardware_硬件层/01_Core/01_AURIX_TC3xx/`（TriCore 内核手册：CSA/PCXI/FCX 硬件章节）
 - 工程仓库：github.com/zlmjason/TC397_FreeRTOS（commit `834d8f6` 初始合入、`f588fb5` 排障修复）
 

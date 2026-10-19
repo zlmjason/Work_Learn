@@ -18,7 +18,7 @@ Port 层的全部工作可以归结为**五项职责**，每项都由 TriCore �
 
 ## 背景
 
-- 本笔记是「SP Port 深潜」系列的主参考文档，路线见 [[FreeRTOS_00_学习路线与问题地图]]；第 1 课概念版见 [[FreeRTOS_Port_TC3xx_Context_Switch_CSA]]。
+- 本笔记是「SP Port 深潜」系列的主参考文档，路线见 [[FreeRTOS_00_总体学习与实践方案]]；第 1 课概念版见 [[FreeRTOS_Port_TC3xx_Context_Switch_CSA]]。
 - 注解对象：`TC397_FreeRTOS` 工程 `OS/FreeRTOS/portable/Tasking/TC3/port.c`（459 行）+ `portmacro.h`（134 行），FreeRTOS V10.5.1，Infineon 官方 2023 版 port。
 - 文中行号对应工程 commit `f588fb5`。
 - 阅读方式建议：左边打开 port.c，右边开本笔记，逐节对照。
@@ -212,7 +212,7 @@ flowchart TD
 ## 关联笔记
 
 - [[FreeRTOS_Port_TC3xx_Context_Switch_CSA]]（第 1 课：概念版）
-- [[FreeRTOS_00_学习路线与问题地图]]（路线总图）
+- [[FreeRTOS_00_总体学习与实践方案]]（路线总图）
 - `01_Hardware_硬件层/01_Core/01_AURIX_TC3xx/`（TriCore 内核手册：CSA/PCXI/PSW/ICR 硬件定义）
 - 工程仓库：github.com/zlmjason/TC397_FreeRTOS（commit `f588fb5`）
 
