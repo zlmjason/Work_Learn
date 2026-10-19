@@ -1,0 +1,36 @@
+#!/bin/sh
+# pre-commit: keep AGENTS.md and .claude/CLAUDE.md in sync (bidirectional).
+#
+# When either guide has staged or unstaged changes, run scripts/sync-guides.ps1
+# (the newer file wins) and stage both, so whatever is committed is consistent.
+# When neither changed, exit immediately with zero overhead.
+#
+# Note: this file is tracked at scripts/pre-commit and must be installed after clone:
+#   cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+# neither guide touched (neither staged nor in worktree) -> pass through
+if ! git diff --cached --name-only | grep -qE '^(AGENTS\.md|\.claude/CLAUDE\.md)$' \
+   && ! git diff --name-only | grep -qE '^(AGENTS\.md|\.claude/CLAUDE\.md)$'; then
+  exit 0
+fi
+
+# pick an available PowerShell interpreter
+if command -v pwsh.exe >/dev/null 2>&1; then
+  PS=pwsh.exe
+elif command -v powershell.exe >/dev/null 2>&1; then
+  PS=powershell.exe
+else
+  echo "[pre-commit] no pwsh/powershell found, cannot run scripts/sync-guides.ps1 - commit blocked" >&2
+  exit 1
+fi
+
+"$PS" -NoProfile -ExecutionPolicy Bypass -File "$ROOT/scripts/sync-guides.ps1" || {
+  echo "[pre-commit] sync-guides failed - commit blocked" >&2
+  exit 1
+}
+
+# stage both so the commit always contains the consistent pair
+git add -- "$ROOT/AGENTS.md" "$ROOT/.claude/CLAUDE.md"
+exit 0

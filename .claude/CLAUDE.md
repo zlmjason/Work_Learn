@@ -1,6 +1,8 @@
 # MarkDown_Learn 项目工作指南
 
-> 本文件为 Claude Code 提供项目级工作规范。处理本仓库任何任务前，请先阅读本文件。
+> 本文件为 AI 代理（Claude Code / Kimi Code 等）提供项目级工作规范。处理本仓库任何任务前，请先阅读本文件。
+>
+> **双入口同步**：`AGENTS.md`（Kimi Code 入口）与 `.claude/CLAUDE.md`（Claude Code 入口）内容完全一致。修改任意一份即可，git pre-commit hook 会自动以较新者同步另一份；不走 git 的修改请手动运行 `scripts/sync-guides.ps1`。
 
 ---
 
@@ -141,13 +143,19 @@
 
 ```
 MarkDown_Learn/
-├── CLAUDE.md              ← 项目工作指南（本文件）
-├── AGENTS.md              ← 代理指令（技能工作流）
-├── .claude/               ← 辅助资料与技能
-│   ├── CLAUDE.md
+├── AGENTS.md              ← 项目工作指南（Kimi Code 入口，与 .claude/CLAUDE.md 内容一致、双向同步）
+├── .kimi-code/            ← Kimi Code 项目配置
 │   ├── README.md
-│   ├── references/        ← 参考资料
-│   └── skills/            ← 可用技能
+│   ├── agents/            ← 自定义子代理（note-organizer、kb-reviewer）
+│   └── skills/            ← 项目技能（18 个，.claude/skills/ 的镜像副本）
+├── .claude/               ← Claude Code 配置与共享资料（双工具并存）
+│   ├── CLAUDE.md          ← 项目工作指南（Claude Code 入口，与 AGENTS.md 内容一致、双向同步）
+│   ├── settings.json      ← Claude Code 钩子配置（PostToolUse doc-review 等）
+│   ├── hooks/             ← Claude Code 钩子脚本
+│   ├── memory/            ← 记忆索引与文件分类速查表
+│   ├── references/        ← 参考资料（knowledge-base，两套工具共享引用）
+│   └── skills/            ← Claude Code 技能（源副本）
+├── scripts/               ← 仓库维护脚本（sync-guides.ps1 等）
 ├── .learnings/            ← 持续改进日志
 │   ├── ERRORS.md
 │   ├── FEATURE_REQUESTS.md
@@ -366,56 +374,65 @@ MarkDown_Learn/
 
 ### 5.1 本地技能
 
-本地技能存放于 `.claude/skills/`：
+技能以多文件目录形式存放，双工具各有一份、内容保持一致：Kimi Code 用 `.kimi-code/skills/`（可用 `/skill:<名称>` 手动调用），Claude Code 用 `.claude/skills/`（部分技能支持 `/<名称>` 斜杠命令）；两者均可由模型按 description 自动触发。新增/修改技能时，改完一边后同步另一边，保持内容一致。
 
-| 技能 | 路径 | 触发时机 |
+| 技能 | 路径（Kimi Code 侧；Claude Code 对应 `.claude/skills/`） | 触发时机 |
 |------|------|----------|
-| docx-cn | `.claude/skills/docx-cn/` | Word 文档处理（.docx） |
-| find-skills | `.claude/skills/find-skills/` | 搜索/安装外部技能 |
-| context-compress | `.claude/skills/context-compress/` | 上下文压缩与摘要（支持手动 `/context-compress` 或 Hook 自动提醒） |
-| mineru-pdf-parser | `.claude/skills/mineru-pdf-parser/` | PDF/Word/PPT/Excel 转 Markdown |
-| pdf | `.claude/skills/pdf/` | PDF 处理指南 |
-| self-improving-agent | `.claude/skills/self-improving-agent/` | 持续改进日志（强制工作流） |
-| summarize | `.claude/skills/summarize/` | 内容提取/摘要 |
-| autoresearch | `.claude/skills/autoresearch/` | 有明确量化指标的自动迭代优化（性能、内存、测试通过率、构建时间等） |
-| impeccable | `.claude/skills/impeccable/` | 前端 UI 设计、重构、评审、打磨（页面、组件、Dashboard、表单等） |
-| obsidian-vault | `.claude/skills/obsidian-vault/` | 在 Obsidian 中搜索、创建、整理笔记 |
-| note-organizer | `.claude/skills/note-organizer/` | 按 CLAUDE.md 规范整理 Markdown 笔记目录与命名 |
-| skillify | `.claude/skills/skillify/` | 将当前会话的可重复流程捕获为新的 skill |
-| doc-review | `.claude/skills/doc-review/` | Markdown 笔记规范检查 |
-| mcu-note-creator | `.claude/skills/mcu-note-creator/` | 按规范创建 MCU 笔记 |
-| safespi-evaluator | `.claude/skills/safespi-evaluator/` | SafeSPI Rev 2.0 支持性五层评估 |
-| git-upload-push | `.claude/skills/git-upload-push/` | 一键 git add/commit/push（直接推 master） |
-| purpose-driven-book-study | `.claude/skills/purpose-driven-book-study/` | 目的驱动型精读：按问题主线学书籍/标准/长文档，阶段化沉淀 |
-| kb-workflow | `.claude/skills/kb-workflow/` | 工作流编排层：阶段→技能流水线表与"用前重读"纪律 |
+| docx-cn | `.kimi-code/skills/docx-cn/` | Word 文档处理（.docx） |
+| find-skills | `.kimi-code/skills/find-skills/` | 搜索/安装外部技能 |
+| context-compress | `.kimi-code/skills/context-compress/` | 上下文压缩与摘要（Kimi Code 手动 `/skill:context-compress`，Claude Code 手动 `/context-compress`，或 Hook 自动提醒） |
+| mineru-pdf-parser | `.kimi-code/skills/mineru-pdf-parser/` | PDF/Word/PPT/Excel 转 Markdown |
+| pdf | `.kimi-code/skills/pdf/` | PDF 处理指南 |
+| self-improving-agent | `.kimi-code/skills/self-improving-agent/` | 持续改进日志（强制工作流） |
+| summarize | `.kimi-code/skills/summarize/` | 内容提取/摘要 |
+| autoresearch | `.kimi-code/skills/autoresearch/` | 有明确量化指标的自动迭代优化（性能、内存、测试通过率、构建时间等） |
+| impeccable | `.kimi-code/skills/impeccable/` | 前端 UI 设计、重构、评审、打磨（页面、组件、Dashboard、表单等） |
+| obsidian-vault | `.kimi-code/skills/obsidian-vault/` | 在 Obsidian 中搜索、创建、整理笔记 |
+| note-organizer | `.kimi-code/skills/note-organizer/` | 按本规范整理 Markdown 笔记目录与命名 |
+| skillify | `.kimi-code/skills/skillify/` | 将当前会话的可重复流程捕获为新的 skill |
+| doc-review | `.kimi-code/skills/doc-review/` | Markdown 笔记规范检查 |
+| mcu-note-creator | `.kimi-code/skills/mcu-note-creator/` | 按规范创建 MCU 笔记 |
+| safespi-evaluator | `.kimi-code/skills/safespi-evaluator/` | SafeSPI Rev 2.0 支持性五层评估 |
+| git-upload-push | `.kimi-code/skills/git-upload-push/` | 一键 git add/commit/push（直接推 master） |
+| purpose-driven-book-study | `.kimi-code/skills/purpose-driven-book-study/` | 目的驱动型精读：按问题主线学书籍/标准/长文档，阶段化沉淀 |
+| kb-workflow | `.kimi-code/skills/kb-workflow/` | 工作流编排层：阶段→技能流水线表与"用前重读"纪律 |
 
 > **技能结构约定**：每个技能文件夹遵循多文件结构 — `SKILL.md`（入口与触发条件）、`reference.md`（详细用法）、`gotchas.md`（陷阱与失败模式）、`config.json`（配置）、`scripts/`（可执行脚本）。参考实现：`self-improving-agent`、`context-compress`。
 
-### 5.2 summarize（内容提取）
+### 5.2 自定义子代理
 
-**位置**：`.claude/skills/summarize/summarize.py`（Windows 原生 Python 脚本）。
+`.kimi-code/agents/` 下定义了项目级子代理，主 Agent 可在合适时机委派（独立上下文执行，结果回传）：
+
+| 子代理 | 文件 | 用途 |
+|--------|------|------|
+| note-organizer | `.kimi-code/agents/note-organizer.md` | 批量整理 Inbox / 未归档笔记（移动 + 重命名），独立上下文执行不污染主会话 |
+| kb-reviewer | `.kimi-code/agents/kb-reviewer.md` | 只读合规审查：按本规范检查笔记，输出分级报告 |
+
+### 5.3 summarize（内容提取）
+
+**位置**：`.kimi-code/skills/summarize/summarize.py`（Claude Code 镜像：`.claude/skills/summarize/summarize.py`，Windows 原生 Python 脚本）。
 
 **关键限制**：用户无第三方 LLM API 密钥，脚本自动回退到内容提取模式。
 
 **使用方式**：
 ```bash
-# 仅提取内容（无 LLM 调用）—— 将输出复制到对话中让 Kimi 总结
-python .claude/skills/summarize/summarize.py "https://example.com" --print-content
+# 仅提取内容（无 LLM 调用）—— 将输出复制到对话中让 AI 总结
+py -3 .kimi-code/skills/summarize/summarize.py "https://example.com" --print-content
 
 # 保存长内容到文件，然后在对话中引用
-python .claude/skills/summarize/summarize.py "https://example.com" --print-content --output doc.md
+py -3 .kimi-code/skills/summarize/summarize.py "https://example.com" --print-content --output doc.md
 
 # 本地 PDF 提取
-python .claude/skills/summarize/summarize.py "path/to/file.pdf" --print-content
+py -3 .kimi-code/skills/summarize/summarize.py "path/to/file.pdf" --print-content
 ```
 
 **依赖**：`requests`、`beautifulsoup4`（必需）；`PyPDF2`（PDF 支持）；`yt-dlp`（YouTube 支持）。
 
 **Windows 包装器**：`%USERPROFILE%\.local\bin\summarize.cmd` 提供相同 CLI 接口。
 
-### 5.3 PDF 处理
+### 5.4 PDF 处理
 
-Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
+Python 版 PDF 工具包，定义见 pdf 技能的 `SKILL.md`（§5.1）：
 
 | 任务 | 工具 |
 |------|------|
@@ -428,12 +445,12 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 **已安装**：`pypdf`、`pdfplumber`、`reportlab`、`pandas`、`openpyxl`、`pytesseract`（仅 Python 库）。
 **未安装**：Tesseract-OCR 引擎、poppler（`pdftoppm`）。
 
-### 5.4 MinerU PDF 解析
+### 5.5 MinerU PDF 解析
 
-`.claude/skills/mineru-pdf-parser/` 提供基于 MinerU 云端 API 的文档解析，支持 PDF/Word/PPT/Excel/图片转结构化 Markdown，保留标题层级、表格结构、公式、多栏排版。
+mineru-pdf-parser 技能（§5.1）提供基于 MinerU 云端 API 的文档解析，支持 PDF/Word/PPT/Excel/图片转结构化 Markdown，保留标题层级、表格结构、公式、多栏排版。
 
 - 触发条件：用户提到"PDF转Markdown"、"解析文档"、"提取文档内容"等
-- 详细用法见 `.claude/skills/mineru-pdf-parser/SKILL.md`
+- 详细用法见该技能的 `SKILL.md`
 
 ---
 
@@ -466,7 +483,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 | 外部工具/API 行为与预期不符 | `.learnings/ERRORS.md` | `ERR-YYYYMMDD-XXX`，注明集成细节 |
 | 知识过时或盲区被填补 | `.learnings/LEARNINGS.md` | `LRN-YYYYMMDD-XXX`，category: `knowledge_gap` |
 
-**记录格式**：遵循 `.claude/skills/self-improving-agent/SKILL.md` 中的模板，包含：
+**记录格式**：遵循 self-improving-agent 技能 `SKILL.md`（§5.1）中的模板，包含：
 - 标题 `## [ID] category/name`
 - `**Logged**`、`**Priority**`、`**Status**`、`**Area**`
 - `### Summary`、`### Details`、`### Suggested Action`、`### Metadata`
@@ -481,7 +498,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
    - 如果某条学习具有跨任务通用性（非一次性问题），将其精简后追加到本文件或项目文档的合适章节。
    - 晋升后，在原记录中更新 `**Status**: promoted`。
 3. **月度 retro（每月一次，或 `.learnings/` 积累 10+ 条未处理记录时）**：
-   - 按 `self-improving-agent` SKILL.md 的「月度回顾」流程执行：聚类复发问题 → 产出 CLAUDE.md / skill 修订建议 → 用户确认后晋升并销账。
+   - 按 `self-improving-agent` SKILL.md 的「月度回顾」流程执行：聚类复发问题 → 产出本指南 / skill 修订建议 → 用户确认后晋升并销账。
 
 ### 6.4 常见借口与反模式（Shortcuts to Resist）
 
@@ -494,8 +511,9 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 | "直接改原笔记内容" | 违反 §9.1 第 3 条。保留原文，在下方新增"整理版"或"补充理解" |
 | "这个 skill 上次读过，凭记忆用" | 上下文压缩后内容可能已丢失。每个阶段开始前重读对应 SKILL.md（见 kb-workflow「用前重读纪律」） |
 | "用户需求够清楚，直接做" | 存在多方案、删除/重命名、批量改动时必须先确认（LRN-20260717-001）。一次性成功优先于速度 |
-| "检查脚本大概能过，跳过 doc-review" | 一分钟的检查跳过后，归档返工要动 git 历史，成本翻倍（2026-08-06 起已由 PostToolUse hook 自动执行，跳过已不可能） |
-| "记录过 learning 就算改进了" | 记录≠改进。按 §6.3 月度 retro 把复发问题转化为 CLAUDE.md / skill 的实际修订 |
+| "检查脚本大概能过，跳过 doc-review" | 一分钟的检查跳过后，归档返工要动 git 历史，成本翻倍（2026-08-06 起 Claude Code 侧已由 PostToolUse hook 自动执行） |
+| "记录过 learning 就算改进了" | 记录≠改进。按 §6.3 月度 retro 把复发问题转化为本指南 / skill 的实际修订 |
+| "指南只改了 AGENTS.md / CLAUDE.md 其中一份" | 两份内容必须一致。直接改任一份即可，git pre-commit hook 会以较新者自动同步另一份；不走 git 的修改需手动运行 `scripts/sync-guides.ps1` |
 
 ---
 
@@ -519,14 +537,23 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 
 ---
 
-## 8. .claude/ 目录说明
+## 8. .kimi-code/ 与 .claude/ 目录说明
 
-`.claude/` 为辅助资料区，供回答车规 MCU 相关问题时按需参考。
+`.kimi-code/` 为 Kimi Code 项目配置区：
+
+| 子目录 | 内容 |
+|--------|------|
+| `skills/` | 项目技能（完整清单与触发时机见 §5.1，`.claude/skills/` 的镜像副本） |
+| `agents/` | 自定义子代理（见 §5.2） |
+
+`.claude/` 为 Claude Code 配置区，同时存放两套工具**共享的参考资料**，处理相关主题时按需读取：
 
 | 子目录 | 内容 |
 |--------|------|
 | `references/knowledge-base/` | MCU 架构、通信协议、诊断、外设测试、功能安全、区域架构等参考资料 |
-| `skills/` | 可用技能（完整清单与触发时机见 §5.1） |
+| `memory/` | 记忆索引（`MEMORY.md`）与文件分类速查表（`file-classification-cheatsheet.md`） |
+| `skills/` | Claude Code 技能（源副本，与 `.kimi-code/skills/` 内容保持一致） |
+| `settings.json` / `hooks/` | Claude Code 钩子配置（PostToolUse doc-review 等） |
 
 ---
 
@@ -548,7 +575,7 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 | 8 | 车规 MCU 相关内容放入 `01_MCU_车规MCU`。 |
 | 9 | 生物医学、论文、动脉粥样硬化相关内容放入 `02_Biomed_动脉粥样硬化`。 |
 | 10 | 投资、AI 产业链、个股跟踪内容放入 `03_AI产业链投资`。 |
-| 11 | AI 工具、Agent、Claude Code、Obsidian 相关内容放入 `91_Tools_AI工具链`。 |
+| 11 | AI 工具、Agent、Claude Code / Kimi Code、Obsidian 相关内容放入 `91_Tools_AI工具链`。 |
 | 12 | 笔记层（01-05、91 等主题目录）与 `99_Attachments_附件` 按**角色**分界，不按文件类型：消化后的产出（精读/伴读/总结/分析笔记、专题体系）进笔记层，按主题组织、持续迭代；原始素材（PDF 原件、MinerU 原始解析 full.md+images、图片）进 `99_Attachments_附件`，按资料来源组织、入库后不再改动。引用方向单向：笔记 → 附件。移动附件内任何文件前必须 grep 找全引用，移动后逐条校验链接可解析。 |
 
 ### 9.2 笔记格式
@@ -592,18 +619,20 @@ Python 版 PDF 工具包，定义见 `.claude/skills/pdf/SKILL.md`：
 
 | 日期 | 更新内容 |
 |------|---------|
-| 2026-08-15 | 新增技能 `purpose-driven-book-study`（GPT 版 skill 内化为 Claude Code 多文件格式：SKILL.md+reference+gotchas+config+模板，绑定本库命名/doc-review/附件规则/对话渲染限制；另产出 Kimi Code 自包含指令版 `references/kimi-code-instruction.md`；GPT 原件归档 `90_Archive_归档/`）；§6 记录对话渲染限制（LRN-20260815-001：对话内禁 LaTeX/Mermaid，公式纯文本、图用 ASCII） |
+| 2026-10-14 | **双入口统一 + 双向同步机制**：`AGENTS.md` 与 `.claude/CLAUDE.md` 合并为逐字节一致的同一份内容（泛化工具名引用；并入 CLAUDE 侧独有的 §2 核心工作原则、Obsidian 规则 12、`purpose-driven-book-study` 技能登记、`py -3` 警告，以及 Kimi 侧独有的 §5.2 自定义子代理、`.claude/memory/` 目录说明）；新增 `scripts/sync-guides.ps1` 与 git pre-commit hook——此后修改任一份，提交时自动以较新者同步另一份 |
+| 2026-08-15 | 新增技能 `purpose-driven-book-study`（GPT 版 skill 内化为多文件格式：SKILL.md+reference+gotchas+config+模板，绑定本库命名/doc-review/附件规则/对话渲染限制；另产出 Kimi Code 自包含指令版 `references/kimi-code-instruction.md`；GPT 原件归档 `90_Archive_归档/`）；记录对话渲染限制（LRN-20260815-001：对话内禁 LaTeX/Mermaid，公式纯文本、图用 ASCII） |
 | 2026-08-06 | 新增 PostToolUse hook 自动规范检查（过程检验硬护栏化）：`.claude/hooks/doc_review_on_md_edit.py` 在 Edit/Write 仓库内笔记后自动运行 doc-review 并将问题注入上下文（登记于 `.claude/settings.json`，排除附件/Inbox/归档等目录）；doc-review 校准：修复代码块闭合围栏误计 bug、必要章节 fail 限定 MCU 笔记层（新增 `strictTemplateDirs` 配置）、文件名前缀白名单补 `Agent_`/`AI_`、豁免 INDEX.md/README.md；§7 记录 Git Bash 须用 `py -3`（ERR-20260806-001） |
 | 2026-08-06 | §9.1 新增规则 12：明确笔记层与 `99_Attachments_附件` 的角色边界（消化产出 vs 原始素材）、单向引用方向、移动附件的引用校验要求；`91_Tools_AI工具链` 新增 `02_Google_Agent_Whitepapers_Google白皮书`、`03_AI_Startup_AI原生创业`；附件按主题分为 `AI_Agent/`、`Memory_存储器/`、`IC_Design_芯片设计/` |
-| 2026-07-26 | 新增 §5.0「思维与协作纪律」：总原则三问、第一性原理（工作方式 6 步、回答原则）、人机协作边界 3 条、六条思维纪律、出错三分法；checkpoint 约定与 ERR 根因分类为新立项目约定 |
-| 2026-05-11 | 初始版本：整合 find-skills、pdf、self-improving-agent、summarize 四个技能 |
-| 2026-05-17 | 融合 CLAUDE.md 与 AGENTS.md，精简 .claude/ 目录适配知识库项目 |
-| 2026-06-05 | 新增第 8 节"Obsidian 知识库管理规范"；本地技能目录从 `skills/` 迁移至 `.claude/skills/`，新增 docx-cn、mineru-pdf-parser 登记 |
+| 2026-08-04 | **Kimi Code 配置落地**：以 `.claude/CLAUDE.md` 为蓝本创建根 `AGENTS.md`；技能复制适配至 `.kimi-code/skills/`；新增 `.kimi-code/agents/` 两个自定义子代理（note-organizer、kb-reviewer）；`.claude/` 保留，references/memory 由两套工具共享引用 |
+| 2026-08-04 | 借鉴 Jason_HPC_Work-main 工作区：新增 §2「核心工作原则与协作规范」，包含第一性原理、行动规范、协作规范（六条思维纪律） |
+| 2026-07-26 | 新增「思维与协作纪律」：总原则三问、第一性原理（工作方式 6 步、回答原则）、人机协作边界 3 条、六条思维纪律、出错三分法；checkpoint 约定与 ERR 根因分类为新立项目约定 |
+| 2026-07-19 | 借鉴 google/agents-cli 的 skill 工程模式（LRN-20260719-001）：新增 `kb-workflow` 编排技能（阶段→技能流水线表 + 用前重读纪律）；为 5 个技能描述补充负向触发边界；新增反模式表；月度 retro 闭环；技能表补齐遗漏登记 |
+| 2026-07-05 | 新增本地技能 `note-organizer`：按目录与命名规范自动整理 Markdown 笔记；将两篇原子操作笔记归档至 `01_Hardware_硬件层/01_Core/03_Comparison/` |
+| 2026-06-05 | 新增"Obsidian 知识库管理规范"；本地技能目录从 `skills/` 迁移至 `.claude/skills/`，新增 docx-cn、mineru-pdf-parser 登记 |
 | 2026-06-05 | **工作区重构**：建立车规 MCU 技术栈分层架构（Hardware / Middleware / Application）；目录全英文化；Peripherals 按功能（Comm/Timer/IO/Storage）拆分；Core 按架构（AURIX/ARM/Comparison）细分；新增 AUTOSAR 和 FreeRTOS 完整目录框架；制定文件命名规范 |
-| 2026-07-05 | 新增本地技能 `note-organizer`：按 CLAUDE.md 目录与命名规范自动整理 Markdown 笔记；将两篇原子操作笔记归档至 `01_Hardware_硬件层/01_Core/03_Comparison/` |
-| 2026-08-04 | 借鉴 Jason_HPC_Work-main 工作区：新增 §2「核心工作原则与协作规范」，包含第一性原理、行动规范、协作规范（六条思维纪律）；后续章节编号顺延 |
-| 2026-07-19 | 借鉴 google/agents-cli 的 skill 工程模式（LRN-20260719-001）：新增 `kb-workflow` 编排技能（阶段→技能流水线表 + 用前重读纪律）；为 5 个技能描述补充负向触发边界；新增 §5.4 反模式表；§5.3 增加月度 retro 闭环；§4.1 技能表补齐遗漏登记 |
-| 2026-06-05 | **深度细分**：Hardware 层全部细化（Memory→RAM/Flash/Cache/MPU、System→Clock/Power/Reset/Bus/DMA/Interrupt、Boot→Bootloader/BootROM/FirmwareUpdate、Peripherals/Comm→SPI/I2C/CAN/LIN/UART/Ethernet/FlexRay/Intercore、Timer→GPT/PWM/ICU/WDG、IO→GPIO/ADC/DAC、Multicore→Lockstep/Resource/Intercore、Debug→CoreSight/Trace/JTAG/CrossTrigger）；新增 `04_Safety_功能安全`（ISO26262/E2E/SafetyMonitor/Lockstep）和 `05_Tools_工具链`（Compiler/Debugger/Flash/Trace/HIL_SIL）；AUTOSAR 全部细化到模块级（CAN/LIN/SPI/Ethernet/FlexRay/UDS/XCP、DEM/DET/UDS/DTC/OBD、OS/EcuM/BswM/SchM/ComM/Nm、E2E/SafeSPI/SafeT/Testing）；FreeRTOS 细化到子模块级（Tasks/Scheduler/Lists/Queues、Semaphores/Mutexes/EventGroups/StreamBuffers、Heap/Stack/MPU、Tick/Timers/Delays、PortLayer/Interrupts/Hooks）；文件命名规则扩展至 28 条覆盖全部层次 |
+| 2026-06-05 | **深度细分**：Hardware 层全部细化（Memory→RAM/Flash/Cache/MPU、System→Clock/Power/Reset/Bus/DMA/Interrupt、Boot→Bootloader/BootROM/FirmwareUpdate、Peripherals/Comm→SPI/I2C/CAN/LIN/UART/Ethernet/FlexRay/Intercore、Timer→GPT/PWM/ICU/WDG、IO→GPIO/ADC/DAC、Multicore→Lockstep/Resource/Intercore、Debug→CoreSight/Trace/JTAG/CrossTrigger）；新增 `04_Safety_功能安全`（ISO26262/E2E/SafetyMonitor/Lockstep）和 `05_Tools_工具链`（Compiler/Debugger/Flash/Trace/HIL_SIL）；AUTOSAR 全部细化到模块级；FreeRTOS 细化到子模块级；文件命名规则扩展至 28 条覆盖全部层次 |
+| 2026-05-17 | 融合 CLAUDE.md 与 AGENTS.md，精简 .claude/ 目录适配知识库项目 |
+| 2026-05-11 | 初始版本：整合 find-skills、pdf、self-improving-agent、summarize 四个技能 |
 
 ---
 
