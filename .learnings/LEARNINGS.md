@@ -535,7 +535,7 @@ ADS（Eclipse + com.infineon.aurix.buildsystem）会把工程内**所有文件�
 ### Metadata
 
 - Related Files: TC397_Platform_Jason/ADS/FreeRTOS（库外工程）
-- See Also: FreeRTOS_00_学习路线与问题地图.md S0/SX 阶段
+- See Also: FreeRTOS_00_总体学习与实践方案.md S0/SP 阶段
 - Pattern-Key: tools.ads_include_autogen
 
 ## [LRN-20260831-001] correction/stage_lesson_must_persist_immediately
@@ -599,3 +599,33 @@ ADS（Eclipse + com.infineon.aurix.buildsystem）会把工程内**所有文件�
 - Pattern-Key: tools.mineru_split_pipeline
 - Recurrence-Count: 1
 - First-Seen: 2026-09-11
+
+## [LRN-20261014-001] best_practice/dual-guide-sync-hook
+
+**Logged**: 2026-10-14
+**Priority**: medium
+**Status**: active
+**Area**: workflow
+
+### Summary
+
+AGENTS.md 与 .claude/CLAUDE.md 统一为逐字节一致的同一内容（泛化工具名引用），用 `scripts/sync-guides.ps1` + git pre-commit hook 双向同步（较新 mtime 者覆盖较旧者，hook 自动 git add 两份）。消除了 2026-08 以来两份指南独立演化分叉 229 行的问题。
+
+### Details
+
+- 统一关键：两份文件内容必须 100% 相同（措辞泛化，不写工具专属表述），同步才能退化为纯拷贝、双向无损
+- hook 源文件同时保存于 `scripts/pre-commit`（`.git/hooks/` 不随仓库分发，克隆后需 `cp scripts/pre-commit .git/hooks/pre-commit` 重装）
+- 附带坑：Windows PowerShell 5.1 把无 BOM 的 UTF-8 .ps1 按 ANSI(GBK) 解析，中文注释/字符串直接 ParseError；本机无 pwsh（PS7），hook 实际走 powershell.exe（5.1）
+
+### Suggested Action
+
+- 今后修改任一份指南即可；git 提交时 hook 自动同步另一份。不走 git 的修改手动跑 `scripts/sync-guides.ps1`（`-Check` 仅校验、`-From agents|claude` 强制方向）
+- 仓库内 .ps1 脚本保持纯 ASCII；必须含中文时保存为带 BOM 的 UTF-8
+
+### Metadata
+
+- Source: best_practice
+- Related Files: `AGENTS.md`, `.claude/CLAUDE.md`, `scripts/sync-guides.ps1`, `scripts/pre-commit`
+- Pattern-Key: workflow.dual_guide_sync
+- Recurrence-Count: 1
+- First-Seen: 2026-10-14
