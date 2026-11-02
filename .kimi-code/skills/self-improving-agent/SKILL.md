@@ -1,9 +1,7 @@
 ---
-name: self-improvement
-description: "Captures learnings, errors, and corrections to enable continuous improvement. Use when: (1) A command or operation fails unexpectedly, (2) User corrects Claude ('No, that's wrong...', 'Actually...'), (3) User requests a capability that doesn't exist, (4) An external API or tool fails, (5) Claude realizes its knowledge is outdated or incorrect, (6) A better approach is discovered for a recurring task. Also review learnings before major tasks."
-metadata:
+name: self-improving-agent
+description: "记录与复盘经验。当用户说「记录经验」「记一条 learning」「记个 error」「复盘一下」「把这条记下来」「总结经验」「这个坑要记住」时使用；也在命令失败、用户纠正、发现更好做法后需要按 CLAUDE.md §6.2 写日志时使用。只提供记录格式与月度 retro 流程，不负责判定何时该记——那是 CLAUDE.md §6.2 的职责。"
 ---
-
 # Self-Improvement Skill
 
 Log learnings and errors to markdown files for continuous improvement. Coding agents can later process these into fixes, and important learnings get promoted to project memory.

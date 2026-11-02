@@ -1,12 +1,6 @@
 ---
 name: skillify
-description:
-  "Capture this session's repeatable process into a reusable skill. Call at end
-  of a process you want to automate."
-when_to_use:
-  "Use when the user wants to capture, save, or turn a session workflow into a
-  reusable skill. Examples: '/skillify', 'capture this as a skill', 'turn this
-  into a skill', 'save this workflow', 'make this repeatable'"
+description: "把本次会话中可重复的流程固化成新的技能。当用户说「固化成技能」「把这个流程存成 skill」「变成一个可复用技能」「以后都这么做」「skillify」时使用，通常在流程刚跑通、准备收尾时调用。"
 allowed-tools:
   - Read
   - Write
@@ -16,12 +10,9 @@ allowed-tools:
   - AskUserQuestion
   - Bash(mkdir:*)
 user-invocable: true
-disable-model-invocation: true
+disable-model-invocation: false
 argument-hint: "[description of the process you want to capture]"
-arguments:
-  - description
 ---
-
 # Skillify
 
 You are capturing this session's repeatable process as a reusable skill.

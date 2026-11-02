@@ -1,9 +1,8 @@
 ---
 name: pdf
-description: Process, extract, create, merge, split, or OCR PDF documents programmatically. Trigger when the user mentions PDF text extraction, table extraction, merging/splitting PDFs, creating PDFs, filling forms, or OCR on scanned documents.
+description: "程序化处理 PDF 文件本身：提取文字与表格、合并、拆分、旋转、生成、填表、OCR。当用户要求对 PDF 做文件级操作时使用。若目标是把 PDF 转成结构化 Markdown（保留标题层级、表格、公式、多栏），用 mineru-pdf-parser；若只是快速摘录内容做摘要，用 summarize。"
 license: Proprietary. LICENSE.txt has complete terms
 ---
-
 # PDF Processing Guide
 
 本项目 PDF 处理指南，覆盖 Python 库（`pypdf`、`pdfplumber`、`reportlab`）和命令行工具（`qpdf`、`pdftotext`、`pdftk`）。

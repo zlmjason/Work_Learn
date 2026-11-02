@@ -147,7 +147,7 @@ MarkDown_Learn/
 ├── .kimi-code/            ← Kimi Code 项目配置
 │   ├── README.md
 │   ├── agents/            ← 自定义子代理（note-organizer、kb-reviewer）
-│   └── skills/            ← 项目技能（18 个，.claude/skills/ 的镜像副本）
+│   └── skills/            ← 项目技能（15 个，.claude/skills/ 的镜像副本）
 ├── .claude/               ← Claude Code 配置与共享资料（双工具并存）
 │   ├── CLAUDE.md          ← 项目工作指南（Claude Code 入口，与 AGENTS.md 内容一致、双向同步）
 │   ├── settings.json      ← Claude Code 钩子配置（PostToolUse doc-review 等）
@@ -379,14 +379,10 @@ MarkDown_Learn/
 | 技能 | 路径（Kimi Code 侧；Claude Code 对应 `.claude/skills/`） | 触发时机 |
 |------|------|----------|
 | docx-cn | `.kimi-code/skills/docx-cn/` | Word 文档处理（.docx） |
-| find-skills | `.kimi-code/skills/find-skills/` | 搜索/安装外部技能 |
-| context-compress | `.kimi-code/skills/context-compress/` | 上下文压缩与摘要（Kimi Code 手动 `/skill:context-compress`，Claude Code 手动 `/context-compress`，或 Hook 自动提醒） |
 | mineru-pdf-parser | `.kimi-code/skills/mineru-pdf-parser/` | PDF/Word/PPT/Excel 转 Markdown |
 | pdf | `.kimi-code/skills/pdf/` | PDF 处理指南 |
-| self-improving-agent | `.kimi-code/skills/self-improving-agent/` | 持续改进日志（强制工作流） |
+| self-improving-agent | `.kimi-code/skills/self-improving-agent/` | 记录/复盘经验（"记录经验""记一条 learning""复盘一下"）；记录时机仍由 §6.2 判定 |
 | summarize | `.kimi-code/skills/summarize/` | 内容提取/摘要 |
-| autoresearch | `.kimi-code/skills/autoresearch/` | 有明确量化指标的自动迭代优化（性能、内存、测试通过率、构建时间等） |
-| impeccable | `.kimi-code/skills/impeccable/` | 前端 UI 设计、重构、评审、打磨（页面、组件、Dashboard、表单等） |
 | obsidian-vault | `.kimi-code/skills/obsidian-vault/` | 在 Obsidian 中搜索、创建、整理笔记 |
 | note-organizer | `.kimi-code/skills/note-organizer/` | 按本规范整理 Markdown 笔记目录与命名 |
 | skillify | `.kimi-code/skills/skillify/` | 将当前会话的可重复流程捕获为新的 skill |
@@ -398,7 +394,14 @@ MarkDown_Learn/
 | kb-workflow | `.kimi-code/skills/kb-workflow/` | 工作流编排层：阶段→技能流水线表与"用前重读"纪律 |
 | aurix-build-analyze | `.kimi-code/skills/aurix-build-analyze/` | AURIX TC3xx（ADS/TASKING）工程编译与 map/ELF/HEX 链接产物分析 |
 
-> **技能结构约定**：每个技能文件夹遵循多文件结构 — `SKILL.md`（入口与触发条件）、`reference.md`（详细用法）、`gotchas.md`（陷阱与失败模式）、`config.json`（配置）、`scripts/`（可执行脚本）。参考实现：`self-improving-agent`、`context-compress`。
+> **技能结构约定**：每个技能文件夹遵循多文件结构 — `SKILL.md`（入口与触发条件）、`reference.md`（详细用法）、`gotchas.md`（陷阱与失败模式）、`config.json`（配置）、`scripts/`（可执行脚本）。参考实现：`self-improving-agent`。
+>
+> **触发面三条硬规则**（2026-11-02 清理后确立）：
+> 1. **description 是唯一触发面**。模型只能看到 `name` + `description`；放在 `when_to_use`、正文标题里的短语一律无效。
+> 2. **必须写成单行**。多行 YAML 折叠值在技能清单里只显示首行，触发词会被截断。
+> 3. **必须包含用户会说的原话**（中文短语），而不只是"当某事发生时"。事件式触发（"命令失败时""上下文将满时"）实际上不会被调用——那类判断应交给 CLAUDE.md 规则或 Hook。
+>
+> 新增技能前先问：这件事是否已经写在 CLAUDE.md 或由 Hook 自动执行？若是，就不要建技能。
 
 ### 5.2 自定义子代理
 
@@ -627,6 +630,7 @@ mineru-pdf-parser 技能（§5.1）提供基于 MinerU 云端 API 的文档解�
 
 | 日期 | 更新内容 |
 |------|---------|
+| 2026-11-02 | **技能触发面清理**：删除 4 个长期零触发的技能（`autoresearch`、`impeccable`、`context-compress`、`find-skills`，与文档库产出无交集或应交给 Hook/内建能力），技能数 19→15；`self-improving-agent` 的 `name` 由 `self-improvement` 更正为目录名，description 改为用户可说的中文短语（原为纯事件式，与 §6.2 重复导致永不触发）；`skillify` 解除 `disable-model-invocation: true` 并补触发短语；`pdf`/`summarize` 收窄触发词并互相指向，消除与 `mineru-pdf-parser` 的三方抢词；补齐 `.kimi-code/skills/` 缺失的 `purpose-driven-book-study`；统一 `note-organizer` 两份描述。§5.1 新增「触发面三条硬规则」 |
 | 2026-10-14 | **双入口统一 + 双向同步机制**：`AGENTS.md` 与 `.claude/CLAUDE.md` 合并为逐字节一致的同一份内容（泛化工具名引用；并入 CLAUDE 侧独有的 §2 核心工作原则、Obsidian 规则 12、`purpose-driven-book-study` 技能登记、`py -3` 警告，以及 Kimi 侧独有的 §5.2 自定义子代理、`.claude/memory/` 目录说明）；新增 `scripts/sync-guides.ps1` 与 git pre-commit hook——此后修改任一份，提交时自动以较新者同步另一份 |
 | 2026-08-15 | 新增技能 `purpose-driven-book-study`（GPT 版 skill 内化为多文件格式：SKILL.md+reference+gotchas+config+模板，绑定本库命名/doc-review/附件规则/对话渲染限制；另产出 Kimi Code 自包含指令版 `references/kimi-code-instruction.md`；GPT 原件归档 `90_Archive_归档/`）；记录对话渲染限制（LRN-20260815-001：对话内禁 LaTeX/Mermaid，公式纯文本、图用 ASCII） |
 | 2026-08-06 | 新增 PostToolUse hook 自动规范检查（过程检验硬护栏化）：`.claude/hooks/doc_review_on_md_edit.py` 在 Edit/Write 仓库内笔记后自动运行 doc-review 并将问题注入上下文（登记于 `.claude/settings.json`，排除附件/Inbox/归档等目录）；doc-review 校准：修复代码块闭合围栏误计 bug、必要章节 fail 限定 MCU 笔记层（新增 `strictTemplateDirs` 配置）、文件名前缀白名单补 `Agent_`/`AI_`、豁免 INDEX.md/README.md；§7 记录 Git Bash 须用 `py -3`（ERR-20260806-001） |

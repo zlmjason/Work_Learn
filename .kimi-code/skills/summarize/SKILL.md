@@ -1,9 +1,7 @@
 ---
 name: summarize
-description: Extract and summarize content from URLs, local files, PDFs, and YouTube videos. Trigger when the user asks to summarize a webpage, article, PDF, video, or any document; or mentions 'TL;DR', 'summary', 'extract content'. This project has no third-party LLM API key, so default to --print-content mode and let Kimi summarize. Do NOT use for high-fidelity conversion of PDF/Word/PPT/Excel where tables, formulas, and layout must be preserved (use mineru-pdf-parser).
-metadata:
+description: "快速摘录与摘要：网页、本地文件、PDF、YouTube 视频的内容提取与总结。当用户说「总结一下」「摘要」「提取内容」「TL;DR」「这个链接讲了什么」时使用。若需要高保真转换（表格、公式、版式），用 mineru-pdf-parser；若要对 PDF 做合并拆分等文件操作，用 pdf。本项目无第三方 LLM API key，默认 --print-content 模式。"
 ---
-
 # Summarize
 
 Windows-native CLI 替代工具，用于提取 URL、本地文件、PDF、YouTube 视频的内容。本项目**默认无第三方 LLM API 密钥**，所以通常使用 `--print-content` 模式：只提取内容，然后交给 Kimi 总结。
