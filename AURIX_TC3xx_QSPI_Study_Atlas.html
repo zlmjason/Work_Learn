@@ -1,0 +1,1395 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>AURIX TC3xx QSPI · Interactive Engineering Manual</title>
+<style>
+:root{color-scheme:light dark;--bg:#eef3f8;--paper:#fff;--paper2:#f8fafc;--ink:#12263b;--muted:#5d7288;--line:#d5e0ea;--nav:#10283d;--navInk:#edf6fc;--blue:#176fb0;--blueSoft:#e4f1fb;--green:#087e61;--greenSoft:#e3f4ee;--violet:#6752b4;--violetSoft:#eeeafb;--amber:#aa6800;--amberSoft:#fff0d1;--red:#be4638;--redSoft:#fde9e6;--shadow:0 16px 38px rgba(28,57,84,.09)}
+@media(prefers-color-scheme:dark){:root{--bg:#0d151e;--paper:#17232e;--paper2:#111c26;--ink:#eef6fb;--muted:#a9bac9;--line:#314351;--nav:#07131d;--navInk:#edf7ff;--blue:#69b8ee;--blueSoft:#19384e;--green:#62d0a9;--greenSoft:#173b33;--violet:#b6a4f4;--violetSoft:#312b50;--amber:#f2b653;--amberSoft:#493718;--red:#f18d80;--redSoft:#4a2828;--shadow:0 16px 38px rgba(0,0,0,.26)}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;line-height:1.58}button,input,select{font:inherit}button{color:inherit}.app{max-width:1500px;margin:auto;display:grid;grid-template-columns:270px minmax(0,1fr);min-height:100vh}.sidebar{position:sticky;top:0;height:100vh;background:var(--nav);color:var(--navInk);padding:26px 18px;overflow:auto}.brand{padding:0 10px 22px;border-bottom:1px solid rgba(255,255,255,.12)}.brand small{display:block;color:#84c9f3;letter-spacing:.13em;font-weight:800}.brand h1{font-size:24px;line-height:1.12;margin:7px 0}.brand p{font-size:12px;color:#b9ccda;margin:8px 0 0}.nav{display:grid;gap:7px;margin-top:18px}.nav button{width:100%;border:0;background:transparent;color:#c6d8e5;text-align:left;border-radius:12px;padding:11px 12px;cursor:pointer;display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:center}.nav button:hover{background:rgba(255,255,255,.07)}.nav button.active{background:#f5fbff;color:#12314a;font-weight:800}.nav .n{font:700 12px ui-monospace,monospace;opacity:.72}.side-note{margin:20px 8px 0;padding:13px;background:rgba(255,255,255,.07);border-radius:12px;color:#bdd0dc;font-size:12px}.content{min-width:0;padding:28px 36px 72px}.view{display:none;animation:in .2s ease-out}.view.active{display:block}@keyframes in{from{opacity:.25;transform:translateY(5px)}}.topbar{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:24px}.eyebrow{font-size:12px;letter-spacing:.13em;font-weight:900;color:var(--blue);text-transform:uppercase}.topbar h2{font-size:clamp(30px,4vw,54px);line-height:1.03;margin:7px 0 9px;letter-spacing:-.035em}.lead{max-width:850px;color:var(--muted);margin:0;font-size:16px}.stamp{white-space:nowrap;border-radius:999px;padding:7px 12px;background:var(--greenSoft);color:var(--green);font-size:11px;font-weight:900}.thesis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}.thesis article{border-radius:16px;padding:17px 18px;min-height:116px}.thesis h3{margin:0 0 5px;font-size:14px}.thesis p{margin:0;color:var(--muted);font-size:14px}.why{background:var(--blueSoft)}.what{background:var(--amberSoft)}.how{background:var(--greenSoft)}.why h3{color:var(--blue)}.what h3{color:var(--amber)}.how h3{color:var(--green)}
+.section{margin:28px 0}.section-head{display:flex;align-items:end;justify-content:space-between;gap:14px;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:13px}.section-head h3{margin:0;font-size:17px}.section-head span{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}.board{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:var(--shadow)}.board+.board{margin-top:14px}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.tile{background:var(--paper2);border:1px solid var(--line);border-radius:14px;padding:15px}.tile h4{margin:0 0 6px;font-size:15px}.tile p{margin:5px 0;color:var(--muted);font-size:14px}.tile b{color:var(--ink)}.flow{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}.node{flex:1 1 145px;min-width:0;padding:14px;border:1px solid var(--line);border-radius:13px;text-align:center;background:var(--paper2)}.node b{display:block}.node small{color:var(--muted)}.node.blue{background:var(--blueSoft);color:var(--blue)}.node.green{background:var(--greenSoft);color:var(--green)}.node.violet{background:var(--violetSoft);color:var(--violet)}.node.amber{background:var(--amberSoft);color:var(--amber)}.arrow{align-self:center;font-weight:900;font-size:22px;color:var(--muted)}.lane{display:grid;grid-template-columns:135px 1fr;gap:13px;align-items:center;margin:12px 0}.lane-label b{display:block}.lane-label small{color:var(--muted)}.rail{display:flex;align-items:stretch;gap:8px}.rail .node{flex-basis:100px}.formula{padding:13px 16px;border-radius:12px;background:var(--nav);color:var(--navInk);font:600 14px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;text-align:center;overflow-wrap:anywhere}.callout{padding:12px 14px;border-radius:12px;background:var(--amberSoft);border-left:5px solid var(--amber);font-size:14px}.callout b{color:var(--amber)}.warning{background:var(--redSoft);border-color:var(--red)}.warning b{color:var(--red)}.good{background:var(--greenSoft);border-color:var(--green)}.good b{color:var(--green)}
+.controls{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:12px 0}.field{display:grid;gap:4px;min-width:110px;flex:1}.field label{font-size:12px;font-weight:800;color:var(--muted)}.field input,.field select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink)}.button-row{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:8px 11px;cursor:pointer;font-weight:800}.btn.active,.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}.result{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--greenSoft);border-left:5px solid var(--green);border-radius:12px;padding:13px 15px}.result span{color:var(--muted)}.result strong{font-size:22px;color:var(--green);white-space:nowrap}
+.regmap{border:1px solid var(--line);border-radius:16px;background:var(--paper2);padding:14px;overflow-x:auto}.strip{min-width:740px}.strip-h{display:flex;justify-content:space-between;align-items:center;font:800 9px ui-monospace,monospace;color:var(--muted);letter-spacing:.08em;margin:0 2px 4px;text-transform:uppercase}.bitbar{display:grid;grid-template-columns:repeat(16,minmax(0,1fr));gap:2px}.bitbar+.strip-h{margin-top:8px}.bitbar .f{min-width:0;overflow:hidden;border-radius:6px;padding:8px 2px;text-align:center;font-weight:800;font-size:10px;line-height:1.16;white-space:nowrap;cursor:pointer;user-select:none;transition:box-shadow .12s,transform .12s}.bitbar .f small{display:block;font-size:8.5px;font-weight:700;opacity:.78;margin-top:2px;letter-spacing:.02em}.bitbar .f:hover,.bitbar .f.on{box-shadow:0 0 0 2px var(--ink) inset;transform:translateY(-1px)}.g-blue{background:var(--blueSoft);color:var(--blue)}.g-green{background:var(--greenSoft);color:var(--green)}.g-violet{background:var(--violetSoft);color:var(--violet)}.g-amber{background:var(--amberSoft);color:var(--amber)}.g-res{background:repeating-linear-gradient(135deg,transparent,transparent 4px,var(--line) 4px,var(--line) 5px);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}.selfcheck{margin-top:11px;font:700 11px ui-monospace,monospace;color:var(--green)}.selfcheck.bad{color:var(--red)}.table tr.hl td{background:var(--amberSoft)}
+.wave{border:1px solid var(--line);border-radius:14px;background:var(--paper2);padding:10px 8px}.wave svg{display:block;width:100%;height:auto;overflow:visible}.w-name{font:800 11px Inter,"Noto Sans SC",sans-serif;fill:var(--muted)}.w-lbl{font:800 10.5px Inter,"Noto Sans SC",sans-serif;fill:var(--ink)}.w-small{font:700 9.5px ui-monospace,Consolas,monospace;fill:var(--muted)}.w-val{font:800 10px ui-monospace,Consolas,monospace;fill:var(--ink)}.w-sig{fill:none;stroke-width:2.4;stroke-linejoin:miter;stroke-linecap:round}.s-clk{stroke:var(--blue)}.s-cs{stroke:var(--violet)}.s-mosi{stroke:var(--green)}.s-miso{stroke:var(--amber)}.w-grid{stroke:var(--line);stroke-width:1;stroke-dasharray:3 4}.w-brace{fill:none;stroke:var(--muted);stroke-width:1.4;stroke-linejoin:round}.w-samp{stroke:var(--red);stroke-width:1.5;stroke-dasharray:5 4}.w-dim{stroke:var(--muted);stroke-width:1.3;fill:none}.w-old{fill:var(--redSoft)}.w-new{fill:var(--greenSoft)}.w-band{fill:var(--blueSoft);opacity:.55}.w-band2{fill:var(--amberSoft);opacity:.55}.w-band3{fill:var(--violetSoft);opacity:.5}.w-band4{fill:var(--greenSoft);opacity:.55}.w-sep{stroke:var(--line);stroke-width:1;stroke-dasharray:4 3}.w-box{fill:var(--paper2);stroke:var(--line)}.st-vio{stroke:var(--violet)}.s-red{fill:var(--red)}.s-green{fill:var(--green)}.s-amb{fill:var(--amber)}.s-blu{fill:var(--blue)}.s-vio{fill:var(--violet)}
+.codegrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:14px;align-items:start}
+.band{fill-opacity:.62;stroke-width:2;stroke-linejoin:round}.f-mosi{fill:var(--greenSoft);stroke:var(--green)}.f-old{fill:var(--redSoft);stroke:var(--red)}.f-new{fill:var(--greenSoft);stroke:var(--green)}
+.dep .n{stroke-width:1.6}.dep .n-blue{fill:var(--blueSoft);stroke:var(--blue)}.dep .n-amber{fill:var(--amberSoft);stroke:var(--amber)}.dep .n-green{fill:var(--greenSoft);stroke:var(--green)}.dep .n-violet{fill:var(--violetSoft);stroke:var(--violet)}.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:7px}.steps li{counter-increment:s;position:relative;padding-left:30px;font-size:13.5px;color:var(--muted)}.steps li:before{content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:var(--blueSoft);color:var(--blue);display:grid;place-items:center;font:800 11px ui-monospace,monospace}.steps li b{color:var(--ink)}
+.fifo{display:grid;gap:6px}.fifo-slot{padding:9px 11px;text-align:center;border-radius:9px;background:var(--greenSoft);color:var(--green);font:800 13px ui-monospace,monospace}.fifo-slot.c{background:var(--violetSoft);color:var(--violet)}.fifo-slot.status{background:var(--blueSoft);color:var(--blue)}.burst{height:54px;display:flex;align-items:end;gap:7px;padding:0 5px;border-bottom:1px solid var(--line)}.burst i{display:block;width:22px;background:var(--blue);border-radius:4px 4px 0 0}.cadence{height:54px;display:flex;align-items:center;overflow:hidden}.cadence i{height:24px;min-width:42px;border-top:4px solid var(--green);border-right:4px solid var(--green);border-bottom:4px solid var(--green)}
+.tokens{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-height:56px}.token{padding:9px 11px;border-radius:9px;background:var(--greenSoft);color:var(--green);font:800 12px ui-monospace,monospace;border:1px solid color-mix(in srgb,var(--green),transparent 60%)}.token.c{background:var(--violetSoft);color:var(--violet);border-color:color-mix(in srgb,var(--violet),transparent 60%)}.token.gap{background:var(--amberSoft);color:var(--amber);border-color:transparent}.token.dim{background:var(--paper2);color:var(--muted);border-color:var(--line)}.tokens .arr{font-weight:900;color:var(--muted)}.csbar{height:8px;background:var(--green);border-radius:6px;position:relative;margin:25px 0 8px}.csbar:before,.csbar:after{content:"";position:absolute;width:2px;height:24px;top:-8px;background:var(--green)}.csbar:before{left:0}.csbar:after{right:0}.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px}.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}.dot.c{background:var(--violet)}.dot.d{background:var(--green)}.dot.s{background:var(--blue)}
+.state-machine{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch}.state{padding:15px;border-radius:14px;border:1px solid var(--line);background:var(--paper2);text-align:center;position:relative}.state:not(:last-child):after{content:"→";position:absolute;right:-19px;top:40%;font-weight:900;color:var(--muted);z-index:2}.state b{display:block}.state small{color:var(--muted)}
+.table-wrap{overflow:auto}.table{width:100%;border-collapse:collapse;min-width:760px}.table th,.table td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}.table th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.table tr:last-child td{border-bottom:0}.table td:first-child{font-weight:800}.table code{font-size:12px}
+.deep{display:grid;gap:10px}.deep details{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden}.deep summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:850;display:flex;gap:9px;align-items:center}.deep summary::-webkit-details-marker{display:none}.deep summary:before{content:"＋";width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:var(--blueSoft);color:var(--blue)}.deep details[open] summary:before{content:"−"}.detail-body{padding:0 17px 17px}.detail-body p{margin:7px 0}.detail-body ul,.detail-body ol{padding-left:22px;margin:8px 0}.detail-body li+li{margin-top:5px}.detail-body h4{margin:16px 0 5px;color:var(--blue)}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--nav);color:var(--navInk);padding:13px 15px;border-radius:11px;font:12px/1.6 ui-monospace,Consolas,monospace}.quiz{padding:12px 14px;border-left:5px solid var(--blue);background:var(--blueSoft);border-radius:11px;margin-top:12px}.quiz b{color:var(--blue)}.answer{color:var(--muted);margin-top:5px}.source{margin-top:24px;border-top:1px solid var(--line);padding-top:12px;color:var(--muted);font-size:12px}.chapter-tools{display:flex;justify-content:flex-end;gap:8px;margin:-10px 0 12px}.chapter-tools button{border:1px solid var(--line);background:var(--paper);border-radius:9px;padding:7px 10px;color:var(--muted);cursor:pointer;font-size:12px;font-weight:800}
+.overview-map{display:grid;grid-template-columns:1fr 100px 1.1fr 100px 1fr;gap:9px;align-items:center}.overview-map .stack{display:grid;gap:8px}.bridge{text-align:center;color:var(--muted);font-weight:900}.bridge strong{display:block;color:var(--amber);font-size:12px}.metric{font-size:30px;font-weight:900;letter-spacing:-.03em}.muted{color:var(--muted)}.mini{font-size:12px;color:var(--muted)}
+@media(max-width:1050px){.app{grid-template-columns:1fr}.sidebar{position:static;height:auto;padding:16px}.brand{padding:0 5px 12px}.nav{display:flex;overflow:auto}.nav button{min-width:170px}.side-note{display:none}.content{padding:24px 18px 60px}.overview-map{grid-template-columns:1fr}.bridge{transform:none}.lane{grid-template-columns:1fr}.rail{flex-wrap:wrap}.thesis{grid-template-columns:1fr}.state-machine{grid-template-columns:1fr 1fr}.state:nth-child(2):after{display:none}.topbar{display:block}.stamp{display:inline-block;margin-top:12px}}
+@media(max-width:620px){.content{padding:18px 12px 45px}.grid2,.grid3{grid-template-columns:1fr}.board{padding:14px}.flow{flex-direction:column}.arrow{transform:rotate(90deg);margin:auto}.state-machine{grid-template-columns:1fr}.state:not(:last-child):after{content:"↓";right:50%;top:auto;bottom:-22px}.topbar h2{font-size:32px}.result{align-items:flex-start;flex-direction:column}.result strong{font-size:19px}.rail{flex-direction:column}.chapter-tools{justify-content:flex-start;flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><small>AURIX TC3xx · QSPI</small><h1>Interactive Engineering Manual</h1><p>从时钟、队列和状态机出发，建立一套可用于驱动设计与异常定位的统一心智模型。</p></div>
+  <nav class="nav" aria-label="章节导航">
+    <button class="active" data-view="overview"><span class="n">00</span><span>整机模型：带队列的执行机</span></button>
+    <button data-view="clock"><span class="n">01</span><span>三级分频：TPER → TQ → TQz</span></button>
+    <button data-view="sampling"><span class="n">02</span><span>采样点可编程：A/B/C 拆段</span></button>
+    <button data-view="bacon"><span class="n">03</span><span>两层配置：BACON 逐帧 / ECON 驻留</span></button>
+    <button data-view="modes"><span class="n">04</span><span>数据模式：Short/Long/连续/XXL/MC</span></button>
+    <button data-view="queue"><span class="n">05</span><span>队列与 entry：类型由地址决定</span></button>
+    <button data-view="dual"><span class="n">06</span><span>双时钟域：FIFO 只吸收抖动</span></button>
+    <button data-view="flow"><span class="n">07</span><span>背压与供数：三种中断模式</span></button>
+    <button data-view="chipsel"><span class="n">08</span><span>片选子系统：16 路 + 解复用</span></button>
+    <button data-view="slave"><span class="n">09</span><span>从机模式：被动方的契约</span></button>
+    <button data-view="evt"><span class="n">10</span><span>相位事件与九类错误桶</span></button>
+    <button data-view="observ"><span class="n">11</span><span>非侵入观测：RXEXITD 与 SI</span></button>
+    <button data-view="life"><span class="n">12</span><span>停机粒度：PAUSE / sleep / 复位</span></button>
+    <button data-view="closing"><span class="n">END</span><span>设计哲学与选型表</span></button>
+    <button data-view="hsic"><span class="n">APP</span><span>附：HSIC 输入捕获</span></button>
+  </nav>
+  <div class="side-note"><b>阅读建议</b><br>先看 00 建立总图，之后按 01 → 12 顺序读——编号已经就是因果顺序。每章第一块是主视觉，后面才是工程细节；END 是收束，APP 是与 SPI 无关的附录。</div>
+</aside>
+<main class="content">
+
+<section id="overview" class="view active">
+  <div class="topbar"><div><div class="eyebrow">Chapter 00 · One mental model</div><h2>QSPI 执行模型：命令队列 + 移位引擎</h2><p class="lead">CPU/DMA 在 fSPB 域提交一串 typed commands；4×32-bit FIFO 跨越异步边界；fPER 域的状态机把 BACON、ECON 与 DATA 合成为确定的线端行为。</p></div><span class="stamp">MANUAL-CHECKED · TC3xx V2.0.0</span></div>
+  <div class="thesis"><article class="why"><h3>WHY · 为什么不是普通 SPI</h3><p>车规控制需要确定时序、DMA 批量执行、多从机 timing profile 与错误诊断，不能让 CPU 逐 word 紧跟线端节拍。</p></article><article class="what"><h3>WHAT · 核心构件</h3><p>双时钟域、typed TXFIFO、BACON/ECON 两层配置、状态机、shift register、RXFIFO 与服务请求。</p></article><article class="how"><h3>HOW · 统一执行链</h3><p>软件描述事务 → FIFO 缓冲 → 类型分派 → 通道 profile 绑定 → 帧状态机 → SCLK/MTSR/MRST/SLSO。</p></article></div>
+  <div class="section"><div class="section-head"><h3>整机主链路</h3><span>BUS SIDE → QUEUE → PROTOCOL SIDE → PINS</span></div><div class="board">
+    <div class="overview-map">
+      <div class="stack"><div class="node blue"><b>CPU / DMA · fSPB</b><small>写 BACON_ENTRY / DATA_ENTRY / MIX_ENTRY<br>读 RX_EXIT 与 STATUS</small></div><div class="tile"><div class="burst"><i style="height:18px"></i><i style="height:42px"></i><i style="height:25px"></i><i style="height:48px"></i><i style="height:20px"></i></div><p class="mini">突发、仲裁相关、服务延迟不固定</p></div></div>
+      <div class="bridge">→<strong>ASYNC CDC</strong>→</div>
+      <div class="stack"><div class="node amber"><b>TXFIFO / RXFIFO</b><small>各 4 entries × 32 bit<br>TX entry 还带隐藏类型标记</small></div><div class="grid2"><div class="fifo"><div class="fifo-slot c">C · BACON</div><div class="fifo-slot">D · DATA</div><div class="fifo-slot">D · DATA</div><div class="fifo-slot c">C · BACON</div></div><div class="fifo"><div class="fifo-slot status">S · STATUS</div><div class="fifo-slot">D · RX DATA</div><div class="fifo-slot status">S · STATUS</div><div class="fifo-slot">D · RX DATA</div></div></div></div>
+      <div class="bridge">→<strong>TYPE DISPATCH</strong>→</div>
+      <div class="stack"><div class="node violet"><b>Protocol engine · fPER</b><small>BACON + ECONz → state machine<br>DATA → shift register</small></div><div class="node green"><b>SLSO · SCLK · MTSR · MRST</b><small>确定的帧相位、移位与采样</small></div></div>
+    </div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>六个关键事实</h3><span>THE NON-NEGOTIABLES</span></div><div class="grid3">
+    <div class="tile"><div class="metric">6</div><p><b>TC39xB QSPI 实例</b><br>QSPI0…QSPI5 可并行工作；每个实例有自己的线端执行机。</p></div>
+    <div class="tile"><div class="metric">16 CS</div><p><b>每实例 16 条 SLSO</b><br>单实例同一时刻只执行当前 BACON.CS 对应的通道。</p></div>
+    <div class="tile"><div class="metric">8 ECON</div><p><b>两两共享</b><br>CSz 与 CS(z+8) 共用 ECONz；物理片选不同，timing profile 相同。</p></div>
+    <div class="tile"><div class="metric">4×32</div><p><b>固定 FIFO 组织</b><br>不是 16×8；8/16-bit 写仍占一个 32-bit entry，未写位补 0。</p></div>
+    <div class="tile"><div class="metric">2 clocks</div><p><b>fSPB 与 fPER 异步</b><br>一个决定软件服务能力，一个决定协议引擎与 SCLK 的时间基准。</p></div>
+    <div class="tile"><div class="metric">C + D</div><p><b>typed command stream</b><br>C 装载 BACON，D 进入 shift register；类型主要来自写入口。</p></div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>章节地图：编号就是阅读顺序</h3><span>CHAPTER MAP</span></div><div class="board">
+    <div class="table-wrap"><table class="table"><thead><tr><th>#</th><th>章节</th><th>前置</th><th>为什么排在这</th></tr></thead><tbody>
+      <tr><td>00</td><td>整机模型：带队列的执行机</td><td>—</td><td>先给总图，后面每章都是它的一个零件</td></tr>
+      <tr><td>01</td><td>三级分频：TPER → TQ → TQz</td><td>00</td><td>没有 TQz，后面任何波形都无从谈起</td></tr>
+      <tr><td>02</td><td>采样点可编程：A/B/C 拆段</td><td>01</td><td>用 01 的 TQz 才谈得上 A/B/C 与采样点</td></tr>
+      <tr><td>03</td><td>两层配置：BACON 逐帧 / ECON 驻留</td><td>01、02</td><td>第 02 章已经用到 ECON.A/B/C，正好接上字段层</td></tr>
+      <tr><td>04</td><td>数据模式：Short/Long/连续/XXL/MC</td><td>03</td><td>模式只用 BACON.DL/BYTE/LAST 三个位，第 03 章刚讲完</td></tr>
+      <tr><td>05</td><td>队列与 entry：类型由地址决定</td><td>03、04</td><td>知道了有哪些模式，才谈得上"每个模式该怎么排 entry"</td></tr>
+      <tr><td>06</td><td>双时钟域：FIFO 只吸收抖动</td><td>01</td><td>先有两个时钟域，才谈得上缓冲与吞吐预算</td></tr>
+      <tr><td>07</td><td>背压与供数：三种中断模式</td><td>06</td><td>知道 FIFO 只有 4 格，才需要背压与供数协议</td></tr>
+      <tr><td>08</td><td>片选子系统：16 路 + 解复用</td><td>01、04</td><td>片选延时以 TQz 计，通道选择在 BACON.CS</td></tr>
+      <tr><td>09</td><td>从机模式：被动方的契约</td><td>01、04、08</td><td>从机是主机语义的镜像，先把主机侧立住</td></tr>
+      <tr><td>10</td><td>相位事件与错误桶</td><td>03、04</td><td>事件映射的是状态机相位，错误映射的是队列行为</td></tr>
+      <tr><td>11</td><td>非侵入观测：RXEXITD 与 SI</td><td>06、10</td><td>要先知道 FIFO 与错误模型，才谈得上"怎么看"</td></tr>
+      <tr><td>12</td><td>停机粒度：PAUSE / sleep / 复位</td><td>03、06</td><td>静止点的意义来自队列与双时钟域</td></tr>
+      <tr><td>END</td><td>设计哲学与选型表</td><td>全部</td><td>收束四条设计原则 + 选型决策表</td></tr>
+    </tbody></table></div>
+    <p class="mini" style="margin:8px 2px 0">"前置"列只说明依赖关系，不影响按 00 → 12 的顺序读下去。有少量前向引用（05 用到 04 的模式名、09 用到 10 的事件编码、11 用到 12 的 PAUSE），正文里都做了交叉指引，读到时按提示跳一次即可。</p>
+    <div class="callout good" style="margin-top:12px"><b>现在编号就是阅读顺序。</b>这一版把章节按因果链重排过了：时间 → 波形 → 队列 → 配置 → 边框 → 缓冲 → 流控 → 拓扑 → 从机 → 观测 → 生命周期。表里的"前置"列只是让你知道某一章<u>依赖</u>谁，正常顺序读即可，不必跳读。</div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>一次完整事务如何串起后面各章</h3><span>END-TO-END</span></div><div class="board"><div class="state-machine"><div class="state"><b>1 · Clock budget</b><small>CCU 给出 fPER；TQ/Q/A/B/C 三级分频得到 fSCLK</small></div><div class="state"><b>2 · Describe</b><small>BACON 决定 CS/长度/边界；ECON 决定通道 timing</small></div><div class="state"><b>3 · Queue</b><small>CPU/DMA 把 C/D entries 写入 TXFIFO</small></div><div class="state"><b>4 · Execute</b><small>IDLE → LEAD → DATA → TRAIL；RX 进入 RXFIFO</small></div></div></div></div>
+  <div class="callout good"><b>核心结论：</b>QSPI 的灵魂不是“会发 SPI”，而是把不确定的 CPU/DMA 服务，与确定的串行时序隔开，并让配置和数据一起排队执行。</div>
+  <p class="source">核心依据：TC3xx UM Part 1 V2.0.0 §10.5.1（CCU：CCUCON1.CLKSELQSPI/QSPIDIV）；Part 2 V2.0.0 §37.2.4、§37.3.1、§37.3.2、§37.3.5；实例数 6 与 50 Mbit/s 取自 TC39xB Data Sheet 特征表；寄存器位域与复位值另与 iLLD 生成的 <code>IfxQspi_regdef.h</code> 交叉核对（与 UM p.37-88/89 一致）。逐条对源日期 2026-10-29。</p>
+</section>
+
+<section id="sampling" class="view">
+  <div class="topbar"><div><div class="eyebrow">Chapter 02 · Sampling &amp; channels</div><h2>位时序：A/B/C 三段的划分与采样点</h2><p class="lead">位周期、占空比、采样点被拆成三组独立参数（A/B/C），用于补偿板级闭环延迟。</p></div><span class="stamp">MASTER RX TIMING</span></div>
+  <div class="thesis"><article class="why"><h3>WHY</h3><p>SCLK 去程 + 从机 tCO + MRST 回程，使新数据晚于主机发出的 shift edge 到达。</p></article><article class="what"><h3>WHAT</h3><p>A 与 B+C 决定两个电平段；B/C 分界固定为 master 接收采样点。</p></article><article class="how"><h3>HOW</h3><p>保持 A 与 B+C 不变，只做 B↑、C↓，即可后移采样点而不改 bit period 和 duty cycle。</p></article></div>
+  <div class="section"><div class="section-head"><h3>采样窗口与 tLOOP</h3><span>WHY</span></div><div class="board">
+    <div class="flow"><div class="node blue"><b>MASTER shift edge</b><small>SCLKO 离开 MCU</small></div><div class="arrow">12 ns →</div><div class="node violet"><b>SLAVE</b><small>tCO = 21 ns</small></div><div class="arrow">12 ns →</div><div class="node green"><b>MRST valid</b><small>约 45 ns 后到 MCU</small></div></div>
+    <p class="formula">tLOOP ≈ tSCLK-flight + tCO(slave) + tMRST-flight = 12 + 21 + 12 = 45 ns</p>
+    <div class="callout"><b>矛盾：</b>若主机固定在 40 ns 采样，就会落在旧数据/切换区；整体降频虽然安全，却直接损失吞吐。</div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>交互：调整 A/B/C 与采样点位置</h3><span>WHAT + HOW</span></div><div class="board">
+    <div class="callout" style="margin-bottom:12px"><b>先说清单位，否则这一节和第 02 章的频率算例对不上：</b>本节所有 <b>TQz</b> 都指<b>通道时间量子</b>，不是 GLOBALCON.TQ。
+      <div class="formula" style="margin-top:8px">TQz = TPER × (GLOBALCON.TQ + 1) × (ECONz.Q + 1)　；　Tbit,z = (A + B + C) × TQz<br><span style="font-size:12px;opacity:.85">本节 A/B/C 均为<b>换算后的真实长度</b>（A = A_raw + 1，B/C 的 raw 即真实值）；寄存器原始编码见第 03 章字段表</span></div>
+      <p style="margin:8px 0 0">把数值接上：<b>TPER = 5 ns、GLOBALCON.TQ = 0、ECON.Q = 1</b> → TQz = 5 × 1 × 2 = <b>10 ns</b>，就是下面滑杆里的 10 ns。于是 A=4（A raw=3）、B=0、C=3 → 位周期 7 TQz = 70 ns → <b>fSCLK ≈ 14.3 MHz</b>。</p>
+      <p style="margin:6px 0 0"><b>但别把第 02 章的 50 MHz 当成这块板的可用档。</b>采样点最多落在 A+B ≤ A+B+C 处（C=0 时相等，此时采样点正好落在下一位的移位边沿），所以必须 <b>tLOOP &lt; 位周期</b>；回环 45 ns 就把 fSCLK 锁死在 <b>1/45 ns ≈ 22.2 MHz 以下</b>。50 MHz 的位周期只有 20 ns，<b>任何 A/B/C 都采不到 45 ns 之后才到的数据</b>——这也是为什么高速链路要去压回环（缩短走线、换低 tCO 的从机），而不是靠调位段硬凑。</p>
+    </div>
+    <div class="controls">
+      <div class="field"><label for="sA">A · 第一相位 = <span id="sAv">4</span> TQz</label><input id="sA" type="range" min="1" max="4" step="1" value="4"></div>
+      <div class="field"><label for="sB">B · 采样点偏移 = <span id="sBv">0</span> TQz</label><input id="sB" type="range" min="0" max="3" step="1" value="0"></div>
+      <div class="field"><label for="sC">C · 第二相位余量 = <span id="sCv">3</span> TQz</label><input id="sC" type="range" min="0" max="3" step="1" value="3"></div>
+      <div class="field"><label for="sTq">1 TQz = __ ns</label><input id="sTq" type="number" min="1" step="1" value="10"></div>
+      <div class="field"><label for="sLoop">回环延迟 tLOOP / ns</label><input id="sLoop" type="number" min="0" step="1" value="45"></div>
+    </div>
+    <div class="button-row" style="margin:8px 0 12px"><button class="btn active" data-preset="early">预设 A=4 B=0 C=3（早采样）</button><button class="btn" data-preset="late">预设 A=4 B=1 C=2（后移 1 TQz）</button></div>
+    <div id="sampleWave" class="wave"></div>
+    <div id="sampleResult" class="result" style="margin-top:12px"></div>
+    <div class="grid3" style="margin-top:14px"><div class="tile"><h4>位周期</h4><p id="bitPeriod">A+B+C = 7 TQz = 70 ns</p></div><div class="tile"><h4>Duty</h4><p id="dutyText">A 与 B+C 不变，高/低比例不变。</p></div><div class="tile"><h4>采样点</h4><p id="samplePoint">A+B = 4 TQz = 40 ns</p></div></div>
+    <div class="callout" style="margin-top:12px"><b>看图要点：</b>SCLK 的上升沿把新 bit 推出去；从机 tCO 之后 MRST 才真正翻转，所以"主机边沿"与"数据有效"之间隔着 tLOOP。A+B 决定你在哪一刻锁存——这条竖线落在红色区间就是采到旧值。</div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>从 GLOBALCON.TQ 到 16 路片选</h3><span>CHANNEL SHARING</span></div><div class="board">
+    <div class="flow"><div class="node blue"><b>GLOBALCON.TQ</b><small>模块时间量子分频<br>量子 = TPER×(TQ+1)</small></div><div class="arrow">→</div><div class="node violet"><b>ECONz.Q</b><small>通道量子分频<br>TQz = 上一级×(Q+1)</small></div><div class="arrow">→</div><div class="node amber"><b>ECONz.A/B/C</b><small>bit period · duty · sample</small></div><div class="arrow">→</div><div class="node green"><b>BACON.CS</b><small>选择 SLSO 与 ECON[CS&amp;7]</small></div></div>
+    <div class="table-wrap" style="margin-top:14px"><table class="table"><thead><tr><th>Profile</th><th>服务的片选</th><th>共享项目</th></tr></thead><tbody><tr><td>ECON0</td><td>CS0 / CS8</td><td>Q、A/B/C、CPOL/CPH、PAREN、BE</td></tr><tr><td>ECON1</td><td>CS1 / CS9</td><td>同上</td></tr><tr><td>…</td><td>…</td><td>…</td></tr><tr><td>ECON7</td><td>CS7 / CS15</td><td>同上</td></tr></tbody></table></div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>工程解释</h3><span>DEEP DIVE</span></div><div class="chapter-tools"><button data-expand>展开全部</button><button data-collapse>折叠全部</button></div><div class="deep">
+    <details open><summary>A、B、C 的寄存器编码与真实长度</summary><div class="detail-body"><ul><li>A[7:6] 编码为 0…3，对应真实 1…4 个 TQz。</li><li>B[9:8]、C[11:10] 编码为 0…3，对应真实 0…3 个 channel TQ。</li><li>若 B=0 且 C=0，硬件把 C 的有效长度强制为 1。</li><li>波特率公式中的 A+1、B、C 是由 raw field 换算后的代表值，写驱动时不要把示意图的“A=4”直接当 raw value 4。</li></ul><p class="formula">fSCLK,z = fPER / [(TQ+1)(Qz+1)(A+1+B+C)]</p></div></details>
+    <details><summary>CPOL / CPH 如何改变首尾边沿语义</summary><div class="detail-body"><p><b>CPOL</b> 决定 SCLK 空闲电平。<b>CPH=0</b> 适合从机在 CS 激活后已经提供首 bit 的情况，第一条边沿用于锁存；此时 SLSO 到首边沿的有效间隔是 <b>T_LEAD + A×TQz</b>。<b>CPH=1</b> 时第一条边沿先让从机 shift，下一条边沿再 sample；末边沿到 CS 释放的有效间隔是 <b>T_TRAIL + (B+C)×TQz</b>。<span class="mini">注意两项量纲不同：LEAD/TRAIL 以 TPER 为基（×4^PRE），A/B/C 以 TQz 为基，相加前先各自换成 ns。</span></p><p>Slave mode 的行为固定为 CPOL=0、CPH=1，A/B/C 不用于移动从机采样点；从机在 SCLKI 下降沿采样。</p></div></details>
+    <details><summary>示波器调试时应该按什么顺序调</summary><div class="detail-body"><ol><li>先按从机手册确认 CPOL/CPH，避免把“边沿选错”误诊成“采样点太早”。</li><li>用 A 与 B+C 满足 tHIGH/tLOW，并补偿 pad/走线上升下降不对称。</li><li>固定 A、固定 B+C，再把 TQ 从 C 搬到 B，逐步后移 sample point。</li><li>在电压、温度、最长走线、最大负载和从机最大 tCO 下复测。</li></ol><div class="quiz"><b>自测：</b>A=3、B=1、C=2 改为 A=3、B=2、C=1，频率会变吗？<div class="answer">不会；总和与 duty 都不变，只把采样点后移 1 个 TQz。</div></div></div></details>
+  </div></div>
+  <p class="source">依据：TC3xx UM Part 2 V2.0.0 §37.3.2.1、Figures 465–468、§37.3.2.3–37.3.2.4；CPH=0 时 SLSO→首边沿为 LEAD+A、CPH=1 时末边沿→SLSO 为 TRAIL+B+C，见 §37.3.2.2 两处 Attention。45 ns 为教学算例，不是器件保证值。</p>
+</section>
+
+<section id="clock" class="view">
+  <div class="topbar"><div><div class="eyebrow">Chapter 01 · Clock chain</div><h2>时钟链：CCU → fPER → TQz → SCLK</h2><p class="lead">CCU 决定 QSPI kernel 的大时间基准；QSPI 内部再做公共量化、通道量化和 bit segment 分配。</p></div><span class="stamp">CCU + QSPI</span></div>
+  <div class="thesis"><article class="why"><h3>WHY</h3><p>让外设 baud rate 独立于 CPU/SPB 调频，避免系统性能策略直接扰动外部协议。</p></article><article class="what"><h3>WHAT</h3><p>fQSPI 是 CCU 名称；进入 QSPI 章节后同一 kernel clock 被称为 fPER。</p></article><article class="how"><h3>HOW</h3><p>CLKSELQSPI/QSPIDIV 形成 fPER；TQ/Q/A/B/C 再形成 fSCLK,z。</p></article></div>
+  <div class="section"><div class="section-head"><h3>两条并行而不同的时钟链</h3><span>DO NOT MIX THEM</span></div><div class="board">
+    <div class="lane"><div class="lane-label"><b>协议时钟链</b><small>决定线端时序</small></div><div class="rail"><div class="node blue"><b>fOSC0 / fBACK</b><small>PLL reference / fallback</small></div><div class="arrow">→</div><div class="node violet"><b>Peripheral PLL</b><small>fPLL1 / fPLL2</small></div><div class="arrow">→</div><div class="node amber"><b>CCUCON1</b><small>CLKSELQSPI + QSPIDIV</small></div><div class="arrow">→</div><div class="node green"><b>fQSPI = fPER</b><small>protocol engine</small></div></div></div>
+    <div class="lane"><div class="lane-label"><b>用户接口链</b><small>决定软件服务能力</small></div><div class="rail"><div class="node blue"><b>System PLL / fBACK</b><small>system domain</small></div><div class="arrow">→</div><div class="node amber"><b>CCUCON0.SPBDIV</b><small>independent divider</small></div><div class="arrow">→</div><div class="node green"><b>fSPB</b><small>SFR · FIFO · IRQ · DMA handshake</small></div></div></div>
+    <div class="callout"><b>关键：</b>fSPB 与 fPER 完全异步。降低 SPB 不必改变 SCLK，但可能让 CPU/DMA 来不及服务 FIFO。</div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>QSPI 内部的 baud-rate chain</h3><span>fPER → fSCLK,z</span></div><div class="board">
+    <div class="flow"><div class="node violet"><b>fPER</b><small>CCU 输出</small></div><div class="arrow">÷</div><div class="node blue"><b>TQ+1</b><small>GLOBALCON.TQ</small></div><div class="arrow">÷</div><div class="node amber"><b>Qz+1</b><small>ECONz.Q</small></div><div class="arrow">÷</div><div class="node green"><b>A+1+B+C</b><small>ECONz segments</small></div><div class="arrow">=</div><div class="node blue"><b>fSCLK,z</b><small>pin baud rate</small></div></div>
+    <p class="formula">fSCLK,z = fPER / [(TQ+1) × (Qz+1) × (A+1+B+C)]<br>三级分频：TPER → 模块时间量子 = TPER×(TQ+1) → <b>通道时间量子 TQz = TPER×(TQ+1)×(Qz+1)</b> → 位周期 = (A+1+B+C)×TQz<br>硬件约束：(Qz+1) × (A+1+B+C) ≥ 4——注意它数的是<b>模块时间量子</b>：即位周期至少 4 × TPER × (TQ+1)，<b>不是</b> 4 个 TQz（手册 Figure 471 注）</p>
+    <div class="callout" style="margin-top:10px"><b>别把两个 TQ 弄混：</b><code>GLOBALCON.TQ</code> 是<b>模块级分频器</b>（8 bit，本实例所有通道共享）；<b>TQz</b> 是它 cascade 上 <code>ECONz.Q</code> 之后的<b>通道时间量子</b>——波形章里说"A=4 个 TQ"指的是 TQz，不是 GLOBALCON.TQ。</div>
+    <div class="controls"><div class="field"><label for="clkFper">fPER / MHz</label><input id="clkFper" type="number" min="1" value="200"></div><div class="field"><label for="clkTq">TQ raw</label><input id="clkTq" type="number" min="0" value="0"></div><div class="field"><label for="clkQ">Q raw</label><input id="clkQ" type="number" min="0" max="63" value="0"></div><div class="field"><label for="clkA">A raw 0…3</label><input id="clkA" type="number" min="0" max="3" value="0"></div><div class="field"><label for="clkB">B raw 0…3</label><input id="clkB" type="number" min="0" max="3" value="1"></div><div class="field"><label for="clkC">C raw 0…3</label><input id="clkC" type="number" min="0" max="3" value="2"></div></div>
+    <div class="result"><span id="clkExplain">总除数 4 · 符合最小 bit-time 约束</span><strong id="clkResult">50.000 MHz</strong></div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>工程解释</h3><span>DEEP DIVE</span></div><div class="chapter-tools"><button data-expand>展开全部</button><button data-collapse>折叠全部</button></div><div class="deep">
+    <details open><summary>CLKSELQSPI 与 QSPIDIV 的合法设置</summary><div class="detail-body"><table class="table"><thead><tr><th>字段</th><th>合法值</th><th>含义</th></tr></thead><tbody><tr><td>CLKSELQSPI</td><td>00 / 01 / 10</td><td>stop / fsource1 / fsource2；11 保留</td></tr><tr><td>QSPIDIV</td><td>0,1,2,3,4,5,6,8,10,12,15</td><td>0 停钟；其他为对应整数分频；7/9/11/13/14 保留</td></tr></tbody></table><p>在两个非零 source 之间切换时，手册要求先切到 00（停钟），再切换到新 source，避免跨源直接切换产生不可控脉冲。</p></div></details>
+    <details><summary>为什么同一个时钟在两章里叫 fQSPI 和 fPER</summary><div class="detail-body"><p>CCU 从全芯片视角把输出命名为 <b>fQSPI</b>；QSPI IP 章节从模块内部视角把进入状态机域的时钟称为 <b>fPER</b>。手册 §37.3.1 明确说明：CCU overview 中的 fQSPI，在本章作为 fPER 引用。二者不是两级额外分频。</p></div></details>
+    <details><summary>建议的时钟初始化顺序</summary><div class="detail-body"><ol><li>确保目标 QSPI 没有正在运行的 frame。</li><li>等待 CCUCON1.LCK=0，写 CLKSELQSPI=00B（停钟）。<b>寄存器没有 UP 位</b>：写操作本身会置起 LCK，改动被执行后硬件自动释放该位。</li><li>再写 CLKSELQSPI=目标源 + QSPIDIV；同样等 LCK 回到 0 再继续。</li><li>配置 GLOBALCON.TQ；再配置各 ECONz.Q/A/B/C。</li><li>用示波器确认 SCLK 频率、duty、CS lead/trail，而不是只相信寄存器计算。</li></ol><div class="quiz"><b>自测：</b>只把 SPBDIV 从 2 改为 4，SCLK 一定减半吗？<div class="answer">不一定。若 QSPI 的独立 fQSPI 支路未变，fPER 与 SCLK 可保持不变；受影响的是总线侧 FIFO 服务能力。</div></div></div></details>
+  </div></div>
+  <p class="source">依据：Part 1 §10.5.1、CCUCON1.CLKSELQSPI/QSPIDIV；Part 2 §37.3.1、§37.3.2.3–37.3.2.4。</p>
+</section>
+
+<section id="dual" class="view">
+  <div class="topbar"><div><div class="eyebrow">Chapter 06 · Dual-clock architecture</div><h2>跨时钟域缓冲：4×32 FIFO 与吞吐预算</h2><p class="lead">总线侧服务是突发的，线端消费是连续的。设计的本质是同时满足平均吞吐与最坏服务延迟。</p></div><span class="stamp">THROUGHPUT BUDGET</span></div>
+  <div class="thesis"><article class="why"><h3>WHY</h3><p>让 SCLK 不被 CPU cache miss、总线仲裁、DMA 冲突和中断抖动直接扰动。</p></article><article class="what"><h3>WHAT</h3><p>fSPB user interface 与 fPER protocol engine 之间，用 4×32 TX/RX FIFO 和 CDC 状态桥接。</p></article><article class="how"><h3>HOW</h3><p>FIFO 覆盖短时 jitter；系统仍须保证平均 refill/drain rate 与最坏 latency 两个条件。</p></article></div>
+  <div class="section"><div class="section-head"><h3>两个域、两种节奏</h3><span>PRODUCER / CONSUMER</span></div><div class="board"><div class="grid3">
+    <div class="tile"><h4 style="color:var(--blue)">SYSTEM / BUS · fSPB</h4><p>CPU/DMA 以 32-bit moves 生产 TX entries、消费 RX entries。</p><div class="burst"><i style="height:14px"></i><i style="height:40px"></i><i style="height:19px"></i><i style="height:48px"></i><i style="height:24px"></i><i style="height:43px"></i></div><p class="mini">service latency 可变</p></div>
+    <div class="tile"><h4 style="color:var(--amber)">ASYNC FIFO BOUNDARY</h4><div class="grid2"><div><p class="mini">TXFIFO · 4×32</p><div class="fifo"><div class="fifo-slot c">C</div><div class="fifo-slot">D</div><div class="fifo-slot">D</div><div class="fifo-slot">D</div></div></div><div><p class="mini">RXFIFO · 4×32</p><div class="fifo"><div class="fifo-slot status">S</div><div class="fifo-slot">D</div><div class="fifo-slot status">S</div><div class="fifo-slot">D</div></div></div></div></div>
+    <div class="tile"><h4 style="color:var(--green)">PROTOCOL ENGINE · fPER</h4><p>状态机与 shift register 按 fSCLK 的确定节拍消费/产生 bit。</p><div class="cadence"><i></i><i></i><i></i><i></i><i></i></div><p class="mini">constant wire cadence</p></div>
+  </div><div class="callout warning" style="margin-top:14px"><b>FIFO absorbs jitter — not average deficit.</b> 平均服务速率不足时，FIFO 只会把最终错误推迟。</div></div></div>
+  <div class="section"><div class="section-head"><h3>交互：4 个 DATA entry 能覆盖的 DMA 延迟</h3><span>HEADROOM</span></div><div class="board">
+    <div class="controls"><div class="field"><label for="hrBits">每 entry 有效 bit</label><select id="hrBits"><option value="8">8 bit</option><option value="16">16 bit</option><option value="32" selected>32 bit</option></select></div><div class="field"><label for="hrClock">fSCLK / MHz</label><input id="hrClock" type="number" min=".1" step=".1" value="50"></div><div class="field"><label for="hrEntries">可用 DATA entries</label><input id="hrEntries" type="number" min="1" max="4" value="4"></div></div>
+    <div class="result"><span>理想 headroom：entries × bits / fSCLK</span><strong id="hrResult">2.56 μs</strong></div><p class="mini">这是<b>全是 DATA</b> 时的上限。首 burst 还要占 1 个 BACON，4 个 entry 实际只有 3 个 DATA（3×32/50 MHz = <b>1.92 μs</b>）；此外未计入 IDLE/LEAD/TRAIL、parity 与末尾不足 32-bit 的 packing，仅用于建立数量级。</p>
+    <div class="grid2" style="margin-top:14px"><div class="callout good"><b>TX：</b>平均 refill rate ≥ consume rate；最坏 DMA latency &lt; 剩余 DATA headroom。</div><div class="callout"><b>RX：</b>平均 drain rate ≥ receive rate；最坏服务 latency &lt; 剩余 free entries。</div></div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>工程解释</h3><span>FAILURE MODES</span></div><div class="chapter-tools"><button data-expand>展开全部</button><button data-collapse>折叠全部</button></div><div class="deep">
+    <details open><summary>4×32 固定组织意味着什么</summary><div class="detail-body"><p>8-bit 或 16-bit FPI 写会把数据 1:1 放在 32-bit entry 的相应位置，其余位补 0，但 filling level 仍增加 1。也就是说：传 4 个 8-bit short words 会用完 4 个 entries，而不是“只用了 32 bit，所以还能写 12 个 byte”。</p><table class="table"><thead><tr><th>线端数据</th><th>50 MHz 下单 entry 时间</th><th>4 entries</th></tr></thead><tbody><tr><td>8 bit</td><td>160 ns</td><td>0.64 μs</td></tr><tr><td>16 bit</td><td>320 ns</td><td>1.28 μs</td></tr><tr><td>32 bit</td><td>640 ns</td><td>2.56 μs</td></tr></tbody></table></div></details>
+    <details><summary>Master 与 Slave 的 overflow / underflow 行为不同</summary><div class="detail-body"><ul><li>软件向满 TXFIFO 写：TX overflow，写入被忽略。</li><li>软件读空 RXFIFO：RX underflow，并返回全 1。</li><li>硬件向满 RXFIFO 写：RX overflow，本次写入被忽略。</li><li>Master 且 SRF=1：RXFIFO full 时协议可以暂停等待空间。</li><li>Slave 无法停止外部 SCLK，SRF 被忽略；TX underflow 时对外移出全 1。</li></ul></div></details>
+    <details><summary>跨域为什么会让某些状态看起来“慢半拍”</summary><div class="detail-body"><p>FIFO pointers、MC.CURRENT 与 phase/status 要从 fPER 域同步到 fSPB 域。同步链避免亚稳传播，却引入若干周期的可见延迟。手册对 MC.CURRENT 明确提示：更新会因异步 shift-engine domain 延迟若干周期。因此用这些状态做调试很合适，但不要假定它们与 pin edge 同周期更新。</p></div></details>
+    <details><summary>DMA/中断阈值的工程设置</summary><div class="detail-body"><ol><li>先算平均 entry rate：考虑 data packing、BACON entries、RX status injection。</li><li>测或估计最坏 DMA request-to-write/read latency，而不是平均 latency。</li><li>TX 在 FIFO 仍有余量时提前请求；RX 在尚有足够 free space 时请求 drain。</li><li>错误 ISR 同时快照 ERRORFLAGS、FIFO levels、PHASE、DMA channel source/destination 与当前 BACON。</li></ol><div class="quiz"><b>自测：</b>把 FIFO 深度增大 4 倍，能否修复平均 DMA refill rate 小于线端消耗率？<div class="answer">不能，只会更晚 starvation；长期吞吐缺口仍然存在。</div></div></div></details>
+  </div></div>
+  <p class="source">依据：Part 2 §37.3.1、§37.3.5.1、STATUS/FIFO interrupt 与 Move Counter 描述。</p>
+</section>
+
+<section id="modes" class="view">
+  <div class="topbar"><div><div class="eyebrow">Chapter 04 · Data modes</div><h2>数据模式分类：block 长度、CS 生命周期、结束条件</h2><p class="lead">数据模式由三个参数区分：block 长度、CS 是否跨 block 保持、结束条件由谁判定。</p></div><span class="stamp">WIRE-LEVEL GRAMMAR</span></div>
+  <div class="thesis"><article class="why"><h3>WHY</h3><p>寄存器命令、几十字节 burst、Flash payload 与 daisy-chain 的边界条件不同，单一长度模型会浪费配置和 DMA 带宽。</p></article><article class="what"><h3>WHAT</h3><p>Short/Long 定义 block size；Continuous 定义 CS lifetime；XXL/Move Counter 定义大流的 end condition。</p></article><article class="how"><h3>HOW</h3><p>BACON.BYTE/DL/LAST 与 XXLCON、MCCON 共同决定 state machine 如何消费 entries。</p></article></div>
+  <div class="section"><div class="section-head"><h3>交互：各模式的 FIFO recipe 与线端生命周期</h3><span>MODE EXPLORER</span></div><div class="board">
+    <div id="modeButtons" class="button-row"><button class="btn active" data-mode="short">SHORT</button><button class="btn" data-mode="long">LONG</button><button class="btn" data-mode="cshort">CONTINUOUS SHORT</button><button class="btn" data-mode="clong">CONTINUOUS LONG</button><button class="btn" data-mode="single">ONE CONFIG · MANY FRAMES</button><button class="btn" data-mode="xxl">XXL</button><button class="btn" data-mode="mc">MOVE COUNTER</button></div>
+    <div class="csbar"></div><div class="legend"><span>CS asserted</span><span id="modeEnd">TRAIL → release CS</span></div>
+    <div id="modeTokens" class="tokens" aria-live="polite"></div>
+    <div class="grid3" style="margin-top:14px"><div class="tile"><h4>配置条件</h4><p id="modeConfig"></p></div><div class="tile"><h4>结束条件</h4><p id="modeFinish"></p></div><div class="tile"><h4>Best fit</h4><p id="modeUse"></p></div></div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>软件操作顺序（寄存器级）</h3><span>SOFTWARE RECIPE</span></div><div class="board">
+    <div class="codegrid">
+      <div><h4>操作顺序</h4><ol id="modeSteps" class="steps"></ol></div>
+      <div><h4>示意代码 · TC3xx iLLD 风格</h4><pre><code id="modeCode"></code></pre></div>
+    </div>
+    <div id="modeDma" class="callout good" style="margin-top:12px"></div>
+    <div id="modePit" class="callout warning" style="margin-top:10px"></div>
+    <p class="mini" style="margin:11px 0 0">代码为示意：寄存器名与字段名取自 TC3xx iLLD（<code>QSPI0-&gt;BACONENTRY.U</code>、<code>DATAENTRY[0]</code>、<code>ECON[z]</code>），模块实例名随派生型号不同。真正要记住的不是 API，而是两条：<b>一次写 = 恰好一个 entry</b>，以及 <b>C 必须在它描述的 D 之前</b>。</p>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>LAST=0 之后发生了什么：TRAIL 是下限，WAIT/EXPECT 才是不定长的那段</h3><span>TRAIL vs WAIT</span></div><div class="board">
+    <div class="formula">DATA → TRAIL（定时长）→ WAIT / EXPECT（不定长）→ 下一个 block</div>
+    <div class="callout" style="margin-top:12px"><b>手册对 WAIT 的定义：</b>"The WAIT phase is simply a loop waiting for a write to the Tx FIFO, <b>without predefined duration</b>, and consequently without a defining bit field."（§37.3.2.1）</div>
+    <div class="table-wrap" style="margin-top:12px"><table class="table"><thead><tr><th>情况</th><th>block 之间的实际间隔</th><th>说明</th></tr></thead><tbody>
+      <tr><td>下一个 entry 已经在 FIFO 里</td><td><b>TRAIL</b></td><td>EXPECT 状态时长为 0，TRAIL 结束即开始下一块</td></tr>
+      <tr><td>FIFO 暂时为空、稍后写入</td><td><b>TRAIL + 等待时间</b></td><td>等待时间取决于 CPU/DMA 何时写，<b>无法由寄存器预设</b></td></tr>
+      <tr><td>一直没有数据（Long / Continuous）</td><td rowspan="2"><b>不确定</b></td><td>进入 EXPECT 并启超时计数（<code>GLOBALCON.EXPECT</code>，2⁶…2²¹ TPER）；超时后<b>帧停住但 SLSO 不释放</b>、置 <code>ERRORFLAGS[7]</code>、循环等软件介入</td></tr>
+      <tr><td>一直没有数据（Short）</td><td>Short 模式不经过 EXPECT，直接停在 WAIT 等写入</td></tr>
+    </tbody></table></div>
+    <div class="callout warning" style="margin-top:12px"><b>超时计数从哪一刻开始（§37.3.2.6 原文）：</b>"after one FIFO entry has been shifted out and the module expects more bits to shift, according to the BACON.DL, <b>a time-out counting starts</b>." 锚点是<b>当前 entry 全部移完、且还需继续移位</b>那一刻——不是帧开始，也不是 TRAIL 结束。若那一刻下一个 entry 已在 FIFO 里，EXPECT 时长为 0，计数等于没启动。图 476 的状态序列是 Data → Trailing → Expect，TRAIL 这段固定延时照走。</div>
+    <div class="callout" style="margin-top:10px"><b>超时后的行为：</b>帧停止但 SLSO 不撤；报 TO 中断并置 <code>ERRORFLAGS[7]</code>；状态机<b>留在 EXPECT 里循环</b>，原文 "generating an interrupt signal after each expect time interval"——即每个超时窗口再报一次，直到软件介入。<br>超时值 <code>GLOBALCON.EXPECT[13:10]</code> 是<b>指数编码</b>：0H=2⁶ … FH=2²¹（单位 TQSPI，即 TPER），不是线性刻度。</div>
+    <div class="callout good" style="margin-top:12px"><b>所以这句话要改成：</b>TRAIL 是 block 间的<b>最小</b>间隔，不是实际间隔。用连续模式做流控时，真正的时序预算是"TRAIL + 供给延迟"，只算 TRAIL 会把最坏情况估短。</div>
+    <div class="callout warning" style="margin-top:10px"><b>另一个后果：</b>EXPECT 超时后 SLSO 仍保持有效——外部从机看到的是"片选一直拉着、时钟停住"。如果从机有自己的超时保护，这段时间可能触发从机侧错误，需要在系统层面对齐。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>物理 FIFO 与逻辑 block</h3><span>PHYSICAL VS LOGICAL</span></div><div class="board"><div class="grid2"><div><h4>物理层：永远是 4×32-bit</h4><div class="fifo"><div class="fifo-slot">ENTRY 3 · 32 bit</div><div class="fifo-slot">ENTRY 2 · 32 bit</div><div class="fifo-slot">ENTRY 1 · 32 bit</div><div class="fifo-slot">ENTRY 0 · 32 bit</div></div></div><div><h4>逻辑层：block 可以跨多个 entries</h4><div class="tokens"><span class="token">d0 · 32b</span><span class="arr">+</span><span class="token">d1 · 32b</span><span class="arr">+</span><span class="token">rest</span><span class="arr">=</span><span class="token c">LONG D block</span></div><div class="callout" style="margin-top:12px"><b>例：</b>10-byte Long block 需要 ceil(10/4)=3 个 DATA entries；最后一个 entry 只使用 2 bytes。</div></div></div></div></div>
+  <div class="section"><div class="section-head"><h3>Long 模式：一块跨多个 entry，SCLK 是否连续取决于供数</h3><span>D = ddddddb</span></div><div class="board">
+    <div class="formula">D = d d d d d b　（d = 满 32-bit entry，b = 末尾残余 entry）</div>
+    <p style="margin-top:12px">手册原文："One 'D' is made of a number of 32-bit TXFIFO entries 'd' and one rest at the end 'b'." <b>DL 定义的是整块字节数，不是单个 entry 的长度</b>；硬件按 DL 连续消耗多个 entry。</p>
+    <div class="grid2" style="margin-top:14px">
+      <div class="tile"><h4>DL = 5 字节（40 bit）</h4><p>需要 <b>ceil(5/4) = 2 个 entry</b>：entry0 = 4 字节（32 bit），entry1 = 1 字节（8 bit，只有低字节有效）。线上共 <b>40 个 SCLK</b>。</p></div>
+      <div class="tile"><h4>DL = 32 字节（256 bit，上限）</h4><p>需要 <b>8 个 entry</b>，全部是满 32-bit。<b>超过 32 字节</b>就要转 XXL（DL=0 + XXLCON.XDL）。</p></div>
+    </div>
+    <div id="longWave" class="wave" style="margin-top:14px"></div>
+    <div class="callout" style="margin-top:12px"><b>关键结论：entry 边界本身不插 gap。</b>只要下一个 entry 在需要的那一刻已在 FIFO 里（EXPECT 时长 = 0），40 个 bit 就是<b>连续</b>发出的，SCLK 不停。bit 与 bit 之间没有分段，从机看到的就是一个 40 拍的连续帧。</div>
+    <div class="callout warning" style="margin-top:10px"><b>唯一的断点：供给不及时。</b>若在 entry 边界处 FIFO 为空，硬件进入 EXPECT、<b>SCLK 停住</b>，等数据到了再继续（见第 05 章的 TRAIL/WAIT 说明）。这段停顿可能远长于一个 bit，部分从机会判为超时；因此 DMA 必须按 entry 速率提前供数，而不是等中断再补。</div>
+    <div class="callout" style="margin-top:10px"><b>残余 entry 与 MSB：一条容易被读反的手册要求</b><br><code>BACON.MSB</code> 的描述里写着：<i>"If the MSB option is set, and the data is a block longer than 32 bits, the block must be fed into the TXFIFO in reverse direction, from the end of the block until its beginning."</i> 这句对应的是“每字内字节倒置”这个动作，具体见下面两种构造方式。</div>
+        <div class="callout" style="margin-top:10px"><b>拆开看：目标、直接写法、从字节数组构造</b><br><b>目标</b>只有一个——线上依次发出 <code>01 02 03 04 05 06 07 08 09 0A</code>（40 bit）。实现有两条路：</div>
+    <p style="margin:10px 0 4px"><b>方法 1 · 直接按字写入（推荐）</b>：把要发的字直接写成 32-bit 常量。</p>
+    <pre><code>QSPI0->DATAENTRY[0].U = 0x01020304u;   /* 第 1~4 字节 */
+QSPI0->DATAENTRY[0].U = 0x05060708u;   /* 第 5~8 字节 */
+QSPI0->DATAENTRY[0].U = 0x0000090Au;   /* 残余字：有效字节在低位，高位补 0 */</code></pre>
+    <p style="margin:12px 0 4px"><b>方法 2 · 从 <code>uint8_t</code> 数组构造</b>：若数据本来就在字节数组里（如 DMA 源缓冲），必须让“按 32-bit 小端读出来的值”正好等于方法 1 的三个字。也就是<b>每个字内部把字节倒着放</b>：</p>
+    <pre><code>/* 每个 32-bit 字内部：低地址放低字节 */
+uint8_t data[10] = { 0x04,0x03,0x02,0x01,   /* → 0x01020304 */
+                     0x08,0x07,0x06,0x05,   /* → 0x05060708 */
+                     0x0A,0x09 };           /* → 0x0000090A */
+
+QSPI0->DATAENTRY[0].U = *(uint32_t *)&amp;data[0];   /* 0x01020304 */
+QSPI0->DATAENTRY[0].U = *(uint32_t *)&amp;data[4];   /* 0x05060708 */
+QSPI0->DATAENTRY[0].U = *(uint32_t *)&amp;data[8];   /* 见下方注意 */</code></pre>
+    <div class="callout warning" style="margin-top:10px"><b>方法 2 的两个前提：</b>①<code>data[]</code> 必须 <b>4 字节对齐</b>（否则强制转换在 TriCore 上可能触发对齐 Trap）；②末尾只剩 2 字节，<code>*(uint32_t*)&amp;data[8]</code> 会越界读 2 字节——应把数组补到 12 字节并置 0，或用 <code>*(uint16_t*)&amp;data[8]</code> 读出后高位补 0。</div>
+    <div class="callout good" style="margin-top:10px"><b>手册那句 "reverse direction, from the end of the block until its beginning" 对应的是方法 2 里的“每字内字节倒置”</b>——把按发送顺序排的 <code>01 02 … 0A</code> 变成 <code>04 03 02 01 …</code>。它不是让你把残余字先写：三种方法下 entry 的<b>写入顺序都是第 1、2、3 个字</b>。</div>
+    <div class="callout" style="margin-top:10px"><b>如果不想手工倒字节：</b>把源数组保持发送顺序，改用 <code>ECON.BE</code> 在数据通路上做字节置换——但 BE 的置换粒度是 16/32-bit 且作用于整个通道，要先确认它与你其余从机的字节序要求不冲突。</div>
+
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>精确模式对照</h3><span>DECISION TABLE</span></div><div class="board table-wrap"><table class="table"><thead><tr><th>模式</th><th>启动条件</th><th>block / frame</th><th>终止</th><th>推荐场景</th></tr></thead><tbody><tr><td>Short</td><td>BYTE=0，典型 LAST=1</td><td>一个 D = 2…32 bit</td><td>该 block 完成并 TRAIL</td><td>ADC/传感器/寄存器命令</td></tr><tr><td>Long</td><td>BYTE=1，LAST=1</td><td>一个 D block = 2…32 byte</td><td>DL byte count 完成</td><td>中等 packet</td></tr><tr><td>Continuous</td><td>首 BACON.LAST=0</td><td>多个 short/long blocks 共用一次 CS active window</td><td>最终 BACON.LAST=1</td><td>连续流、CS 不可抖动设备</td></tr><tr><td>XXL</td><td>BYTE=1、DL=0</td><td>一个超长 block = 2…65,536 byte</td><td>XXLCON.BYTECOUNT→0</td><td>Flash/display 大 payload</td></tr><tr><td>Move Counter</td><td>MCEN=1、BYTE=0、LAST=0</td><td>1…8191 个 DATA moves</td><td>MC.CURRENT→0 自动释放 SLSO</td><td>固定 DMA move 数、daisy-chain</td></tr></tbody></table></div></div>
+  <div class="section"><div class="section-head"><h3>工程解释</h3><span>DEEP DIVE</span></div><div class="chapter-tools"><button data-expand>展开全部</button><button data-collapse>折叠全部</button></div><div class="deep">
+    <details open><summary>Short 中“额外 DATA 自动复用配置”是什么意思</summary><div class="detail-body"><p>当一个 short frame 完成后，如果 TXFIFO 还有 DATA entries，QSPI 可以使用上一份 configuration 自动开始新的 short frame。这不是说 FIFO 自动变成 16×8，也不是任意模式都复用；Long mode 完成声明的 block 后，额外数据不会被视为同一 block。</p></div></details>
+    <details><summary>Continuous mode 的本质是 CS 生命周期，不是新数据宽度</summary><div class="detail-body"><p>Continuous 可以承载 short blocks，也可以承载 long blocks。LAST=0 时 SLSO 不释放，TRAIL 仍是每个 block 末尾的固定延时——它只决定 block 之间的**最小**间隔，不是实际间隔，SLSO 不释放；最终 LAST=1 时 TRAIL 才成为 frame 尾部并释放 SLSO。Long continuous 通常每个 block 仍需要 BACON，使用较大的 long block 可降低配置开销。</p></div></details>
+    <details><summary>XXL 与 Move Counter 为什么同时存在</summary><div class="detail-body"><table class="table"><thead><tr><th></th><th>XXL</th><th>Move Counter</th></tr></thead><tbody><tr><td>计数单位</td><td>byte</td><td>DATA moves</td></tr><tr><td>范围</td><td>2…65,536 bytes</td><td>1…8191 moves</td></tr><tr><td>状态</td><td>BYTECOUNT</td><td>CURRENT、IBL、IAL</td></tr><tr><td>入口</td><td>dedicated C/D</td><td>dedicated C/D</td></tr></tbody></table><p>IBL 在倒数第二个 move 完成后提示，IAL 在最后一个完成后提示；它们适合提前准备流尾动作和确认数据已真正移出。</p></div></details>
+    <details><summary>应用选择例子</summary><div class="detail-body"><ul><li>16-bit resolver/ADC command：Short。</li><li>Gate-driver 32-bit 配置：Short + LAST=1。</li><li>24-byte display block：Long。</li><li>Flash page program：Continuous Long 或 XXL，取决于是否需要分 block 改配置。</li><li>多个 ≤16-bit DAC samples、同一配置：One-config-many-frames。</li><li>Daisy-chain 多器件固定 word 数：Move Counter。</li></ul><div class="quiz"><b>自测：</b>Continuous Short 与 One-config-many-frames 是否完全相同？<div class="answer">不相同。前者是标准 C-D-C-D grammar，可逐 block 改 BACON；后者用一次 BACON + 多个 ≤16-bit MIX data，重点是节省重复配置。</div></div></div></details>
+  </div></div>
+  <p class="source">依据：TC3xx UM Part 2 V2.0.0 §37.3.5.1（short 模式帧满后自动以同一配置重启、long 模式忽略多余数据、FIFO 错误条件）、§37.3.5.1.1–37.3.5.1.3（三种模式定义）、§37.3.5.1.4（单配置多帧）、XXLCON（058H）、MC（0A4H）/MCCON。</p>
+</section>
+
+<section id="queue" class="view">
+  <div class="topbar"><div><div class="eyebrow">Chapter 05 · Queue command stream</div><h2>队列指令流：配置项 C 与数据项 D</h2><p class="lead">软件提交 transaction recipe；硬件依据隐藏类型标记自动把 C 分派给 BACON，把 D 分派给 shift register。</p></div><span class="stamp">QUEUE SUPPORT</span></div>
+  <div class="thesis"><article class="why"><h3>WHY</h3><p>预装多帧、逐帧换 CS/长度/边界，并把线端执行从 CPU bit-banging 式服务中卸载出来。</p></article><article class="what"><h3>WHAT</h3><p>三个写入口、一个 typed TXFIFO、BACON register、shift register 与 ECON profile。</p></article><article class="how"><h3>HOW</h3><p>地址译码/模式 parser 产生 TFLAG；出队后 C/D 被分派到不同目的地。</p></article></div>
+  <div class="section"><div class="section-head"><h3>三个写入口到线端序列</h3><span>END-TO-END DATAFLOW</span></div><div class="board">
+    <div class="flow"><div class="node blue"><b>CPU / DMA · fSPB</b><small>BACON_ENTRY<br>DATA_ENTRY0…7<br>MIX_ENTRY</small></div><div class="arrow">enqueue</div><div class="node amber"><b>TXFIFO · 4×32</b><small>value + hidden TFLAG</small></div><div class="arrow">dequeue</div><div class="node violet"><b>C → BACON</b><small>frame descriptor</small></div><div class="node green"><b>D → SHIFT REG</b><small>serial payload</small></div></div>
+    <div class="callout" style="margin-top:14px"><b>关键：</b>数值内容通常不是身份。写 BACON_ENTRY 就产生 C；写 DATA_ENTRY 就产生 D；只有 MIX_ENTRY 需要 parser rules。</div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>交互：单步执行命令队列</h3><span>STEP THROUGH</span></div><div class="grid2">
+    <div class="board"><h4>RAM / DMA recipe</h4><div id="queueRecipe" class="fifo"></div><div class="button-row" style="margin-top:12px"><button id="queueStep" class="btn primary">执行下一项</button><button id="queueReset" class="btn">复位</button></div></div>
+    <div class="board"><h4>Hardware destinations</h4><div class="grid2"><div class="tile"><h4 style="color:var(--violet)">BACON register</h4><p id="queueBacon">尚未加载</p></div><div class="tile"><h4 style="color:var(--green)">Shift register</h4><p id="queueShift">等待 DATA</p></div></div><div id="queueStatus" class="callout" style="margin-top:12px"><b>READY：</b>队首 configuration 将装载 frame descriptor。</div><h4 style="margin-bottom:5px">Wire result</h4><div id="queueWire" class="tokens"></div></div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>帧边界：LAST 的作用</h3><span>LAST CONTROLS CS</span></div><div class="board"><div class="tokens"><span class="token c">C · A · CS2 · LAST=0</span><span class="arr">→</span><span class="token">D · A0</span><span class="arr">→</span><span class="token">D · A1</span><span class="arr">→</span><span class="token c">C · A · CS2 · LAST=1</span><span class="arr">→</span><span class="token">D · A2</span><span class="arr">→</span><span class="token c">C · B · CS5</span><span class="arr">→</span><span class="token">D · B0</span></div><div class="csbar"></div><div class="grid2"><p><b>FRAME A：</b>CS2 在 A0/A1/A2 间保持；最终 LAST=1 的 A2 后释放。</p><p><b>FRAME B：</b>新 BACON 选择 CS5，并自动绑定 ECON5。</p></div></div></div>
+  <div class="section"><div class="section-head"><h3>工程解释</h3><span>DEEP DIVE</span></div><div class="chapter-tools"><button data-expand>展开全部</button><button data-collapse>折叠全部</button></div><div class="deep">
+    <details open><summary>一个 entry 从 SPB 写入到引脚输出的完整路径</summary><div class="detail-body"><ol><li>fSPB 地址译码识别写入口并生成 C/D 类型。</li><li>32-bit value 与 TFLAG 一同写入 4-entry TXFIFO。</li><li>FIFO 指针跨越 fSPB/fPER 异步边界。</li><li>出队时 C 装 BACON，D 装 shift register。</li><li>BACON.CS 同时选择 SLSO[CS] 和 ECON[CS&amp;7]。</li><li>状态机执行 IDLEA/B → LEAD → DATA → TRAIL，并把接收值/可选 STATUS 放入 RXFIFO。</li></ol></div></details>
+    <details><summary>为什么 BACON 会 pending</summary><div class="detail-body"><p>如果新 C 已经出队装入 BACON，但其所需 D 尚未到达，状态机不能凭空开始有效 frame，于是 configuration 保持 pending。Continuous 场景中 DATA 供给不及时还可能进入 EXPECT；因此调试“CS 活着但不出 SCLK”时，要同时看 TXFIFOLEVEL、当前 PHASE、EXPECT 与 DMA request。</p></div></details>
+    <details><summary>SoQ / SoF / EoF / EoQ 不在同一个层级</summary><div class="detail-body"><table class="table"><thead><tr><th>事件</th><th>真实含义</th></tr></thead><tbody><tr><td>SoQ</td><td>队列序列开始，不等于第一条 SCLK 已出现</td></tr><tr><td>SoF</td><td>frame 的线端启动流程开始</td></tr><tr><td>EoF</td><td>frame 在线端完成，不是 DATA 刚写入 FIFO</td></tr><tr><td>EoQ</td><td>当前 queue sequence 结束</td></tr></tbody></table><p>控制外部 enable、复用引脚或通知上层“真正发送完成”时，要选 EoF/EoQ，而不是简单使用 FIFO-not-full。</p></div></details>
+    <details><summary>推荐的 CPU / DMA 分工</summary><div class="detail-body"><ul><li><b>最稳健：</b>CPU/descriptor 写 BACON_ENTRY，DMA 固定写 DATA_ENTRY0。类型无歧义。</li><li><b>最紧凑：</b>RAM 交错存 C/D，单 DMA channel 全部写 MIX_ENTRY；必须严格验证 grammar。</li><li><b>复杂链式：</b>DMA descriptor 改 destination 或双 channel；要证明入 FIFO 的顺序不会因仲裁被破坏。</li></ul><div class="quiz"><b>自测：</b>CPU 写完 DATA_ENTRY 后能否立刻认为外设已经收到？<div class="answer">不能。此时最多说明数据进入 TXFIFO；还要经历跨域、出队、shift 与 frame 尾部。</div></div></div></details>
+  </div></div>
+  <p class="source">依据：Part 2 §37.2.4、§37.3.5.1、Figures 488–489。C/D 是学习符号，真实硬件记录的是 entry type/TFLAG。</p>
+
+  <div class="section"><div class="section-head"><h3>写入口决定 entry 类型</h3><span>ENTRY TYPE SYSTEM</span></div><div class="board"><p>队列里的 <b>C</b> 和 <b>D</b> 从哪来？三个写入口共享同一个物理 FIFO，<b>类型由地址决定，而不是包头</b>——软件只选地址，硬件不解析包头，DMA 因此可以直接从内存搬。</p></div></div>
+<div class="section"><div class="section-head"><h3>三个写入口共享一个 FIFO</h3><span>ADDRESS CREATES TYPE</span></div><div class="board"><div class="grid3"><div class="node violet"><b>BACON_ENTRY · +0x060</b><small>always configuration<br>TFLAG=1</small></div><div class="node green"><b>DATA_ENTRYx · +0x064+x×4</b><small>always payload<br>TFLAG=0</small></div><div class="node amber"><b>MIX_ENTRY · +0x05C</b><small>classified by parser state<br>single DMA destination</small></div></div><div class="callout warning" style="margin-top:14px"><b>同一 frame 二选一：</b>使用 MIX_ENTRY，或者使用 BACON_ENTRY + DATA_ENTRY；不要混用两套策略。</div></div></div>
+  <div class="section"><div class="section-head"><h3>MIX parser 的状态机</h3><span>KEY MECHANISM</span></div><div class="board"><div class="state-machine"><div class="state" style="background:var(--violetSoft)"><b>EXPECT CONFIG</b><small>首 word → C<br>解析 BYTE/DL/LAST</small></div><div class="state" style="background:var(--greenSoft)"><b>EXPECT N DATA</b><small>Short: N=1<br>Long: N=ceil(bytes/4)</small></div><div class="state" style="background:var(--blueSoft)"><b>BLOCK COMPLETE</b><small>正常路径回到 EXPECT C<br>LAST 只控制 CS</small></div><div class="state" style="background:var(--amberSoft)"><b>≤16-bit OVERRIDE</b><small>upper16=0 → D<br>upper16≠0 → C</small></div></div><p class="mini" style="margin-top:14px">学习模型：类型在 entry 进入 FIFO 时确定；shift 时不会重新检查数值。</p></div></div>
+  <div class="section"><div class="section-head"><h3>交互：各模式下的合法 recipe</h3><span>MODE × ENTRY</span></div><div class="board"><div id="entryButtons" class="button-row"><button class="btn active" data-entry="short">SHORT</button><button class="btn" data-entry="long">LONG</button><button class="btn" data-entry="continuous">CONTINUOUS</button><button class="btn" data-entry="single">ONE CONFIG · MANY</button><button class="btn" data-entry="xxl">XXL</button><button class="btn" data-entry="mc">MOVE COUNTER</button></div><div id="entryTokens" class="tokens" style="margin-top:13px"></div><div class="grid2"><div class="tile"><h4>Legal ports</h4><p id="entryLegal"></p></div><div class="tile"><h4>Parser rule</h4><p id="entryRule"></p></div></div></div></div>
+  <div class="section"><div class="section-head"><h3>单配置多帧规则</h3><span>ONE CONFIG · MANY FRAMES</span></div><div class="board"><div class="grid2"><div><h4>合法 sequence</h4><div class="tokens"><span class="token c">BACON once<br>DL≤15</span><span class="arr">→</span><span class="token">0x00001234</span><span class="arr">→</span><span class="token">0x00008001</span><span class="arr">→</span><span class="token">0x0000FFFF</span></div></div><div><h4>为什么无歧义</h4><p>手册明确说明不存在 upper16=0 的合法 BACON。因此在该特殊模式中，upper16 全 0 的 MIX word 可以安全占用为 DATA 编码空间。</p></div></div><div class="callout warning" style="margin-top:14px"><b>有符号数据陷阱：</b>-1 必须零扩展为 0x0000FFFF；若符号扩展成 0xFFFFFFFF，upper16≠0，会被 parser 当成 configuration。</div>
+    <div class="callout" style="margin-top:0"><b>🟡 一点保留（推断，非手册结论）：</b>手册写的原话是"不存在 upper16 全 0 的合法配置字"。但按字段编码表，CS=0 且 DL=0（bit 模式即 2 bit）且 TRAIL=0 时，形式上也凑得出 upper16=0。<b>工程上不必去挑战这个边界</b>：这条保证在 DL≤15 的常规配置里成立，而"CS0 上发 2 bit、零延时"本来也不是有意义的用法；真要那么做，改用 dedicated 的 BACON_ENTRY + DATA_ENTRY。</div></div></div>
+  <div class="section"><div class="section-head"><h3>入口合法性矩阵</h3><span>LEGALITY MATRIX</span></div><div class="board table-wrap"><p class="mini" style="margin:0 0 10px">这张表只回答"<b>能不能从这个口写</b>"；模式本身的帧语义、边界与选型见第 05 章。</p><table class="table"><thead><tr><th>模式</th><th>合法入口</th><th>Grammar</th><th>关键限制</th></tr></thead><tbody><tr><td>Short</td><td>MIX 或 dedicated C/D</td><td>C → D</td><td>一个 D block 2…32 bit</td></tr><tr><td>Long</td><td>MIX 或 dedicated C/D</td><td>C → N×D</td><td>N=ceil(bytes/4)</td></tr><tr><td>Continuous</td><td>MIX 或 dedicated C/D</td><td>C-D / C-ND repeated</td><td>LAST 决定 CS，不决定 entry type</td></tr><tr><td>One config · many</td><td>MIX only</td><td>C once → D-D-D…</td><td>DL≤15，DATA upper16=0</td></tr><tr><td>XXL</td><td>dedicated C/D only</td><td>C + data stream</td><td>MIX 禁止</td></tr><tr><td>Move Counter</td><td>dedicated C/D only</td><td>C + counted moves</td><td>MIX 禁止</td></tr></tbody></table></div></div>
+  <div class="section"><div class="section-head"><h3>工程解释</h3><span>DEFENSIVE SOFTWARE</span></div><div class="chapter-tools"><button data-expand>展开全部</button><button data-collapse>折叠全部</button></div><div class="deep">
+    <details open><summary>Continuous Short 与 one-config-many 的精确区别</summary><div class="detail-body"><table class="table"><thead><tr><th></th><th>标准 Continuous Short</th><th>One config · many</th></tr></thead><tbody><tr><td>Recipe</td><td>C-D、C-D、C-D…</td><td>C 一次、D-D-D…</td></tr><tr><td>可否逐 block 改配置</td><td>可以</td><td>不可以，复用首次 BACON</td></tr><tr><td>入口</td><td>MIX 或 dedicated</td><td>MIX only</td></tr><tr><td>数据宽度</td><td>2…32 bit</td><td>≤16 bit</td></tr></tbody></table></div></details>
+    <details><summary>为什么 XXL / MC 禁止 MIX</summary><div class="detail-body"><p>这两种模式的 end condition 来自独立 counter，而不是每个 BACON 后一个可静态推导的 DATA word count。长 payload 中任意 32-bit word 都可能“长得像配置”。使用 dedicated ports 后，类型由地址显式标记，不需要 parser 在超长流中猜测。</p></div></details>
+    <details><summary>推荐的 queue-builder API 设计</summary><div class="detail-body"><pre><code>qspi_push_short(cs, bits, data);        // dedicated C + D
+qspi_push_long(cs, bytes, words, n);   // validates ceil(bytes/4)
+qspi_begin_continuous(...);
+qspi_end_continuous(...);
+qspi_push_reused_u16((uint16_t)value); // force zero-extension
+qspi_start_xxl(bytes, dma_src);         // forbids MIX destination
+qspi_start_move_counter(moves, ...);</code></pre><p>不要向上层暴露“随便写 32-bit MIX word”的通用接口。让不同 mode 使用不同 builder，并在单元测试中验证 entry 数、C/D grammar、LAST 与 DMA destination。</p></div></details>
+    <details><summary>Unexpected Configuration Error 如何定位</summary><div class="detail-body"><ol><li>读取/记录 ERRORFLAGS 和当前 FIFO level。</li><li>定位 DMA current source address，导出错误点前后 RAM words。</li><li>从最近一个确定的 C 开始重新模拟 EXPECT state 与 remaining N。</li><li>检查是否少一个 DATA、RAM 起始地址偏 4 byte、符号扩展破坏 upper16，或同一 frame 混用了 MIX 与 dedicated ports。</li></ol><div class="quiz"><b>自测：</b>BACON 高 16 位真的可能全 0 吗？<div class="answer">在该特殊规则适用的合法 configuration 空间中不可能；这正是硬件能把 upper16=0 安全复用为 DATA 标记的前提。</div></div></div></details>
+  </div></div>
+  <p class="source">依据：Part 2 §37.3.5、§37.3.5.1、§37.3.5.1.4、MIXENTRY/BACONENTRY/DATAENTRY register descriptions。</p>
+
+</section>
+
+<section id="bacon" class="view">
+  <div class="topbar"><div><div class="eyebrow">Chapter 03 · BACON + ECON</div><h2>BACON 与 ECON：逐帧配置与驻留配置</h2><p class="lead">BACON 负责本次事务的边界；ECON 负责该从机长期稳定的电气时序。两者在出队执行时动态绑定。</p></div><span class="stamp">TWO-LAYER CONFIG</span></div>
+  <div class="thesis"><article class="why"><h3>WHY</h3><p>每帧都携带完整 timing 会浪费 FIFO；全部放 resident register 又无法在 queue 中逐帧变化。</p></article><article class="what"><h3>WHAT</h3><p>BACON：CS/长度/LAST/delays；ECON：Q/A/B/C/CPOL/CPH/parity/byte order。</p></article><article class="how"><h3>HOW</h3><p>BACON.CS 选择物理 SLSO，并用低 3 bit 选择 ECONz，合成完整 frame contract。</p></article></div>
+  <div class="section"><div class="section-head"><h3>两级配置的合成</h3><span>DESIGN PHILOSOPHY</span></div><div class="board"><div class="flow"><div class="node blue"><b>BACON · 32 bit</b><small>queued with DATA<br>may change every block/frame</small></div><div class="arrow">＋</div><div class="node violet"><b>ECONz · resident</b><small>8 timing profiles<br>reused by channels</small></div><div class="arrow">＝</div><div class="node green"><b>FRAME CONTRACT</b><small>who · how much · how fast<br>how to start/sample/end</small></div></div></div></div>
+  <div class="section"><div class="section-head"><h3>BACON · 32 bit 逐位地图</h3><span>018H · RESET 0F87 1C71H</span></div><div class="board">
+    <div id="baconMap" class="regmap"></div>
+    <div class="legend" style="margin-top:11px"><span><i class="dot" style="background:var(--blue)"></i>通道与长度</span><span><i class="dot" style="background:var(--green)"></i>格式 / 控制</span><span><i class="dot" style="background:var(--amber)"></i>帧包络延时</span><span>每格 = 1 bit，格宽严格等于位宽</span></div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>BACON 字段说明</h3><span>FIELD BY FIELD</span></div><div class="board table-wrap"><table class="table" id="baconTable"><thead><tr><th>字段</th><th>位</th><th>宽</th><th>作用</th><th>编码 / 典型值</th><th>设错会怎样</th></tr></thead><tbody></tbody></table></div></div>
+  <div class="section"><div class="section-head"><h3>ECONz · 32 bit 逐位地图</h3><span>020H + z×4 · RESET 0000 1450H</span></div><div class="board">
+    <div id="econMap" class="regmap"></div>
+    <div class="legend" style="margin-top:11px"><span><i class="dot" style="background:var(--green)"></i>电气格式</span><span><i class="dot" style="background:var(--violet)"></i>波特率 / 位形状</span><span>reserved 段斜线填充 = 保留位，读 0 写 0</span></div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>ECONz 字段说明</h3><span>FIELD BY FIELD</span></div><div class="board table-wrap"><table class="table" id="econTable"><thead><tr><th>字段</th><th>位</th><th>宽</th><th>作用</th><th>编码 / 典型值</th><th>设错会怎样</th></tr></thead><tbody></tbody></table></div></div>
+  <div class="section"><div class="section-head"><h3>奇偶校验：在数据位之外再拼一位</h3><span>PAREN + PARTYP</span></div><div class="board">
+    <div class="callout"><b>它到底做了什么：</b>手册原话——"The parity bit is concatenated to the data bits at transmission time. That means that a frame containing 16 bit data is <b>17 bits long</b> (data + 1 parity)." 接收侧这一位会被<b>自动剥离</b>，不会进 RXFIFO 的数据里。</div>
+    <div class="table-wrap" style="margin-top:12px"><table class="table"><thead><tr><th>问题</th><th>答案</th><th>依据</th></tr></thead><tbody>
+      <tr><td>加在哪</td><td><b>LSB 端</b>。所以 <code>MSB=1</code>（高位先出）时校验位<b>最后</b>移出；<code>MSB=0</code> 时<b>最先</b>移出</td><td>§37.3.3.3 第二条 Attention</td></tr>
+      <tr><td>DL 要不要 +1</td><td><b>不用</b>。DL 只描述<b>数据位</b>：DL=15（16 bit）配 PAREN=1 → 线上 17 bit</td><td>同上，"data + 1 parity"</td></tr>
+      <tr><td>谁配奇/偶</td><td><b>PARTYP 在 BACON</b>（逐帧可变）；<b>PAREN 在 ECON</b>（逐通道，8 份共享）</td><td>寄存器描述</td></tr>
+      <tr><td>怎么确认发出的/收到的校验位</td><td>回读 <code>STATUS.TPV</code>（Transmit Parity Value）/ <code>STATUS.RPV</code>（Receive Parity Value）</td><td>§37.3.3.3</td></tr>
+      <tr><td>错了怎么知道</td><td><code>ERRORFLAGS[0]</code> = Parity Error；可单独使能中断</td><td>STATUS.ERRORFLAGS</td></tr>
+      <tr><td><b>哪些模式支持</b></td><td><b>只有短模式</b>（≤32 数据位）。Long / Continuous / XXL / Move Counter <b>都不支持</b></td><td>§37.3.3.3 第一条 Attention</td></tr>
+    </tbody></table></div>
+    <div class="callout warning" style="margin-top:12px"><b>为什么只限短模式——这是设计取舍，不是遗漏：</b>校验位是"每帧一位"。短模式一帧就一个 block，语义明确；而长模式/连续模式一帧里有多个 block，硬件没有定义"校验位该盖住整帧还是每个 block"，于是干脆不支持。要用的话，只能把长帧拆成多个短帧，或者在上层做 CRC。</div>
+    <div class="callout" style="margin-top:10px"><b>和两层的配合正好是个例子：</b>PAREN 放在 ECON（"这颗从机要不要校验"是长期属性），PARTYP 放在 BACON（"这一帧用奇还是偶"可以逐帧变）——正好复用了"每从机不变 / 每帧可变"的分层原则。<span class="mini">注意 PARTYP 虽然逐帧可变，但实际工程里几乎不会变。</span></div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>LEAD/TRAIL 的测量基准与 CPH 的关系</h3><span>CPOL · CPH</span></div><div class="board">
+    <div class="callout warning"><b>先指出矛盾：</b>手册 §37.3.2.2 的正文写"The leading delay lasts between the active edge of the SLSO and the first shift clock edge"（CPH=1 那一节），但同一节 CPH=0 的 Attention 又说"SLSO 激活沿到第一条 SCLKO 边沿是 <b>LEAD + A</b>"。<b>两句不可能同时精确成立</b>——差别就在首边沿落在位周期的哪个位置。</div>
+    <p style="margin-top:12px"><b>正确的理解方式：</b>LEAD/TRAIL 是<b>以 TPER×4^PRE 为基的可编程延时</b>，锚点是 SLSO 的激活/释放沿；而"第一条 / 最后一条 SCLK 边沿"落在哪，由 <b>CPH</b> 决定：</p>
+    <div class="table-wrap" style="margin-top:10px"><table class="table"><thead><tr><th>CPH</th><th>首边沿的语义</th><th>SLSO → 首边沿</th><th>末边沿的语义</th><th>末边沿 → SLSO 释放</th></tr></thead><tbody>
+      <tr><td><code>0</code></td><td><b>锁存</b>首 bit —— 要先走完 A 段才有这条边沿</td><td><b>LEAD + A</b> ✅手册明写</td><td>移位（其后无剩余段）</td><td>TRAIL 🟡推定</td></tr>
+      <tr><td><code>1</code></td><td><b>移出</b>首 bit —— 位周期一开始就是边沿</td><td>LEAD 🟡推定</td><td><b>锁存</b>末 bit —— 其后还有 B+C 才释放</td><td><b>TRAIL + B+C</b> ✅手册明写</td></tr>
+    </tbody></table></div>
+    <div class="callout" style="margin-top:12px"><b>✅ 与 🟡 的区别很重要：</b>手册只对<b>两个特例</b>给了 Attention 公式，另外两格是按同一规则推出来的（对称性成立），<b>不能当成手册保证</b>。要精确算 tCSS/tCSH，以你自己板上的波形为准。</div>
+    <div class="callout good" style="margin-top:10px"><b>CPOL 不参与这件事：</b>它只决定空闲电平是高还是低，从而改变你在示波器上看到的是上升沿还是下降沿——<b>时间关系不变</b>。把 A 段想象成"电平 1、长度 A"、B+C 段"电平 0、长度 B+C"（CPOL=0 时），CPOL=1 只是把两者对调。</div>
+    <div class="quiz"><b>自测：</b>从机手册要求 tCSS ≥ 20 ns。你的 TQz=10 ns、A=4、LPRE=0、LEAD=1。按名义值 LEAD = 1×TPER 只有几个 ns，够吗？<div class="answer">要看 CPH。若 CPH=0，从机实际看到的是 LEAD + A = LEAD + 40 ns，早就够了；若 CPH=1，从机看到的就是 LEAD 本身，可能不够。<b>按名义 LEAD 算 tCSS 是典型错误</b>。</div></div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>交互：BACON.CS 选择片选与 ECON</h3><span>THE CONNECTOR</span></div><div class="board"><div class="controls"><div class="field"><label for="csSlider">BACON.CS = <span id="csValue">2</span></label><input id="csSlider" type="range" min="0" max="15" value="2"></div></div><div class="flow"><div class="node blue"><b id="csBacon">BACON.CS = 2</b><small>4-bit channel number</small></div><div class="arrow">→</div><div class="node green"><b id="csSlso">SLSO2</b><small>physical chip-select</small></div><div class="arrow">＋</div><div class="node violet"><b id="csEcon">ECON2</b><small id="csPair">shared by CS2 / CS10</small></div></div><div id="csSentence" class="callout" style="margin-top:13px"><b>当前：</b>激活 SLSO2，并用 ECON2 扩展本次 BACON。</div></div></div>
+  <div class="section"><div class="section-head"><h3>字段分配的设计依据</h3><span>DESIGN RATIONALE</span></div><div class="board">
+    <div class="flow"><div class="node amber"><b>硬约束 ①</b><small>一个队列项 = 32 bit<br>出队一次只装载一个寄存器</small></div><div class="node blue"><b>判定准则</b><small>字段的变化频率</small></div><div class="node violet"><b>硬约束 ②</b><small>帧进行中不能改分频器</small></div><div class="node green"><b>结论</b><small>BACON 随队列走<br>ECON 驻留、8 份共享</small></div></div>
+
+    <h4 style="margin-top:18px">① 容量是被"32 bit"锁死的</h4>
+    <p>FIFO 物理宽度是 32 bit，出队时一次只能把一个字送进目标寄存器。于是"每帧都得改的东西"必须挤在同一个 32 bit 里。</p>
+    <p><b>反证：</b>如果 ECON 的 Q/A/B/C 也要跟着队列走，一帧就要两个 entry。对 16-bit 这种短帧，FIFO 开销直接翻倍、线端吞吐砍半；而 Q/A/B/C 在运行期几乎不变，为它付双倍代价没有任何收益。</p>
+
+    <h4>② 判定准则只有一条：变化频率</h4>
+    <div class="table-wrap"><table class="table"><thead><tr><th>变化频率</th><th>典型字段</th><th>放在哪</th><th>为什么</th></tr></thead><tbody>
+      <tr><td>每个 block 可能变</td><td>CS、DL/BYTE、LAST、LEAD/TRAIL/IDLE</td><td>BACON（随队列）</td><td>只有它们需要逐帧不同；放驻留寄存器就没法在队列里预装多种配置</td></tr>
+      <tr><td>每颗从机不变</td><td>CPOL/CPH、Q、A/B/C、PAREN、BE</td><td>ECON（驻留 8 份）</td><td>板级 bring-up 定一次，运行期稳定</td></tr>
+      <tr><td>整个实例统一</td><td>TQ</td><td>GLOBALCON</td><td>全局时基，保证跨通道的延时可比</td></tr>
+    </tbody></table></div>
+    <div class="callout good"><b>一句话记住：</b>BACON 回答"这一次要干什么"，ECON 回答"这颗从机长什么样"。</div>
+
+    <h4>③ 延时字段为什么是"3 bit 预分频 + 3 bit 计数"</h4>
+    <ul>
+      <li><b>需求跨度有三个数量级</b>：从机 tCSS 可能只有几十 ns（板级走线延迟量级），而某些器件的上电/转换/写周期要几十 µs；TPER 本身只有几 ns。</li>
+      <li><b>只给计数字段不够</b>：单靠计数要覆盖 2000× 约需 11 bit。</li>
+      <li><b>硬件的解法</b>：每个延时配一个 3 bit、每档 ×4 的预分频（4<sup>0</sup>…4<sup>7</sup> = 1…16384），再乘 3 bit 计数的 1…8 → 单个延时覆盖 <b>1…131072 TPER</b>，约 2<sup>17</sup> 的动态范围，只花了 6 bit。</li>
+      <li><b>代价是分辨率变粗</b>：n 越大步长越大。所以 LEAD、TRAIL、IDLE 各有独立预分频——LEAD 通常要细（几十 ns 量级），TRAIL 可能要很大（器件释放/写周期），互不将就。</li>
+      <li><b>为什么是 ×4 而不是 ×2</b>：同样 3 bit 预分频，×2 只能到 128，×4 能到 16384。用有限的位宽换更大的动态范围。</li>
+    </ul>
+
+    <h4>④ 为什么 CS 在最高位、LAST 在最低位</h4>
+    <ul>
+      <li><b>硬件顺序</b>：CS 是路由决策（选哪条 SLSO、哪份 ECON），必须最早解出；DL 紧随其后，因为移位计数器要按它装载。</li>
+      <li><b>LAST 只在帧尾看一次</b>，放在最低位不占资源。</li>
+      <li><b>工程副作用</b>（不是设计目的，但很好用）：读十六进制时通道号一眼可见；<code>b | 1</code> 就是"结束这一帧"。</li>
+    </ul>
+
+    <h4>⑤ 为什么 16 个 CS 只配 8 份 ECON</h4>
+    <ul>
+      <li>每份 ECON 背后是一整套通道时间量子分频器 + 相位时长控制。如果 16 个通道各配一套，硅面积与时钟树都按比例增加，而一个 ECU 很少需要 16 种不同的电气时序——所以按"够用的最小份数"给 8 份。</li>
+      <li><code>z &amp; 7</code> 是硬件里最便宜的映射：直接丢掉最高位。代价写进契约：<b>CS2 与 CS10 必须共用同一 profile</b>。</li>
+      <li>所以 ECON 的分配单位是"<b>从机类型</b>"而不是"片脚"：同一颗 Flash 挂两个 CS 正好共享；两种不同器件恰好落到 z 与 z+8，就得改硬件连接或接受折中。</li>
+    </ul>
+
+    <h4>⑥ 为什么 ECON 必须驻留、不能帧中途改</h4>
+    <ul>
+      <li>ECON 改的是分频器和相位机本身。帧进行中改，会让同一位的前后半段用不同参数——位形状直接撕裂。</li>
+      <li>所以它的生命周期是"<b>板级配置期</b>"，而 BACON 的生命周期是"<b>一个 block</b>"。把两者放在同一层，等于把"配置一次"和"每帧变化"混成一个生命周期。</li>
+      <li>手册另有一条硬性提醒：3-wire 模式下 CPOL 或 CPH 改变时，必须先发一个 dummy frame，第一个真实帧之前引脚电平是未定义的。</li>
+    </ul>
+
+    <h4>⑦ 三级分频为什么这么分</h4>
+    <div class="table-wrap"><table class="table"><thead><tr><th>层</th><th>位宽</th><th>范围</th><th>管什么</th></tr></thead><tbody>
+      <tr><td>GLOBALCON.TQ</td><td>8 bit</td><td>raw 0…255 → 分频 1…256</td><td>模块时间量子 = TPER×(TQ+1)，整个实例的粗时基</td></tr>
+      <tr><td>ECON.Q</td><td>6 bit</td><td>raw 0…63 → 分频 1…64</td><td>通道时间量子 TQz = 上一级×(Q+1)，每颗从机的速率档</td></tr>
+      <tr><td>ECON.A / B / C</td><td>各 2 bit</td><td>A=1…4，B/C=0…3</td><td>位内形状：占空比与采样点</td></tr>
+    </tbody></table></div>
+    <p>手册给的理由很直白：同一实例上所有从机共用 pad 强度与容性负载，速率本来就不可能差太远（"混极端快慢没有意义"）。所以粗调放全局、细调放通道——分频器的结构与板级物理事实正好对齐。</p>
+    <div class="quiz"><b>配错时的第一问：</b>这个字段是"每帧变"还是"每从机不变"？放错层是最常见的 QSPI 配置 bug——以为 CPOL 能逐帧改，改完发现要等下一帧才生效。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>交互：IDLE/LEAD/TRAIL 在帧包络中的位置</h3><span>WAVEFORM</span></div><div class="board">
+    <div class="controls">
+      <div class="field"><label for="eIpre">IPRE = <span id="eIpreV">0</span> → ×4<sup>n</sup></label><input id="eIpre" type="range" min="0" max="7" step="1" value="0"></div>
+      <div class="field"><label for="eIdle">IDLE = <span id="eIdleV">1</span> 单位</label><input id="eIdle" type="range" min="0" max="7" step="1" value="1"></div>
+      <div class="field"><label for="eLpre">LPRE = <span id="eLpreV">0</span> → ×4<sup>n</sup></label><input id="eLpre" type="range" min="0" max="7" step="1" value="0"></div>
+      <div class="field"><label for="eLead">LEAD = <span id="eLeadV">2</span> 单位</label><input id="eLead" type="range" min="0" max="7" step="1" value="2"></div>
+      <div class="field"><label for="eTpre">TPRE = <span id="eTpreV">0</span> → ×4<sup>n</sup></label><input id="eTpre" type="range" min="0" max="7" step="1" value="0"></div>
+      <div class="field"><label for="eTrail">TRAIL = <span id="eTrailV">3</span> 单位</label><input id="eTrail" type="range" min="0" max="7" step="1" value="3"></div>
+      <div class="field"><label for="eTper">TPER / ns　= 1/fPER</label><input id="eTper" type="number" min="0.1" step="0.1" value="5"></div>
+    </div>
+    <div id="envWave" class="wave"></div>
+    <p class="mini" style="margin:8px 2px 0"><b>本图按 CPH=1 绘制</b>（首边沿移位、末边沿锁存）——CPH=0 时首末边沿的位置不同，见下一节的对照图。横向按比例压缩绘制（每段有最小可读宽度），纵向位置不代表电平幅度。DATA 段这里设为 6 bit × 8 TQz（本图假设 GLOBALCON.TQ=0、ECON.Q=0，故 TQz = TPER，1 bit = 8×TQz），实际通常远长于三个延时，真实比例会更悬殊——读时间请看标注，不要用眼睛比宽度。</p>
+    <div class="grid3" style="margin-top:14px">
+      <div class="tile"><h4>帧前空闲</h4><p id="envIdle"></p></div>
+      <div class="tile"><h4>前导延时</h4><p id="envLead"></p></div>
+      <div class="tile"><h4>尾随延时</h4><p id="envTrail"></p></div>
+    </div>
+    <div class="callout" style="margin-top:12px"><b>顺序要看准：</b>IDLEA → IDLEB → <b>SLSO 拉低（帧开始）</b> → LEAD → DATA → TRAIL → SLSO 释放。手册对 IDLE 的定义是"两个等长子相位"，且<b>在 IDLEA 与 IDLEB 的交界处切换给下一个从机的 SCLK 极性</b>——它不是帧前帧后各一半。</div>
+    <div class="callout warning" style="margin-top:10px"><b>CPH=1 时尾段会变长：</b>手册明确：最后一条 SCLK 边沿到 SLSO 释放之间的总时间变成 <code>T_TRAIL + (B+C)×TQz</code>，算时序余量时别只算 TRAIL。<span class="mini">两者量纲不同：T_TRAIL 以 TPER 为基，B+C 以 TQz 为基。</span></div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>CPH=0 与 CPH=1：同一帧，边沿落在不同位置</h3><span>CPH COMPARISON</span></div><div class="board">
+    <div id="cphWave" class="wave"></div>
+    <p class="mini" style="margin:8px 2px 0">本图取 <b>A=2、B=1、C=2 TQz，LEAD=2、TRAIL=1 TQz，2 个 bit</b>：帧总长都是 LEAD+DATA+TRAIL = 13 TQz，<b>两种 CPH 的帧长完全相同</b>，差别只在边沿落在位周期内的哪个位置。图中只标注手册能保证的量；SCLK 的位内电平形状与采样沿见第 02 章。</p>
+    <div class="callout" style="margin-top:12px"><b>读法：</b>左斜线区是 LEAD，中间是数据相位（两个位周期），右斜线区是 TRAIL。<b>CPH=0</b> 时首边沿晚 A 出现、末边沿不是帧尾；<b>CPH=1</b> 时首边沿紧贴数据相位起点、末边沿之后还要走完 B+C 才释放片选。按名义 LEAD/TRAIL 算外部器件的 tCSS/tCSH，在这两种情况下都会算错一个段。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>工程解释</h3><span>FIELD OWNERSHIP</span></div><div class="chapter-tools"><button data-expand>展开全部</button><button data-collapse>折叠全部</button></div><div class="deep">
+    <details open><summary>BACON 字段应该怎样理解</summary><div class="detail-body"><table class="table"><thead><tr><th>字段</th><th>工程含义</th><th>易错点</th></tr></thead><tbody><tr><td>CS</td><td>SLSO0…15 + ECON[CS&amp;7]</td><td>不是单纯 GPIO 编号</td></tr><tr><td>DL/BYTE</td><td>2…32 bit 或 2…32 byte；BYTE=1,DL=0 触发 XXL 长度解释</td><td>DL raw 0 不等于“零长度”</td></tr><tr><td>MSB</td><td>bit shift direction</td><td>不等于 byte endian</td></tr><tr><td>LAST</td><td>本 block 后是否结束整个 CS active frame</td><td>不是“FIFO 最后 entry”</td></tr><tr><td>IDLE/LEAD/TRAIL</td><td>frame envelope timing</td><td>TRAIL 在 LAST=0 时是 block gap</td></tr></tbody></table></div></details>
+    <details><summary>三类 delay 与 baud chain 是两套不同分频链</summary><div class="detail-body"><p class="formula">TIDLEA/B = TPER × 4^IPRE × (IDLE+1)</p><p class="formula">TLEAD = TPER × 4^LPRE × (LEAD+1)</p><p class="formula">TTRAIL = TPER × 4^TPRE × (TRAIL+1)</p><p>GLOBALCON.TQ/ECON.Q/A/B/C 决定 serial bit timing；BACON 的 prescaler+n-divider 决定 frame envelope delays。两者都以 TPER 为根，但不是同一串分频器。</p></div></details>
+    <details><summary>MSB 与 ECON.BE 为什么绝不能混为一谈</summary><div class="detail-body"><p><b>MSB</b> 决定一个数据块中 bit 的移出顺序。<b>BE</b> 决定 32-bit FIFO word 内 byte lane 的 16-bit/32-bit permutation，并只作用于 DATA path；BACON 与 STATUS 不被 permutation。一个是 bit order，一个是 byte order。</p></div></details>
+    <details><summary>完整配置例子：SLSO10 上的 16-bit ADC</summary><div class="detail-body"><ol><li>BACON.CS=10：激活 SLSO10，自动绑定 ECON2。</li><li>BYTE=0，DL 编码为 16-bit，MSB=1，LAST=1。</li><li>LPRE/LEAD 与 TPRE/TRAIL 满足 ADC 的 tCSS/tCSH。</li><li>ECON2 设置 mode、baud、duty 与 sample point。</li><li>若另一个器件挂 CS2，它会共享 ECON2，必须兼容同一 profile。</li></ol><div class="quiz"><b>自测：</b>CS2 改成 CS10，物理片选与 ECON 分别如何变化？<div class="answer">SLSO2 变为 SLSO10；ECON 仍然是 ECON2。</div></div></div></details>
+  </div></div>
+  <p class="source">依据：TC3xx UM Part 2 V2.0.0 §37.3.2.1（frame 相位与 IDLEA/IDLEB 交界切极性）、§37.3.2.2–37.3.2.4（ECON 分配、波特率与延时链、CPH=0/1 的 Attention 段）、§37.3.2.5；BACON（p.37-88）与 ECONz（p.37-89）register descriptions，复位值 0F87 1C71H / 0000 1450H。</p>
+</section>
+
+
+
+<section id="chipsel" class="view">
+  <div class="topbar"><div><div class="eyebrow">Chapter 08 · Slave select subsystem</div><h2>片选子系统：极性、使能、延时三组控制</h2><p class="lead">16 根 SLSO 只是起点。真正的问题有三个：从机要低有效还是高有效？16 根不够怎么办？某个从机要求片选比时钟晚一点又怎么办。QSPI 把这三件事都做成了寄存器——而且做成了<b>与帧相位对齐</b>的硬件行为，不是软件延时。</p></div><span class="stamp">SSOC · DEL0 · STROBE</span></div>
+  <div class="thesis"><article class="why"><h3>WHY</h3><p>片选必须与帧相位严格对齐；软件打拍子有抖动、占 CPU，而且一旦和 DMA 竞争就会错位。</p></article><article class="what"><h3>WHAT</h3><p>三件事可编程：每路的<b>有效电平</b>、每路的<b>使能</b>、以及 SLSO0 的<b>延时选通</b>（外部解复用用）。</p></article><article class="how"><h3>HOW</h3><p><code>SSOC.AOL/OEN</code> 定电平与使能；<code>GLOBALCON.DEL0 + STROBE</code> 定 strobe；<code>BACON.CS</code> 的 4 bit 原样出脚做外部译码。</p></article></div>
+
+  <div class="section"><div class="section-head"><h3>SSOC：电平与使能</h3><span>SSOC · 048H</span></div><div class="board">
+    <div class="table-wrap"><table class="table"><thead><tr><th>字段</th><th>位</th><th>作用</th><th>关键细节</th></tr></thead><tbody>
+      <tr><td><code>AOL[15:0]</code></td><td>15:0</td><td>每路 SLSO 的<b>有效电平</b></td><td>0 = 低有效，1 = 高有效；<b>空闲电平是它的反相</b></td></tr>
+      <tr><td><code>OEN[31:16]</code></td><td>31:16</td><td>每路 SLSO 的<b>使能</b></td><td><b>禁用时驱动空闲电平，不是高阻</b>——这一点决定了"软件片选"能不能做（见后）</td></tr>
+    </tbody></table></div>
+    <div class="callout" style="margin-top:12px"><b>为什么 "禁用 = 驱动 idle" 很重要：</b>如果禁用是高阻，外部上拉/下拉会把线拉到未知电平，多从机总线上就会出现"伪片选"。驱动成确定的空闲电平，等于给每个未用通道一个安全默认值。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>外部解复用与选通延时</h3><span>DELAYED MODE</span></div><div class="board">
+    <div class="flow"><div class="node blue"><b>BACON.CS = 4 bit</b><small>通道号</small></div><div class="arrow">原样出脚</div><div class="node amber"><b>SLSO1…SLSO4</b><small>4 根译码输入</small></div><div class="arrow">→</div><div class="node violet"><b>板级 4→16 译码器</b><small>扩展出更多片选</small></div><div class="arrow">受控于</div><div class="node green"><b>SLSO0 = STROBE</b><small>DEL0=1 时变成选通</small></div></div>
+    <div class="table-wrap" style="margin-top:14px"><table class="table"><thead><tr><th>要点</th><th>说明</th></tr></thead><tbody>
+      <tr><td>何时进 Delayed Mode</td><td><code>GLOBALCON.DEL0 = 1</code>，SLSO0 不再当普通片选，改当 strobe</td></tr>
+      <tr><td>strobe 延时多长</td><td><code>GLOBALCON.STROBE[20:16]</code>，<b>单位是 TQz（通道时间量子）</b>，1…32。<b>帧包络延时里只有它按通道量子计</b>——IDLE/LEAD/TRAIL 都以 TPER 为基（位段 A/B/C 也以 TQz 计，但那是位形状不是包络）</td></tr>
+      <tr><td>为什么需要它</td><td>外部译码器的各路输出<b>有偏斜</b>，切换瞬间可能有两路同时有效 → 两个从机被短暂同时选中。用一根 strobe 把译码输出"关到译码稳定之后再放行"，即可做到 <b>glitch free</b></td></tr>
+      <tr><td>代价</td><td>少一根普通片选（SLSO0 被占用），且译码延迟要算进 CS setup 时间</td></tr>
+    </tbody></table></div>
+    <div class="callout warning" style="margin-top:12px"><b>算时序时别漏：</b>从 BACON.CS 更新 → 译码器输出稳定 → STROBE 放行，这三段加起来才是从机看到的 tCSS。板级译码器的手册延迟 + STROBE×TQz 必须一起算。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>三线模式：无片选时的帧边界</h3><span>3-WIRE</span></div><div class="board">
+    <div class="grid2">
+      <div class="callout good"><b>好处：</b>主机和从机各省一根引脚；单从机点对点时足够用。</div>
+      <div class="callout warning"><b>代价（手册自己的措辞）：</b>"less robust"——没有 SLS 就没有硬件帧边界，帧的起止只能靠<b>数位数</b>与 BACON.DL 对齐。</div>
+    </div>
+    <p style="margin-top:12px"><b>三条连带后果：</b>①配错 DL 时表现为<b>整帧偏移</b>而不是报错；②换 CPOL/CPH 时必须先发一个 dummy frame（手册明确）；③从机侧同理——有的流式器件只给时钟不给片选，此时靠"SCLKI 周期 &gt; 2 个位时间"判定帧尾。</p>
+    <p class="mini" style="margin-top:8px">推论：<b>帧边界只有三个来源</b>——片选线、位数、超时。选型时先问"这条链路有几个来源可用"，再决定 DL 与超时怎么配。</p>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>软件片选</h3><span>SOFTWARE CS</span></div><div class="board">
+    <p>手册给了<b>两条不同</b>的兜底路径，别混用：</p>
+    <ul style="margin:8px 0 0">
+      <li><b>走普通 GPIO：</b>把 Port 的复用选择从 SLSO 改成 <code>Pn.OUT</code>，用普通输出引脚翻转。<b>完全不涉及</b> SSOC。</li>
+      <li><b>留在 SLSO 引脚上仿真：</b>把 <b>全部</b> <code>SSOC.OEN</code> 清 0（输出会停在各自的 idle 电平），然后翻转 <code>SSOC.AOL</code> 来"制造"片选。<b>这是全有或全无</b>，不是"只关这一路"。</li>
+    </ul>
+    <div class="callout warning" style="margin-top:10px"><b>你放弃了什么：</b>片选与帧相位的硬件对齐。软件翻转会有中断延迟、DMA 竞争、编译器重排带来的抖动——从机的 tCSS/tCSH 必须按<b>最坏抖动</b>重新核算，而不是按寄存器标称值。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>LVDS 焊盘与 PINSEL 输入选择</h3><span>PAD / PISEL</span></div><div class="board">
+    <div class="grid2">
+      <div class="tile"><h4>LVDS 差分焊盘</h4><p>手册 §37.3.8.2 明写：MTSR 与 MRST 同时映射到 <b>LVDS 输出/输入焊盘</b>（引脚表里的 <code>SCLKP/N</code>、<code>MRSTAP/N</code>）。板间、长线、强干扰场合用差分，单端 CMOS 在几十 MBaud 下振铃与 EMI 难满足。</p></div>
+      <div class="tile"><h4>输入选择 PISEL</h4><p>同一 IP 要适配不同封装：<code>PISEL</code> 里的 <code>SCIS</code>/<code>SLSIS</code>/<code>MRIS</code> 各自从多组输入引脚里选一路。手册特别提醒"不是每个封装都有全部输入"——移植时必须核对。</p></div>
+    </div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>自测与依据</h3><span>CHECK</span></div><div class="board">
+    <div class="quiz"><b>自测 1：</b>某个从机是 active-high 片选，你要改哪一位？改完之后它的空闲电平是什么？<div class="answer">改 <code>SSOC.AOL[z]</code> 为 1；空闲电平是它的反相，即<b>低</b>。另外别忘了 <code>OEN[z]</code> 必须为 1，否则这一路根本不出脚。</div></div>
+    <div class="quiz" style="margin-top:10px"><b>自测 2：</b>用外部 4→16 译码扩展时，SLSO0 还能当片选用吗？<div class="answer">不能。DEL0=1 之后 SLSO0 被征用为 strobe。可用片选变成 SLSO1…SLSO4（译码输入）+ 译码器输出的 16 路。</div></div>
+    <div class="quiz" style="margin-top:10px"><b>自测 3：</b>三线模式下把 DL 从 16 改成 8，会发生什么？<div class="answer">帧长减半。因为没有片选线，从机无法判断"这帧该收多少位"，只会按自己的期望继续移位——表现为整帧错位，而且不会报任何错误。</div></div>
+  </div></div>
+  <p class="source">依据：TC3xx UM Part 2 V2.0.0 §37.2.6（三线连接与 less robust）、§37.3.8.2（LVDS 焊盘映射、ERU）、SSOC 寄存器描述（048H，AOL/OEN 语义）、GLOBALCON.DEL0/STROBE（20:16，TQz 单位 1…32）、BACON.CS 描述（外部 demux 模式）、PISEL.SCIS/SLSIS/MRIS。</p>
+</section>
+
+<section id="flow" class="view">
+  <div class="topbar"><div><div class="eyebrow">Chapter 07 · Backpressure &amp; refill protocol</div><h2>流控：SRF 背压与三种 FIFO 中断模式</h2><p class="lead">线端按 fSCLK 连续消耗，总线侧突发供给。4 格 FIFO 只能吸收抖动，因此需要两套机制：SRF 背压与中断供数协议。</p></div><span class="stamp">§37.3.6 · GLOBALCON1</span></div>
+  <div class="thesis"><article class="why"><h3>WHY</h3><p>固定水线两难：中断太勤 CPU 扛不住，太懒 FIFO 见底。而纯边沿触发在"已空/已满"的静止态没有事件可发，DMA 链会停摆。</p></article><article class="what"><h3>WHAT</h3><p>①SRF 背压：RXFIFO 满就停发时钟；②TXFM/RXFM 三种中断模式：Single / Batch / Combined。</p></article><article class="how"><h3>HOW</h3><p><code>GLOBALCON.SRF</code>（仅主机）、<code>GLOBALCON1.TXFM/RXFM</code> + <code>TXFIFOINT/RXFIFOINT</code> 阈值。</p></article></div>
+
+  <div class="section"><div class="section-head"><h3>三种 FIFO 中断模式的触发条件</h3><span>TXFM / RXFM</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>模式</th><th style="white-space:nowrap">TXFM 编码</th><th>中断何时触发</th><th>一次搬几个</th><th>失效模式（手册明写）</th></tr></thead><tbody>
+      <tr><td><b>Single Move</b></td><td><code>01B</code></td><td>每次写入后<b>仍有空格</b>就再请求；写满则<b>不</b>请求（防溢出），等移位读走一格再请求</td><td>1</td><td>用块 DMA 或多次写 → 多次中断 + 虚假的 transaction lost</td></tr>
+      <tr><td><b>Batch Move</b></td><td><code>10B</code></td><td>水位<b>跌破阈值那一刻</b>（TX）；RX 是<b>超过阈值那一刻</b></td><td>N，且必须补回阈值以上</td><td>补数太晚 → 追不回阈值 → <b>中断再也不来</b></td></tr>
+      <tr><td><b>Combined</b></td><td><code>00B</code></td><td>水位 ≤ 阈值期间，<b>每被取走一格</b>就触发（RX 相反：≥ 阈值每写入一格）</td><td>2（BACON + DATA1 成对）</td><td>只搬 1 个 → BACON 那次中断被 DATA1 覆盖丢失</td></tr>
+    </tbody></table>
+    <div class="callout" style="margin-top:8px"><b>先分清"模式"这个词：</b>本表的 Single/Batch/Combined 是 <b>FIFO 取数模式</b>（TXFM/RXFM），与第 05 章的 Short/Long/Continuous 等<b>数据模式</b>完全无关——那套讲的是帧的边界，这里讲的是"什么时候叫人来搬"。</div>
+    <div class="callout" style="margin-top:8px"><b>下表两列以 TX 视角写</b>；RX 侧方向相反：Batch 是<b>水位超过阈值</b>时触发、要搬到阈值以下；Combined 的 RX 每次写入触发、按需搬 1 格即可，不需要成对。</div>
+    <div class="callout" style="margin-top:12px"><b>阈值编码不一样，别照抄：</b><code>TXFIFOINT</code> 是 <b>raw+1</b>（00B=1 … 11B=4），<code>RXFIFOINT</code> 是 <b>raw</b>（00B=0 … 11B=3）。<b>Single 模式下两个阈值都是 don't care</b>——调它没用。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>阈值饥饿：中断不再产生的条件</h3><span>THRESHOLD STARVATION</span></div><div class="board">
+    <p>设 <code>TXFIFOINT=10B</code>（阈值 3），FIFO 深度 4。为看清推演，下面按"每个短帧只消耗 1 个 DATA 格"算（BACON 已预装、不计；若按 C+D 两格/帧，帧数减半，结论不变）：</p>
+    <div class="flow" style="margin:10px 0">
+      <div class="node green"><b>水位 4</b><small>满</small></div><div class="arrow">取走 2 格</div>
+      <div class="node amber"><b>水位 2 &lt; 3</b><small>触发中断</small></div><div class="arrow">本该补到 4</div>
+      <div class="node blue"><b>DMA 迟到</b><small>又发了两帧 → 水位 0</small></div><div class="arrow">一次补 2 格</div>
+      <div class="node" style="border-color:var(--red);color:var(--red)"><b>只到 2</b><small>仍 &lt; 阈值 3 → 无中断</small></div>
+    </div>
+    <div class="callout warning"><b>手册原话：</b>"the next interrupt would never come unless the filling level is being polled and the CPU keeps refilling in a loop until the threshold has been passed"。<br><b>工程含义：</b>Batch 模式下<b>不能只补固定格数</b>——必须查水位、补到阈值以上（理想是每次补满）。这也是现场"跑一会儿就停"的典型根因。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>Combined 模式：双中断与每次搬 2 个</h3><span>TWO CLOSE INTERRUPTS</span></div><div class="board">
+    <p>Combined 模式下，FIFO 每被取走一格就触发一次。而 <b>BACON 和紧随其后的 DATA1 是连着被取走的</b>，于是产生两个挨得极近的中断。BACON 那个几乎必然在 DATA1 到来之前没被服务 → <b>被覆盖丢失</b>。</p>
+    <div class="grid2" style="margin-top:12px">
+      <div class="callout good"><b>正确：</b>DMA 每次触发搬 <b>2 个 move</b>（transfer size = 2）。这样两个中断合成一次搬运，水位稳定。</div>
+      <div class="callout warning"><b>错误：</b>一次只搬 1 个 → TXFIFO 平均水位一路下滑，最后在 <b>0 和 1 之间振荡</b>（连续模式除外）。DMA 报出的 transaction loss 应当<b>忽略</b>。</div>
+    </div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>背压：SRF 停止 SCLK</h3><span>SRF</span></div><div class="board">
+    <div class="flow"><div class="node blue"><b>RXFIFO / 移位寄存器满</b><small>软件来不及搬</small></div><div class="arrow">→</div><div class="node amber"><b>SRF=1</b><small>暂停 SCLK</small></div><div class="arrow">→</div><div class="node green"><b>从机被"挂住"</b><small>不丢数据</small></div><div class="arrow">→</div><div class="node violet"><b>软件腾出空间</b><small>恢复</small></div></div>
+    <div class="callout" style="margin-top:12px"><b>为什么从机没有这个选项：</b>从机不掌握时钟，SRF 在从机模式<b>被忽略</b>——它只能靠"及时清 RXFIFO"这一条软件策略。这是同一条物理事实的两面（见从机章）。</div>
+    <div class="callout warning" style="margin-top:10px"><b>代价：</b>停时钟期间总线上没有任何进展。所以外部看门狗、从机的超时保护、以及你自己的时序预算，都要按<b>最坏暂停时间</b>算，不能按理想速率算。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>FIFO 未满时的溢出</h3><span>FALSE OVERFLOW</span></div><div class="board">
+    <div class="callout"><b>手册明写：</b>若 FPI 总线很慢而波特率很高，数据会在<b>移位寄存器 → 未满的 RXFIFO</b> 之间丢失，此时同样报溢出中断——尽管 FIFO 并没有满。</div>
+    <p style="margin-top:10px"><b>诊断第一问就该是：</b>我看到的是 <b>FIFO level</b> 还是 <b>ERRORFLAGS</b>？两者不矛盾——接收通路的"深度"不止 4 格，还包括移位寄存器到 FIFO 之间那一段没有名字的缓冲。</p>
+    <p><b>对策：</b>降低 fSCLK、提高 fSPB、或缩短"移位寄存器→FIFO"这一段的服务间隔。<b>SRF 在这里帮不上忙</b>——它没有阈值，只在 RXFIFO（或移位寄存器）已满时才停时钟；而假溢出恰恰发生在 FIFO 未满的时候。</p>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>配置代码：两种典型组合</h3><span>SOFTWARE</span></div><div class="board">
+    <pre><code>/* 场景 A：DMA 单搬 + 高波特率短帧 —— 保持 FIFO 尽量满 */
+QSPI0->GLOBALCON1.B.TXFM     = 1;  /* 01B = Single Move         */
+QSPI0->GLOBALCON1.B.RXFM     = 1;  /* 01B = Single Move         */
+QSPI0->GLOBALCON1.B.TXFIFOINT= 2;  /* ★ Single 下 don't care    */
+QSPI0->GLOBALCON.B.SRF       = 1;  /* 仅主机有效                */
+
+/* 场景 B：块 DMA，一次 2 move —— Combined 是唯一正确选择 */
+QSPI0->GLOBALCON1.B.TXFM     = 0;  /* 00B = Combined            */
+QSPI0->GLOBALCON1.B.TXFIFOINT= 2;  /* 阈值 = raw+1 = 3          */
+QSPI0->GLOBALCON1.B.RXFM     = 0;  /* 00B = Combined            */
+QSPI0->GLOBALCON1.B.RXFIFOINT= 1;  /* 阈值 = raw  = 1           */
+
+/* 场景 C：高波特率 + 短帧，想少进中断 —— Batch，但必须查水位补满 */
+QSPI0->GLOBALCON1.B.TXFM     = 2;  /* 10B = Batch Move          */
+/* 中断里：while (水位 &lt;= 阈值) 继续补 —— 不能只补固定格数 */</code></pre>
+    <div class="callout warning" style="margin-top:12px"><b>三个别踩的坑：</b>①Single 模式下用块 DMA → 虚假 transaction lost；②Combined 下只搬 1 个 → BACON 中断丢失、水位缓慢下滑；③Batch 下只补固定格数 → 阈值饥饿，中断永久消失。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>自测与依据</h3><span>CHECK</span></div><div class="board">
+    <div class="quiz"><b>自测 1：</b>把 RXFIFOINT 从 <code>10B</code> 改成 <code>11B</code>，接收中断会更频繁还是更少？<div class="answer">更少。RXFIFOINT 是 raw 值，10B=2、11B=3；Combined 模式下要水位 ≥ 阈值才逐格触发，阈值抬高 → 触发点后移 → 中断更少。</div></div>
+    <div class="quiz" style="margin-top:10px"><b>自测 2：</b>Batch 模式下把阈值从 3 降到 2，能解决"跑一会儿就停"吗？<div class="answer">能缓解但不能根治。阈值低意味着更早触发、更容易补回；但只要"补数间隔 &gt; 阈值个帧的时间"，仍然会跌破。根治办法是中断里查水位、补到阈值以上（或补满）。</div></div>
+    <div class="quiz" style="margin-top:10px"><b>自测 3：</b>SRF=1 时，从机侧会看到什么？<div class="answer">从机什么也看不到——SRF 在从机模式被忽略，主机也不会因为 SRF 而改变 SLSO。从机只会感觉"时钟怎么突然停了"。</div></div>
+  </div></div>
+  <p class="source">依据：TC3xx UM Part 2 V2.0.0 §37.3.5.1（FIFO 深度 4、SRF 仅主机、假溢出）、§37.3.6.3（TXFIFO Interrupt Generation：Single/Batch/Combined、阈值饥饿原文、双中断）、GLOBALCON1.TXFM/RXFM/TXFIFOINT/RXFIFOINT 字段描述（含 reset 值与编码）、GLOBALCON.SRF。</p>
+</section>
+
+<section id="evt" class="view">
+  <div class="topbar"><div><div class="eyebrow">Chapter 10 · Phase events &amp; error model</div><h2>相位事件 PT1/PT2 与九类错误标志</h2><p class="lead">普通 SPI 只在"传完一帧"给你一个中断，故障只有一个 overrun 位。队列化之后这两件事都不够用：软件要的动作发生在帧中间，而一次偶发错误无法定位就没有诊断价值。</p></div><span class="stamp">PT1 / PT2 / ERRORFLAGS</span></div>
+  <div class="thesis"><article class="why"><h3>WHY</h3><p>TBE 时补队列、RBF 时搬数、EOF 时放片选、进 EXPECT 时计超时——这些时刻都在帧中间。而错误若不能分类，ISR 只能"有错就整模块复位"。</p></article><article class="what"><h3>WHAT</h3><p>PT1/PT2 是<b>事件多路选择器</b>（8 选 1）；错误侧是 9 个粘滞位，各自可单独使能、单独清除。</p></article><article class="how"><h3>HOW</h3><p><code>GLOBALCON1.PT1/PT2</code> 选事件，<code>BACON.UINT</code> 逐帧门控；错误侧 <code>ERRORENS / ERRORFLAGS / ERRORCLEARS</code> 三者同布局。</p></article></div>
+
+  <div class="section"><div class="section-head"><h3>PT1/PT2 事件编码（主机/从机）</h3><span>PT1 / PT2 编码</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>编码</th><th>事件</th><th>主机侧含义</th><th>从机侧含义</th></tr></thead><tbody>
+      <tr><td><code>000B</code></td><td>BUSY</td><td>WAIT 相位结束</td><td>有发送数据在等时钟</td></tr>
+      <tr><td><code>001B</code></td><td>SCLKPC</td><td>SCLK 极性切换（IDLEA/IDLEB 交界）</td><td>—</td></tr>
+      <tr><td><code>010B</code></td><td>SOF</td><td>帧开始</td><td><b>收到第一个数据位</b>（不是片选边沿）</td></tr>
+      <tr><td><code>011B</code></td><td>TBE</td><td>发送缓冲被取空</td><td>数据被移位引擎取走</td></tr>
+      <tr><td><code>100B</code></td><td>RBF</td><td>接收缓冲被填满</td><td>接收数据写入 RXFIFO</td></tr>
+      <tr><td><code>101B</code></td><td>EOF</td><td>帧结束</td><td>最后一位已收到；<b>PT2 下固定表示 SLSI 撤销</b></td></tr>
+      <tr><td><code>110B</code></td><td>DNA</td><td>数据未就绪 = <b>进入 EXPECT</b></td><td>—</td></tr>
+      <tr><td><code>111B</code></td><td>CONT</td><td><b>EXPECT 结束</b></td><td>—</td></tr>
+    </tbody></table>
+    <div class="callout" style="margin-top:12px"><b>为什么是"多路选择器"而不是"多根中断线"：</b>不同驱动关心的时刻完全不同——有的要在 SOF 打时间戳，有的要在 TBE 触发 DMA，有的要在 DNA/CONT 上量 EXPECT 时长。硬件不可能为每种需求都做一根线，于是让软件从一张事件表里挑两个（PT1 一个、PT2 一个）。</div>
+    <div class="callout warning" style="margin-top:10px"><b>从机的特例：</b>PT2 在从机模式下<b>只有 SLSI 上升沿</b>能触发，且必须写 <code>101</code>（EOF）这个编码——这是硬件约定，不是笔误。PT1 的 SOF 在从机侧也换了定义：绑"收到的第一个时钟脉冲"，因为从机自己没有"开始发送"这个动作。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>BACON.UINT 与 User Interrupt</h3><span>PER-FRAME GATING</span></div><div class="board">
+    <p>全局中断使能有个副作用：<b>每一帧都会来</b>。可有些测量只关心特定一帧——比如只在某条命令帧上量从机响应时间。手册的做法是把使能位放进 <code>BACON</code>：</p>
+    <div class="formula">BACON.UINT = 1 → PT1 事件路由到 User Interrupt；<b>它不是只对这一帧有效</b>：从这一帧起、在后续帧中持续产生，直到下一个 BACON 把 UINT 写成 0</div>
+    <div class="callout warning" style="margin-top:12px"><b>注意它和 MC 的 IBL/IAL 不是一回事：</b>Move Counter 的两个中断<b>复用 U 线但不受 UINT/USREN 控制</b>。所以进 MC 的中断服务程序时，必须自己查 <code>MCCON.IBLF/IALF</code> 才能分清是谁触发的。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>九类错误标志及其归属</h3><span>ERRORFLAGS[8:0]</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>位</th><th>值</th><th>错误</th><th>谁的责任</th><th>典型触发场景</th></tr></thead><tbody>
+      <tr><td>0</td><td>001H</td><td>Parity Error</td><td>链路 / 对端</td><td>PAREN=1 时收到的校验位不符</td></tr>
+      <tr><td>1</td><td>002H</td><td>Unexpected Configuration</td><td><b>软件</b></td><td>该发 D 的时头发了 C —— 通常是 DMA 源指针错位</td></tr>
+      <tr><td>2</td><td>004H</td><td>Baud Rate Error</td><td>主机 / 链路</td><td>从机看到 SCLK 频率超出合法带或毛刺</td></tr>
+      <tr><td>3</td><td>008H</td><td>TXFIFO overflow</td><td><b>软件</b></td><td>往满 TXFIFO 里继续写（本帧写入被忽略）</td></tr>
+      <tr><td>4</td><td>010H</td><td>TXFIFO underflow</td><td>主机（从机视角）</td><td>从机首边沿到达时 FIFO 为空 → 移出全 1</td></tr>
+      <tr><td>5</td><td>020H</td><td>RXFIFO overflow</td><td>软件 / 带宽</td><td>RXFIFO 满时硬件仍要写（含"没满也可能溢出"的假溢出）</td></tr>
+      <tr><td>6</td><td>040H</td><td>RXFIFO underflow</td><td><b>软件</b></td><td>读空 FIFO（返回全 1）</td></tr>
+      <tr><td>7</td><td>080H</td><td>EXPECT time out</td><td>主机 / 队列供给</td><td>多 entry 帧中途断供，超时窗口用尽</td></tr>
+      <tr><td>8</td><td>100H</td><td>SLSI misplaced inactivation</td><td>主机（从机视角）</td><td>从机帧中途片选被撤销</td></tr>
+    </tbody></table>
+    <div class="callout" style="margin-top:12px"><b>"谁的错"这一列才是诊断价值所在：</b>看到 <code>008H</code>（TX overflow）就该去查<b>写侧</b>的节流，而不是查从机；看到 <code>010H</code> 则相反——那是主机没喂数。同一个"FIFO 出错"的笼统说法，在这一列里被拆成了完全不同的排查方向。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>ERRORENS / ERRORFLAGS / ERRORCLEARS</h3><span>ENS · FLAGS · CLEARS</span></div><div class="board">
+    <div class="grid3">
+      <div class="tile"><h4>ERRORENS</h4><p>9 位，逐类使能中断。<b>分级响应</b>的基础：安全相关错误单独送一路、可恢复错误走另一路。</p></div>
+      <div class="tile"><h4>ERRORFLAGS</h4><p>9 位粘滞标志。<b>写 1 置位并触发中断</b>，写 0 无效——正是"软注入自检"的入口。</p></div>
+      <div class="tile"><h4>FLAGSCLEAR.ERRORCLEARS</h4><p>9 位，<b>只写</b>，读回 0。写 1 清除对应标志。不能读-改-写，因为标志会被硬件异步置位。</p></div>
+    </div>
+    <div class="callout good" style="margin-top:12px"><b>为什么必须是"写 1 清除"：</b>如果允许读-改-写，那么在读与写之间新到的错误会被这次写覆盖掉——一次偶发故障就此消失。写 1 清除让"清谁"与"当前有哪些"解耦。</div>
+    <div class="callout" style="margin-top:10px"><b>软注入的用途：</b>不接外部从机、不产生真实线端事件，也能验证"标志置位 → 中断路由 → ISR → 安全反应"整条链是否完好——这是功能安全自检里最便宜的一环。配合 <code>GLOBALCON.LB</code>（内部回环）可以再验一层数据通路。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>代码与自测</h3><span>SOFTWARE / CHECK</span></div><div class="board">
+    <pre><code>/* 关心"帧结束"和"进入 EXPECT"两个时刻 */
+QSPI0->GLOBALCON1.B.PT1 = 5;      /* 101B = EOF  */
+QSPI0->GLOBALCON1.B.PT2 = 6;      /* 110B = DNA（进 EXPECT）*/
+QSPI0->GLOBALCON1.B.PT1EN = 1;
+QSPI0->GLOBALCON1.B.PT2EN = 1;
+
+/* 只对这一帧武装用户中断 */
+uint32_t b = (2u)<<28 | (15u<<23) | (1u)<<21 | (1u)<<20 | 1u;  /* 含 UINT=1 */
+QSPI0->BACONENTRY.U = b;
+
+/* 错误侧：只放行"软件自己造成的"和"链路层"的 */
+QSPI0->GLOBALCON1.B.ERRORENS = 0x1E6;  /* bit1,2,5,6,7,8 */
+
+/* ISR 里先判类，再决定复位粒度 */
+uint32_t e = QSPI0->STATUS.B.ERRORFLAGS;
+if (e &amp; 0x002) { /* unexpected config：查 DMA 源指针 */ }
+if (e &amp; 0x080) { /* EXPECT timeout：查供给节流   */ }
+QSPI0->FLAGSCLEAR.B.ERRORCLEARS = e;   /* 写 1 清除 */</code></pre>
+    <div class="quiz" style="margin-top:12px"><b>自测 1：</b>为什么 PT2 在从机模式必须写 <code>101</code>？<div class="answer">因为从机侧 PT2 只有 SLSI 上升沿一个事件源，而 <code>101</code>（EOF）在从机语义下正好被重定义为"SLSI 撤销"。手册明确要求"always use the setting 101"。</div></div>
+    <div class="quiz" style="margin-top:10px"><b>自测 2：</b>看到 <code>010H</code>（TXFIFO underflow），该查哪一侧？<div class="answer">查主机——这是从机视角的错误：从机首边沿到达时 TXFIFO 是空的。说明主机（或驱动它的 DMA）没在帧开始前预装数据，不是从机的问题。</div></div>
+    <div class="quiz" style="margin-top:10px"><b>自测 3：</b>用 read-modify-write 清错误标志，会有什么后果？<div class="answer">可能丢新错误：读与写之间硬件又置起了新的错误位，而写回的是旧值。必须用 <code>FLAGSCLEAR</code> 的写 1 清除。</div></div>
+  </div></div>
+  <p class="source">依据：TC3xx UM Part 2 V2.0.0 GLOBALCON1.PT1（22:20）/PT2（25:23）编码表（含主从双语义）、BACON.UINT、"Subsequent Frames"语义、STATUS.ERRORFLAGS[8:0]（000H–100H 九类）、ERRORENS 同布局、FLAGSCLEAR.ERRORCLEARS（只写、读回 0）、MCCON.IBLF/IALF 与 U 线复用说明。</p>
+</section>
+
+<section id="observ" class="view">
+  <div class="topbar"><div><div class="eyebrow">Chapter 11 · Observability</div><h2>非侵入观测：RX_EXITD 与状态注入</h2><p class="lead">读 RXFIFO 会推进读指针，调试读取将改变被测状态。部分状态字段跨时钟域同步，读数存在固定延迟。本章给出各观测量的精度边界。</p></div><span class="stamp">RXEXITD · PHASE · BITCOUNT</span></div>
+  <div class="thesis"><article class="why"><h3>WHY</h3><p>在线调试时，读一次 FIFO 就等于替软件消费了一个数据；诊断超时时，看"传了多少字节"往往答不到点子上。</p></article><article class="what"><h3>WHAT</h3><p>两条读路径（破坏性 / 只读镜像）、三组进度量（PHASE / BITCOUNT / MC.CURRENT）、一个注入机制（SI）。</p></article><article class="how"><h3>HOW</h3><p><code>RX_EXIT</code> vs <code>RX_EXITD</code>；Cerberus 按总线 master tag 识别"旁观者"；<code>GLOBALCON.SI</code> 把状态写进 RXFIFO。</p></article></div>
+
+  <div class="section"><div class="section-head"><h3>RX_EXIT 与 RX_EXITD</h3><span>090H vs 094H</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th></th><th><code>RX_EXIT</code>（090H）</th><th><code>RX_EXITD</code>（094H）</th></tr></thead><tbody>
+      <tr><td>语义</td><td>正常出队</td><td>调试/镜像读</td></tr>
+      <tr><td>读指针</td><td><b>推进</b>——读一次就消费一个 entry</td><td><b>不推进</b></td></tr>
+      <tr><td>谁该用</td><td>驱动 / DMA</td><td>调试器、Trace、安全监控任务</td></tr>
+      <tr><td>用错的后果</td><td>—</td><td>用 RX_EXIT 看一眼 → 软件少收一个数据，且<b>毫无报错</b></td></tr>
+    </tbody></table>
+    <div class="callout" style="margin-top:12px"><b>还有一层身份识别：</b>手册明确，通过 <b>Cerberus</b>（由 FPI master tag 识别）读取 FIFO 条目<b>不会修改 FIFO 内容，也不会动读写指针</b>。也就是说，"谁在读"这件事本身参与了语义——同一个地址，调试主机读和 CPU 读，结果不同。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>PHASE / BITCOUNT / MC.CURRENT 的精度</h3><span>PHASE / BITCOUNT / MC.CURRENT</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>量</th><th>告诉你什么</th><th>不可信的地方（手册原话）</th></tr></thead><tbody>
+      <tr><td><code>STATUS.PHASE</code></td><td>当前/上一个帧相位</td><td>读到的往往是<b>上一个相位</b>——高速时等你读到，相位已经走过去了</td></tr>
+      <tr><td><code>STATUS.BITCOUNT</code></td><td>已移出的位数，支持到 256</td><td>"The value is <b>not accurate</b>; it may be lower than the number of bits shifted"。&gt;0 只表示"正在传"</td></tr>
+      <tr><td><code>MC.CURRENT</code></td><td>Move Counter 还剩几块</td><td>从移位引擎的异步时钟域同步回来，读数有<b>几拍延迟</b></td></tr>
+    </tbody></table>
+    <div class="callout good" style="margin-top:12px"><b>使用原则：</b>这三个量适合回答"<b>卡在哪个阶段</b>""<b>还在动吗</b>"，<b>不适合</b>做精确时序测量或位计数。要精确结果，用线端波形或计数器外设，不要用这些状态位。</div>
+    <div class="callout" style="margin-top:10px"><b>诊断第一问该换：</b>不是"传了多少字节"，而是"<b>现在停在哪个相位</b>"。PHASE 停在 EXPECT 说明在等数据；<b>PAUSE 没有独立的 PHASE 编码</b>——它的判据是 <code>EN=0 且 PHASE=0</code>（Wait），且 PHASE 只在主机模式有效、从机恒为 0（PAUSE 的完整语义见第 12 章）。这一问能把"卡住"拆成几种完全不同的原因。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>状态注入（GLOBALCON.SI）</h3><span>GLOBALCON.SI</span></div><div class="board">
+    <p><code>GLOBALCON.SI=1</code> 后，<b>每个数据块之后</b>（取决于 <code>BACON.DL/BYTE</code>）硬件会把 STATUS 的内容作为一个条目写进 RXFIFO。于是"数据"和"该数据的元信息"排在同一条队列里，DMA 一次搬走，不需要额外一次中断去读寄存器。</p>
+    <div class="callout warning" style="margin-top:10px"><b>一条必须知道的限制：</b>注入条目里<b>只有 bit 22…31 反映注入那一刻的状态</b>（即最新帧）；其余位受流水线影响，装的是<b>非最新</b>信息。所以注入状态值钱的是高 10 位，别拿低位做逐帧判断。</div>
+    <p style="margin-top:10px"><b>为什么需要它：</b><code>ERRORFLAGS</code> 是粘滞的，它回答"出过错"，回答不了"<b>哪一帧</b>出错"。多帧排队之后，状态寄存器早被下一帧覆盖了——只有随数据流一起走的标签才能定位到帧。</p>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>自测与依据</h3><span>CHECK</span></div><div class="board">
+    <div class="quiz"><b>自测 1：</b>调试时想确认 RXFIFO 里下一个值对不对，该读哪个地址？<div class="answer"><code>RX_EXITD</code>（094H）。读 <code>RX_EXIT</code> 会把数据消费掉，软件那边就少了一个——而且不会有任何错误提示。</div></div>
+    <div class="quiz" style="margin-top:10px"><b>自测 2：</b>BITCOUNT 显示 128，能断定已经移出 128 位吗？<div class="answer">不能。手册明说它不精确，可能低于实际位数；它只保证"&gt;0 表示正在传输、末位之后归零"。</div></div>
+    <div class="quiz" style="margin-top:10px"><b>自测 3：</b>要逐帧判断"这一帧是不是 parity 错"，读 ERRORFLAGS 够吗？<div class="answer">不够。ERRORFLAGS 是粘滞的、全局的，多帧之后无法归因。应打开 <code>GLOBALCON.SI</code>，让状态随数据进 RXFIFO，并按 bit 22…31 判断。</div></div>
+  </div></div>
+  <p class="source">依据：TC3xx UM Part 2 V2.0.0 §37.3.4.1（OCDS Suspend 内的 Cerberus 读取说明：不修改 FIFO 内容与读写指针）、STATUS.PHASE 说明（"shows a previous phase"）、STATUS.BITCOUNT（"not accurate"、256、末位归零）、MC.CURRENT（异步时钟域延迟）、GLOBALCON.SI（每数据块后注入、仅 bit 22…31 反映最新帧）、RX_EXIT(090H)/RX_EXITD(094H) 寄存器表。</p>
+</section>
+
+<section id="life" class="view">
+  <div class="topbar"><div><div class="eyebrow">Chapter 12 · Lifecycle</div><h2>暂停、睡眠与复位的粒度</h2><p class="lead">队列外设没有天然静止点——软件要改配置时，无法预测"现在改会不会踩到正在发的帧"。硬件给的答案是几种<u>粒度不同</u>的停下来：有的等帧尾，有的立刻冻结，有的顺手把配置也清了。</p></div><span class="stamp">EN · RESETS · OCDS</span></div>
+  <div class="thesis"><article class="why"><h3>WHY</h3><p>在半个 bit 上停止，外部从机会把半帧当成完整帧；而全模块复位又会把辛苦排好的队列和 ECON 一起清掉。</p></article><article class="what"><h3>WHAT</h3><p>PAUSE（等 TRAIL）／sleep（关双时钟）／OCDS 软挂起／硬挂起／两级软件复位／AREN 自动刹车。</p></article><article class="how"><h3>HOW</h3><p><code>GLOBALCON.EN</code> 请求、<code>STATUS.PHASE=0</code> 确认、<code>RESETS[31:30]</code> 两位编码、<code>OCS.SUS</code>、<code>KRST0/1</code>。</p></article></div>
+
+  <div class="section"><div class="section-head"><h3>PAUSE：请求与完成的判定</h3><span>EN / PHASE</span></div><div class="board">
+    <div class="flow"><div class="node blue"><b>写 EN=0</b><small>只是请求</small></div><div class="arrow">→</div><div class="node amber"><b>硬件等</b><small>等到最后一个 TRAIL 结束</small></div><div class="arrow">→</div><div class="node green"><b>进入 PAUSE</b><small>EN=0 且 PHASE=0</small></div></div>
+    <div class="callout" style="margin-top:12px"><b>为什么必须等 TRAIL：</b>在帧中间停，从机会看到"时钟停了但片选还拉着"或"半帧"——某些器件会把半帧当成完整帧处理，数据就错位了。<b>PAUSE 的判据是 <code>EN=0 且 STATUS.PHASE=0</code>（仅主机）</b>，不能只写 EN 就认为停了。</div>
+    <div class="callout warning" style="margin-top:10px"><b>软挂起走同一条路：</b>OCDS soft suspend 请求后，硬件也是在 TRAIL 结束时进 PAUSE，然后给出 acknowledge。而 <b>hard suspend 立即冻结一切</b>——包括服务请求线，现场保住了，但总线处于非法中途状态。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>sleep 与 PAUSE 的时钟差别</h3><span>SLEEP</span></div><div class="board">
+    <div class="grid2">
+      <div class="callout good"><b>PAUSE：</b>状态机停，<b>时钟还在</b>。寄存器可读写，可随时恢复。</div>
+      <div class="callout warning"><b>sleep：</b><b>fSPB 与 fPER 都被关掉</b>。寄存器访问与状态机一起停摆。</div>
+    </div>
+    <p style="margin-top:12px"><b>什么时候可以进 sleep（从机侧）</b>：无待发队列、无进行中传输、TXFIFO 为空——三条同时满足。<b>为什么</b>：sleep 是系统级广播，模块只能选"什么时候可以接受"；如果正在 long/continuous 等数据时被关时钟，"等数据"就变成了永久等待。<b>不想被 sleep 打断时</b>，可以用 <code>CLC.EDIS</code> 关掉该模块的 sleep 使能——这是"拒绝"，不是"延后"。</p>
+    <div class="callout" style="margin-top:10px"><b>从机唤醒路径：</b>sleep 期间 QSPI 自己不可能检测边沿（时钟都关了），必须靠 <b>SCU.ERU 在 SLSI 引脚边沿触发</b>把系统叫醒，唤醒后模块落回 PAUSE，再由软件恢复。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>复位的三种粒度（RESETS）</h3><span>RESETS[31:30]</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>编码</th><th>复位什么</th><th>配置还留着吗</th><th>什么时候用</th></tr></thead><tbody>
+      <tr><td><code>00B</code></td><td>不复位</td><td>—</td><td>—</td></tr>
+      <tr><td><code>01B</code></td><td><b>状态机 + TXFIFO + RXFIFO</b></td><td><b>留着</b>（寄存器不动）</td><td>协议失步、从机重启后快速恢复通信——"避免重新配置整个 IP"</td></tr>
+      <tr><td><code>10B</code></td><td><b>寄存器</b></td><td><b>全清</b></td><td>要换一套完全不同的配置</td></tr>
+      <tr><td><code>11B</code></td><td>状态机 + FIFO + 寄存器</td><td>全清</td><td>彻底重来</td></tr>
+      <tr><td>KRST0/1</td><td><b>整个模块内核</b></td><td>全清</td><td>需要连内核逻辑一起复位时，用这套独立机制</td></tr>
+    </tbody></table>
+    <div class="callout warning" style="margin-top:12px"><b>两条容易踩的：</b>①<code>RESETS</code> 要求时钟使能才能用（<code>CLKSEL</code>），且复位时长约等于<b>SPB 与内核两者中较慢时钟的 10 倍</b>——写完就立刻读状态是不可靠的；②用 10/11 复位后 <code>CLKSEL</code> 也会被清掉。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>AREN：从机时钟错误时自动清 EN</h3><span>AUTO RESET ENABLE</span></div><div class="board">
+    <p><code>GLOBALCON.AREN=1</code> 时，<b>从机侧</b>检测到时钟异常（尖峰 / 波特率偏差）后，硬件在置标志、发中断之后会<b>自动清 <code>GLOBALCON.EN</code></b>，把模块踢回 PAUSE。</p>
+    <div class="callout warning" style="margin-top:10px"><b>适用范围别放大：</b>AREN 只挂在从机的两类时钟监测（spike / baud rate）上，不是"任何错误都自动停机"。主机侧的错误（overflow / underflow / EXPECT timeout）不会触发它。</div>
+    <div class="callout good" style="margin-top:10px"><b>为什么需要"自动"：</b>从置标志到软件进 ISR 之间有一段真实延迟。这段时间里如果继续收，后续帧会被已经错位的状态机继续污染。让硬件自己停下，等于把"检测 → 上报 → 停摆"做成一条闭环，软件只负责善后。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>自测与依据</h3><span>CHECK</span></div><div class="board">
+    <div class="quiz"><b>自测 1：</b>写完 <code>EN=0</code> 后立刻去改 ECON，安全吗？<div class="answer">不安全。EN=0 只是请求，硬件要等最后一个 TRAIL 结束才真正进 PAUSE。必须轮询到 <code>EN=0 且 PHASE=0</code>（仅主机）再改。</div></div>
+    <div class="quiz" style="margin-top:10px"><b>自测 2：</b>从机被主机重启、协议失步，用哪种复位最快恢复？<div class="answer"><code>RESETS=01B</code>：只复位状态机与两个 FIFO，ECON/BACON 配置全部保留，复位完就能重新通信。用 10/11 会把配置清掉，得重排整条队列。</div></div>
+    <div class="quiz" style="margin-top:10px"><b>自测 3：</b>调试器设断点后，用哪种挂起才能保住时序现场？<div class="answer">hard suspend——立即冻结一切（含服务请求线），现场最完整，但外部从机看到的是"半帧"。若要对外部从机友好，用 soft suspend，它会等 TRAIL 结束再停。</div></div>
+  </div></div>
+  <p class="source">依据：TC3xx UM Part 2 V2.0.0 §37.3.4（PAUSE 等 TRAIL、sleep 关 fSPB+fPER、OCDS 软/硬挂起）、GLOBALCON.EN/AREN 描述、GLOBALCON.RESETS 四位说明（01/10/11 语义、CLKSEL 依赖、10×慢时钟时长）、KRST0/KRST1、OCS.SUS/SUSSTA、§37.3.8.2（ERU 唤醒）。</p>
+</section>
+
+<section id="closing" class="view">
+  <div class="topbar"><div><div class="eyebrow">Closing · Design philosophy</div><h2>设计原则与选型表</h2><p class="lead">前十二章的机制可归为四条原则：量化时间、外化状态、守卫边界、非侵入观测与恢复。</p></div><span class="stamp">SYNTHESIS</span></div>
+
+  <div class="section"><div class="section-head"><h3>四条设计原则</h3><span>FOUR PRINCIPLES</span></div><div class="board"><div class="grid2">
+    <div class="tile"><h4>① 时间必须被量化，硬件才可能替软件守时</h4><p>TPER → 模块 TQ → 通道 TQz → A/B/C，全是一个 TQ 的整数倍；五相语法、4<sup>PRE</sup> 预分频也是同一思路。<b>量化到什么程度？</b>量化到"一条寄存器写就能表达一个时间"。</p></div>
+    <div class="tile"><h4>② 状态必须被外化，软件才能用一条 32-bit 写表达意图</h4><p>FIFO 队列、BACON/ECON 两层、按地址路由的 entry 类型、Move Counter 计数器——都是把"我现在想干什么"变成"往哪个地址写哪个值"。</p></div>
+    <div class="tile"><h4>③ 边界必须被守卫，系统才敢把安全功能挂上去</h4><p>EXPECT 超时、从机时钟监控、九类错误、AREN 自动停机。<b>守卫的含义是</b>：出错即置标志、可分级、可停摆，而不是"希望软件及时发现"。</p></div>
+    <div class="tile"><h4>④ 观察与恢复不能破坏现场</h4><p>RXEXITD、Cerberus 读取、PAUSE、分级复位、软挂起。恢复粒度细到"只重启通信、不重配"，在线调试才有意义。</p></div>
+  </div></div></div>
+
+  <div class="section"><div class="section-head"><h3>选型决策表</h3><span>DECISION TABLE</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>场景</th><th>用哪个机制</th><th>章</th></tr></thead><tbody>
+      <tr><td>多从机（&gt;1）</td><td>硬件 SLSO，别用 GPIO 打拍子</td><td>08</td></tr>
+      <tr><td>从机数 &gt;16 或需板级译码</td><td>Delayed Mode + SLSO0 strobe</td><td>08</td></tr>
+      <tr><td>极性混挂 / 背靠背换 CPOL</td><td>SSOC.AOL + IDLEA/IDLEB 极性切换窗口</td><td>08 / 02</td></tr>
+      <tr><td>定长 N 帧批量传输</td><td>Move Counter + IBL/IAL</td><td>05</td></tr>
+      <tr><td>帧长非 32 位对齐</td><td>长模式 bit 级打包</td><td>05</td></tr>
+      <tr><td>接收吞吐接近总线搬运上限（主机）</td><td>SRF 背压</td><td>07</td></tr>
+      <tr><td>高波特率短帧 + DMA</td><td>Single Move，单次搬一格</td><td>07</td></tr>
+      <tr><td>块 DMA（一次两 move）</td><td>Combined，transfer size = 2</td><td>07</td></tr>
+      <tr><td>与支持奇偶的从机对接</td><td>PAREN + PARTYP（仅短模式）</td><td>04</td></tr>
+      <tr><td>大端器件 + DMA 直连</td><td>ECON.BE 在数据通路上换序</td><td>04</td></tr>
+      <tr><td>MCU 作从机</td><td>MS=1x + PISEL + SLSI/ERU 唤醒</td><td>09</td></tr>
+      <tr><td>长线 / 强干扰从机</td><td>Spike/Baud 监测 + AREN 自动停</td><td>09</td></tr>
+      <tr><td>要"第 k 个 bit 之后"做动作</td><td>PT1/PT2 事件 + BACON.UINT 逐帧门控</td><td>10</td></tr>
+      <tr><td>在线调试 / 安全监控</td><td>RXEXITD 非侵入读 + soft suspend</td><td>11 / 12</td></tr>
+      <tr><td>低功耗进出</td><td>避免在 long/continuous 中请求 sleep</td><td>12</td></tr>
+      <tr><td>协议卡死快速恢复</td><td>RESETS=01B（只复位控制结构）</td><td>12</td></tr>
+      <tr><td>测转速/占空比且该实例不通信</td><td>HSIC 输入捕获</td><td>APP</td></tr>
+    </tbody></table></div></div>
+
+  <div class="callout good" style="margin-top:16px"><b>结论：</b>普通 SPI 只有移位引擎；QSPI 集成时基、命令队列与故障模型。它把 CPU 从 bit 时序里赶出去，同时把 CPU 需要的证据——相位、进度、错误归因、非侵入视图——留了下来。</div>
+  <p class="source">本章不引入新事实，全部为第 01–12 章的归纳与交叉引用。</p>
+</section>
+
+<section id="hsic" class="view">
+  <div class="topbar"><div><div class="eyebrow">Appendix · HSIC</div><h2>HSIC：QSPI IP 内的输入捕获子模块</h2><p class="lead">HSIC 是与 SPI 无关的输入捕获子模块，与通信引擎共享同一 IP。手册给出的用途是：为 ADAS 应用测量相对低速的输入信号。</p></div><span class="stamp">§37.4 · CAPCON</span></div>
+  <div class="thesis"><article class="why"><h3>WHY</h3><p>ADAS 要测转速、占空比、PWM 反馈这类低速信号。用 CPU 打时间戳太贵，占一个 GPT/CCU 通道又浪费——同一个 IP 里塞一个捕获定时器最省。</p></article><article class="what"><h3>WHAT</h3><p>15-bit 计数器（分辨率 fPER）+ 四种测量模式（R→R / R→F / F→R / F→F）+ 一个 CAPCON 寄存器。</p></article><article class="how"><h3>HOW</h3><p><code>CAPCON.EDGECON</code> 选模式、<code>INS</code> 选输入、<code>EN</code> 使能；捕获值进 <code>CAP</code>，中断走 HC 线。</p></article></div>
+
+  <div class="section"><div class="section-head"><h3>四种捕获模式</h3><span>MEASUREMENT</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>模式</th><th>测的是什么</th><th>典型用途</th></tr></thead><tbody>
+      <tr><td><b>R→R</b>（rising to rising）</td><td>整个周期</td><td>转速、脉冲频率</td></tr>
+      <tr><td><b>R→F</b>（rising to falling）</td><td>高电平时间</td><td>PWM 高相宽度</td></tr>
+      <tr><td><b>F→R</b>（falling to rising）</td><td>低电平时间</td><td>PWM 低相宽度</td></tr>
+      <tr><td><b>F→F</b>（falling to falling）</td><td>整个周期（从下降沿起算）</td><td>与 R→R 互补，用于极性不确定的信号</td></tr>
+    </tbody></table>
+    <div class="callout" style="margin-top:12px"><b>分辨率是 fPER，量程要自己算：</b>15-bit 计数器的最大计时 = 2<sup>15</sup> × TPER。fPER=100 MHz 时 ≈ 32768×10 ns = <b>328 µs</b>（对应 ≈3.05 kHz）；fPER=200 MHz 时只有 <b>164 µs</b>（≈6.1 kHz）。对照手册给的验证范围 <b>3 kHz…30 kHz</b>：100 MHz 下满量程 ≈3.05 kHz，<b>3 kHz 已略超出量程</b>；200 MHz 下 ≈6.1 kHz，3 kHz 根本测不到。<b>换更快的 fPER，可测下限会同比例抬高</b>——这一点常被忽略。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>CAPCON 寄存器</h3><span>0A0H</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>字段</th><th>位</th><th>作用</th></tr></thead><tbody>
+      <tr><td><code>CAP[14:0]</code></td><td>14:0</td><td>捕获到的计数值（只读）</td></tr>
+      <tr><td><code>OVF[15]</code></td><td>15</td><td>溢出：信号周期长到计数器绕回，说明超出量程</td></tr>
+      <tr><td><code>EDGECON[17:16]</code></td><td>17:16</td><td>边沿配置——决定上面四种模式里的哪一种</td></tr>
+      <tr><td><code>INS[19:18]</code></td><td>19:18</td><td>输入源选择</td></tr>
+      <tr><td><code>EN[20]</code></td><td>20</td><td>使能 HSIC</td></tr>
+      <tr><td><code>CAPC / CAPS</code></td><td>28 / 29</td><td>标志清除 / 置位（写 1 生效）</td></tr>
+      <tr><td><code>CAPF</code></td><td>30</td><td>捕获事件标志</td></tr>
+      <tr><td><code>CAPSEL</code></td><td>31</td><td>中断选择（决定是否走 HC 中断线）</td></tr>
+    </tbody></table>
+    <div class="callout warning" style="margin-top:12px"><b>一个必须处理的初始化陷阱：</b>手册明确——使能（<code>CAPCON.EN=1</code>）之后<b>第一次捕获可能是随机值</b>，取决于使能瞬间输入信号的电平。<b>软件必须丢弃第一次捕获结果</b>，否则会读到一个看起来完全合理的错误值。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>与 QSPI 的关系：共享 IP 与生命周期</h3><span>COEXISTENCE</span></div><div class="board">
+    <div class="grid2">
+      <div class="tile"><h4>共享什么</h4><p>同一块 IP 的寄存器空间与 fPER 时钟基准；捕获中断走 <b>HC 中断线</b>，与 QSPI 的 TX/RX/ERR/PT/U 分开。</p></div>
+      <div class="tile"><h4>不共享什么</h4><p>数据通路完全独立：HSIC 不碰 FIFO、不碰移位引擎、不受 BACON/ECON 影响。<b>但它随 QSPI 内核一起休眠/挂起</b>——这条耦合在系统集成时必须知道。</p></div>
+    </div>
+    <div class="callout" style="margin-top:12px"><b>选型含义：</b>HSIC 是"定时器资源复用"的一条捷径——不必为一路转速信号占用一个 GPT/CCU 通道。代价是：分到 HSIC 的那个 QSPI 实例通常就不再用于通信，而且不是所有派生型号都带这个子模块，移植前要按具体型号核对。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>自测与依据</h3><span>CHECK</span></div><div class="board">
+    <div class="quiz"><b>自测 1：</b>量一个 200 Hz 的轮速信号，HSIC 合适吗？<div class="answer">不合适：200 Hz 的周期 5 ms，比手册下限 3 kHz（周期 333 µs）还慢约 15 倍，而 15-bit 计数器在 fPER=100 MHz 时最大也只有 328 µs，必然溢出（OVF 置位）。量更慢的信号要换定时器，或在外部先分频。</div></div>
+    <div class="quiz" style="margin-top:10px"><b>自测 2：</b>使能 HSIC 后第一次读到的 CAP 值能用吗？<div class="answer">不能。手册明确第一次捕获可能是随机值，必须丢弃。正确做法是使能后先等一次捕获并丢弃，再从第二次开始使用。</div></div>
+  </div></div>
+  <p class="source">依据：TC3xx UM Part 2 V2.0.0 §37.4 Functional Description HSIC（四种测量模式 RR/RF/FR/FF、15-bit 计数器、分辨率 fPER、HC 中断、首次捕获随机值须丢弃、验证频率 3 kHz…30 kHz）、CAPCON 寄存器描述（0A0H，CAP[14:0]/OVF/EDGECON/INS/EN/CAPC/CAPS/CAPF/CAPSEL）、Feature List "High Speed Input Capture (HSIC)"。</p>
+</section>
+
+<section id="slave" class="view">
+  <div class="topbar"><div><div class="eyebrow">Chapter 09 · Slave mode</div><h2>从机模式：固定时序与重定义的帧边界</h2><p class="lead">前八章为主机视角。从机不掌握 SCLK 与 SLSI，帧边界、时序参数与超时判据因此另行定义；BACON/DATA 队列接口保持不变。</p></div><span class="stamp">PASSIVE CONTRACT · §37.3.3</span></div>
+  <div class="thesis"><article class="why"><h3>WHY · 为什么车规要做从机</h3><p>域控、SBC、安全芯片常把 MCU 当外设来读。主控随时可能开始或停止时钟，MCU 既不能拉低 SCLK 也不能插等待，只能"立即响应"。</p></article><article class="what"><h3>WHAT · 被动语义</h3><p>CPOL/CPH 固定 0/1、A/B/C 与所有延时失效、SLSI 定帧、DL 限 2…32 bit、SRF 被忽略、波特率字段改当看门狗。</p></article><article class="how"><h3>HOW · 入口</h3><p>GLOBALCON.MS=1x；PISEL 选输入引脚与电平；SLSI 撤销即复位移位状态机；PT2 绑 SLSI 上升沿（<b>事件编码表见第 10 章</b>）。</p></article></div>
+
+  <div class="section"><div class="section-head"><h3>主从资源归属对照</h3><span>WHO OWNS WHAT</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>资源</th><th>主机</th><th>从机</th><th>后果</th></tr></thead><tbody>
+      <tr><td>SCLK</td><td>产生</td><td>接收，只做采样</td><td>从机没有任何"插等待"的能力</td></tr>
+      <tr><td>片选</td><td>驱动 SLSO[15:0]</td><td>接收 SLSI（<b>固定低有效</b>）</td><td>极性不可配，接反了整帧都不来</td></tr>
+      <tr><td>帧边界</td><td>BACON.LAST 决定</td><td>SLSI 撤销，或位数</td><td>从机的"帧"是外部事件，不是配置</td></tr>
+      <tr><td>波特率字段 Q/A/B/C</td><td>用来<b>造波形</b></td><td>用来<b>划合法带</b>（看门狗）</td><td>同一组字段，两种语义</td></tr>
+      <tr><td>A/B/C 延时与采样点</td><td>有效</td><td><b>全部失效</b></td><td>采样固定在 SCLKI 下降沿</td></tr>
+      <tr><td>LEAD / TRAIL / IDLE</td><td>有效</td><td><b>无效</b></td><td>从机立即响应外部边沿</td></tr>
+      <tr><td>GLOBALCON.SRF</td><td>RXFIFO 满可停时钟</td><td><b>被忽略</b></td><td>从机只剩"及时清 RXFIFO"一条路</td></tr>
+      <tr><td>数据方向</td><td>MTSR 出 / MRST 入</td><td>同左，但节拍由外部给</td><td>空 TXFIFO 时对外移出全 1</td></tr>
+      <tr><td>休眠</td><td>自主请求</td><td>仅当无排队、无传输、TXFIFO 空</td><td>休眠期间靠 SLSI 边沿经 SCU.ERU 唤醒</td></tr>
+    </tbody></table>
+    <div class="callout" style="margin-top:12px"><b>一句话：</b>主机的每个可编程延时，都是从机用不上的自由度。从机的"可编程"只剩两项——<b>数据长度</b>和<b>波特率分频</b>（后者当看门狗用）。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>首拍竞态：TXFIFO 必须在首边沿前就位</h3><span>FIRST-EDGE RACE</span></div><div class="board">
+    <div id="slaveWave" class="wave"></div>
+    <div class="callout warning" style="margin-top:12px"><b>手册原文的两种失效：</b>①首边沿到达时 TXFIFO 为空 → <b>欠载</b>，对外移出全 1，置 underflow 错误；②软件<b>恰好在首边沿那一刻</b>写入 → 仍然报欠载，而且"数据可能被破坏——首 bit 会是 1"。第二种最容易忽略：你以为写了，实际首 bit 已经错了。</div>
+    <div class="callout good" style="margin-top:10px"><b>工程做法：</b>从机侧不能"来一个边沿补一次数"。要么在帧开始前把 TXFIFO 灌满，要么用 PT1 的 BUSY/TBE 事件（事件表见第 10 章）在<b>上一帧</b>就提前准备下一帧——这也是为什么从机驱动通常把 TX 队列做成"预装 N 帧"而不是"按需喂"。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>从机模式的九条硬约束</h3><span>HARD CONSTRAINTS</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>#</th><th>约束</th><th>手册依据 / 为什么</th><th>违反后的现象</th></tr></thead><tbody>
+      <tr><td>1</td><td>CPOL=0、CPH=1 <b>固定</b>，但仍须真的写进 BACON.CS 选中的 ECONz</td><td>§37.3.3.1：硬件只认这一种契约</td><td>模式对不上 → 首 bit 采错，后面全部移位</td></tr>
+      <tr><td>2</td><td>SLSI 固定<b>低有效</b></td><td>§37.3.3.1</td><td>片选接反 → 从机永远认为"未被选中"</td></tr>
+      <tr><td>3</td><td>DL 限 <b>2…32 bit</b>，BACON.BYTE 必须为 0</td><td>§37.3.3：从机只按位计数</td><td>按字节配 → 帧长解释成 8 倍，收不满就溢出</td></tr>
+      <tr><td>4</td><td>A/B/C、LEAD/TRAIL/IDLE、占空比、采样点<b>全部失效</b></td><td>§37.3.3：从机只立即响应外部边沿</td><td>调半天 ECON 参数，波形纹丝不动</td></tr>
+      <tr><td>5</td><td>SRF 被忽略</td><td>§37.3.5.1：从机没有时钟控制权</td><td>以为能靠 SRF 挡溢出，结果数据静默丢失</td></tr>
+      <tr><td>6</td><td>SLSI 撤销 → 移位状态机复位、位计数器清零</td><td>§37.3.3</td><td>主机中途放弃该帧 → 从机重新等下一帧（这是"恢复"，不是"出错"）</td></tr>
+      <tr><td>7</td><td>纯位数定帧时，任何 <b>&gt; 2 个 bit time</b> 的 SCLKI 周期 = 帧尾 + 波特率错误</td><td>§37.3.3</td><td>主机降速或插 gap → 被当成帧结束，帧被腰斩</td></tr>
+      <tr><td>8</td><td>sleep 仅当：无待发队列、无进行中传输、TXFIFO 空</td><td>§37.3.3</td><td>带数据进休眠 → 唤醒后状态机与 FIFO 不一致</td></tr>
+      <tr><td>9</td><td>主↔从切换、simplex 接收切全双工，都必须<b>模块复位</b></td><td>§37.3.3：状态机与计数器语义不同</td><td>直接改 MS 位 → 内部状态残留，首帧行为不可预期</td></tr>
+    </tbody></table>
+    <div class="callout" style="margin-top:12px"><b>重配的时机也有限制：</b>"Slave re-configuration must only be performed in a gap between the frames"，且手册强烈建议<b>只配一次</b>、在传输开始前配完。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>从机波特率：时钟监测的参考值</h3><span>CLOCK MONITORING</span></div><div class="board">
+    <div class="callout"><b>动机：</b>从机拿不到时钟，也就无从判断"这个边沿该不该来"。手册原话：SCLK 上的窄毛刺（地弹、过冲振铃）会让从机<b>多打一拍</b>——多出来的这一位被塞进前端 RXFIFO，于是<b>之后所有帧都永久移位</b>。这是 SPI 从机最隐蔽的失效：数据看着像真的，只是从这一位开始全错位。</div>
+    <p class="mini" style="margin:9px 0 0"><b>单位先定义清楚：</b>本节的"标称位时间" Tbit = (A+1+B+C) × TQz，TQz = TPER×(TQ+1)×(Q+1)，以<b>本机 fPER</b> 为基准。从机不知道主机的实际配置，只能拿自己 ECON 里那组参数作判据——这正是"同一组字段、两种语义"的由来。</p>
+    <div class="table-wrap" style="margin-top:12px"><table class="table"><thead><tr><th>机制</th><th>检测什么</th><th>反应速度</th><th>边界条件（手册明说）</th></tr></thead><tbody>
+      <tr><td>尖峰检测<br>Spike Detection</td><td>SCLK 上的窄脉冲——地弹 / 振铃 / 过冲</td><td><b>立即</b></td><td>工作到 50 MBaud</td></tr>
+      <tr><td>波特率偏差检测<br>Baud Rate Error</td><td>实际 SCLK 频率是否落在 ECON.Q/A/B/C 定义的合法带内</td><td>要<b>几个 bit</b> 才能判出</td><td>窗口 = 2 个标称位时间；2 倍偏差至少 4 个真实脉冲、3 倍至少 6 个；手册明说<b>它</b>对小于一个 kernel 时钟周期的毛刺不敏感</td></tr>
+      <tr><td>频率偏<b>高</b></td><td>两者都会报，但<b>尖峰检测更有效</b></td><td>立即</td><td>—</td></tr>
+      <tr><td>频率偏<b>低</b></td><td><b>只有</b>波特率检测会报；尖峰检测忽略这种情况</td><td>立即</td><td>—</td></tr>
+    </tbody></table></div>
+    <div class="flow" style="margin-top:14px">
+      <div class="node violet"><b>检测到</b><small>SPD / BRD</small></div><div class="arrow">→</div>
+      <div class="node amber"><b>置标志</b><small>STATUS.ERRORFLAGS[2]</small></div><div class="arrow">→</div>
+      <div class="node blue"><b>发中断</b><small>ERRORENS 使能后</small></div><div class="arrow">→</div>
+      <div class="node green"><b>自动清 EN</b><small>AREN=1 → 硬件清 GLOBALCON.EN</small></div><div class="arrow">→</div>
+      <div class="node"><b>软件复位恢复</b><small>清标志 → 重配 → RUN</small></div>
+    </div>
+    <div class="callout good" style="margin-top:12px"><b>设计含义：</b>从机的 ECON 分频值不是"我打算跑多快"，而是"<b>我认为合法的时间窗口</b>"。同一组 Q/A/B/C，在主机侧是波形生成器，在从机侧是频率判据——这就是为什么从机也必须认真配它，哪怕它一个边沿都不生成。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>从机初始化与收发</h3><span>SOFTWARE</span></div><div class="board"><div class="codegrid">
+    <div><h4>操作顺序</h4><ol class="steps" id="slaveSteps"></ol></div>
+    <div><h4>示意代码 · TC3xx iLLD 风格</h4><pre><code id="slaveCode"></code></pre></div>
+  </div>
+  <div class="callout" style="margin-top:12px"><b>注意第 2 步：</b>PISEL 必须在 <b>MS 置位之前</b>配好；手册原文"SLSIS must be programmed properly before the slave mode is set"。<code>SLSIS=000B</code> 表示完全不用片选输入，此时只能靠位数定帧，落进第 7 条约束。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>主从不对称的原因</h3><span>DEEP DIVE</span></div><div class="chapter-tools"><button data-expand>展开全部</button><button data-collapse>折叠全部</button></div><div class="deep">
+    <details open><summary>为什么从机要保留整套 BACON/DATA 队列</summary><div class="detail-body"><p>手册明确："the slave mode supports the same user interface as the master mode. This means the BACON-Data sequences remain the same." 这是有意的设计：驱动栈只写一套描述逻辑，主从由 GLOBALCON.MS 切换。</p><p>但代价是<b>字段语义分裂</b>——同一个 BACON.LAST，主机里决定"片选何时释放"，从机里几乎无事可做（帧边界由 SLSI 或位数决定）；同一个 ECON.Q/A/B/C，主机里造波形，从机里划合法带。<b>读手册时必须按模式切换语义读同一张位域表</b>，这是最容易踩的认知陷阱。</p></div></details>
+    <details><summary>为什么主从切换一定要模块复位</summary><div class="detail-body"><p>主机模式下，状态机是"定时器驱动"：按 TQ 计时、按 A/B/C 输出边沿。从机模式下它是"事件驱动"：每个外部边沿触发一次动作。两者共用移位通路与计数器，但驱动源完全不同。</p><p>直接改 MS 位，等于把正在计时的定时器突然改成计数器——残留的相位、未清的中断标志、已装了一半的移位寄存器都会带进新模式。手册因此要求：先回 wait、复位状态机、再进从机。</p></div></details>
+    <details><summary>从机怎么被"叫醒"：SLSI 边沿经 SCU.ERU</summary><div class="detail-body"><p>休眠时 QSPI kernel 时钟已关，模块自己不可能检测边沿。唤醒必须走系统级路径：<b>SCU.ERU 在 SLSI 引脚的可编程边沿上触发软件中断</b>，把 MCU 叫醒，唤醒后模块落回 PAUSE 状态，再由软件恢复。</p><p>设计含义：从机侧的低功耗不能只考虑 QSPI，必须同时配好 ERU 的边沿选择与唤醒源使能——这是"外设能力"和"系统能力"必须一起规划的例子。</p></div></details>
+    <details><summary>STIP：取消选择时 MRST 输出什么电平</summary><div class="detail-body"><p>从机在被取消选中（SLSI 撤销）时，MRST 应该输出 0 还是 1？手册给了一位专门控制它：<code>GLOBALCON.STIP</code>。0 表示取消选择时 MRST=0，1 表示 MRST=1。</p><p>这不是小事：主机侧可能用上拉/下拉判断从机是否在线，或者把 MRST 当"数据有效"看。默认电平选错，主机会读到伪数据。选型时按对端 EVAL 的期望配。</p></div></details>
+    <div class="quiz"><b>自测：</b>从机模式下把 ECON.A 从 3 改成 0，采样点会前移吗？<div class="answer">不会。A/B/C 在从机模式不参与采样，手册明确"the settings for the leading, trailing, idle delays, and duty cycle and sampling point are irrelevant"，采样固定在 SCLKI 下降沿。改 A 只会影响波特率看门狗的分频基准。</div></div>
+  </div></div>
+  <p class="source">依据：TC3xx UM Part 2 V2.0.0 §37.3.3（Slave Mode，含首拍竞态与帧边界两套规则）、§37.3.3.1（CPOL/CPH 固定与重配时机）、§37.3.3.2（时钟监测）、§37.3.8.2（ERU 唤醒）、PISEL.SLSIS 与 GLOBALCON.STIP 寄存器描述、Feature List "Seven slave select inputs SLSIB..H"。</p>
+</section>
+
+</main>
+</div>
+<script>
+const views=[...document.querySelectorAll('.view')];
+function openView(id){
+  const target=document.getElementById(id)||document.getElementById('overview');
+  views.forEach(v=>v.classList.toggle('active',v===target));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===target.id));
+  try{history.replaceState(null,'','#'+target.id)}catch(e){} window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>openView(b.dataset.view)));
+if(location.hash) openView(location.hash.slice(1));
+document.querySelectorAll('[data-expand]').forEach(b=>b.addEventListener('click',()=>b.closest('.section').querySelectorAll('details').forEach(d=>d.open=true)));
+document.querySelectorAll('[data-collapse]').forEach(b=>b.addEventListener('click',()=>b.closest('.section').querySelectorAll('details').forEach(d=>d.open=false)));
+
+/* ============ SVG 波形基础设施 ============ */
+const SVGNS='http://www.w3.org/2000/svg';
+function mk(tag,attrs,text){const e=document.createElementNS(SVGNS,tag);if(attrs)for(const k in attrs){const v=attrs[k];if(v!==undefined&&v!==null)e.setAttribute(k,v)}if(text!=null)e.textContent=text;return e}
+function halo(t){t.style.paintOrder='stroke';t.style.stroke='var(--paper2)';t.style.strokeWidth='4px';t.style.strokeLinejoin='round';return t}
+function txt(x,y,text,cls,anchor){return halo(mk('text',{x,y,'text-anchor':anchor||'middle',class:cls||'w-lbl'},text))}
+function band(x1,x2,yt,yb,cls,ls,rs){
+  const e=Math.min(12,(x2-x1)/3);
+  const p=[[x1,ls?yt+e:yt]];
+  if(ls)p.push([x1+e,yt]);
+  p.push([rs?x2-e:x2,yt]);
+  if(rs){p.push([x2,yt+e]);p.push([x2,yb-e])}
+  p.push([rs?x2-e:x2,yb]);
+  if(ls)p.push([x1+e,yb]);
+  p.push([x1,ls?yb-e:yb]);
+  return mk('path',{d:'M '+p.map(q=>q[0].toFixed(1)+' '+q[1]).join(' L ')+' Z',class:'band '+cls});
+}
+
+/* ============ Ch01：采样点波形 ============ */
+function renderSample(){
+  const host=document.getElementById('sampleWave'); if(!host) return;
+  const tq=Math.max(1,+document.getElementById('sTq').value||10);
+  const loopNs=Math.max(0,+document.getElementById('sLoop').value||0);
+  const A=+document.getElementById('sA').value;
+  const B=+document.getElementById('sB').value;
+  let C=+document.getElementById('sC').value;
+  const forced=(B===0&&C===0); if(forced) C=1;
+  document.getElementById('sAv').textContent=A;
+  document.getElementById('sBv').textContent=B;
+  document.getElementById('sCv').textContent=C+(forced?'（强制）':'');
+  const T=A+B+C, sampleTq=A+B;
+  const loopTq=loopNs/tq;
+
+  const W=1000,H=392,X0=112,X1=968;
+  const x=t=>X0+(t/T)*(X1-X0);
+  const yClkHi=58,yClkLo=100,mT=148,mB=180,iT=236,iB=268;
+  const svg=mk('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'xMidYMid meet',role:'img','aria-label':'SCLK 位周期与采样点波形'});
+  svg.style.fontFamily='inherit';
+
+  for(let i=0;i<=T;i++){svg.appendChild(mk('line',{x1:x(i),y1:44,x2:x(i),y2:290,class:'w-grid'}));svg.appendChild(mk('text',{x:x(i),y:368,'text-anchor':'middle',class:'w-small'},String(i)))}
+  svg.appendChild(txt(X1+0,386,`横轴：TQz 计数 · 每格 ${tq} ns`,'w-small','end'));
+
+  svg.appendChild(txt(10,80,'SCLKO','w-name','start'));   svg.appendChild(txt(10,93,'主机输出','w-small','start'));
+  svg.appendChild(txt(10,164,'MTSR','w-name','start'));   svg.appendChild(txt(10,177,'主机→从机','w-small','start'));
+  svg.appendChild(txt(10,252,'MRST','w-name','start'));   svg.appendChild(txt(10,265,'从机→主机','w-small','start'));
+
+  svg.appendChild(mk('path',{d:`M ${X0} ${yClkLo} H ${x(0)} V ${yClkHi} H ${x(A)} V ${yClkLo} H ${X1}`,class:'w-sig s-clk'}));
+  svg.appendChild(band(x(0),X1,mT,mB,'f-mosi',true,true));
+  svg.appendChild(txt((x(0)+X1)/2,mT-10,'正在移出的 bit','w-small'));
+
+  const xm=x(Math.max(0,Math.min(loopTq,T)));
+  if(xm>X0+6) svg.appendChild(band(X0,xm,iT,iB,'f-old',false,false));
+  if(xm<X1-6) svg.appendChild(band(xm,X1,iT,iB,'f-new',false,true));
+  if(xm>X0+95) svg.appendChild(txt((X0+xm)/2,(iT+iB)/2+4,'旧值 / 切换区','w-small'));
+  if(X1-xm>95) svg.appendChild(txt((xm+X1)/2,(iT+iB)/2+4,'新数据有效','w-small'));
+
+  const xl=x(Math.min(loopTq,T));
+  if(xl>X0+4){
+    svg.appendChild(mk('line',{x1:X0,y1:222,x2:xl,y2:222,class:'w-dim'}));
+    svg.appendChild(mk('path',{d:`M ${X0} 218 L ${X0+7} 222 L ${X0} 226 Z`,class:'s-amb'}));
+    if(loopTq<T) svg.appendChild(mk('path',{d:`M ${xl} 218 L ${xl-7} 222 L ${xl} 226 Z`,class:'s-amb'}));
+    svg.appendChild(txt((X0+xl)/2,212,`tLOOP = ${loopNs} ns`,'w-val'));
+  }
+
+  const xs=x(sampleTq), miss=(sampleTq*tq)<loopNs;
+  svg.appendChild(mk('line',{x1:xs,y1:42,x2:xs,y2:292,class:'w-samp'}));
+  svg.appendChild(mk('circle',{cx:xs,cy:(iT+iB)/2,r:5,class:miss?'s-red':'s-green'}));
+  const lx=Math.min(Math.max(xs,X0+96),X1-96);
+  svg.appendChild(txt(lx,22,`SAMPLE @ A+B = ${sampleTq} TQz`,'w-lbl'));
+  svg.appendChild(txt(lx,36,`${(sampleTq*tq).toFixed(0)} ns${miss?' · 数据还没到':' · 数据已稳定'}`,miss?'w-val':'w-val'));
+
+  const yBr=306;
+  function brace(t0,t1,label){
+    if(t1<=t0) return;
+    const a=x(t0),b=x(t1);
+    svg.appendChild(mk('path',{d:`M ${a} ${yBr} v 12 H ${b} v -12`,class:'w-brace'}));
+    svg.appendChild(txt((a+b)/2,332,label,'w-lbl'));
+  }
+  brace(0,A,`A = ${A} TQz`);
+  brace(A,A+B,`B = ${B} TQz`);
+  brace(A+B,T,`C = ${C} TQz`);
+  if(B===0){
+    const rx=x(A);
+    svg.appendChild(mk('line',{x1:rx,y1:yBr-10,x2:rx,y2:yBr+16,class:'w-samp'}));
+    const right=rx+64<X1;
+    svg.appendChild(txt(right?rx+9:rx-9,yBr-14,'B = 0','w-small',right?'start':'end'));
+  }
+
+  host.replaceChildren(svg);
+
+  document.getElementById('bitPeriod').textContent=`A+B+C = ${T} TQz = ${T*tq} ns → fSCLK = ${(1000/(T*tq)).toFixed(2)} MHz`;
+  document.getElementById('samplePoint').textContent=`A+B = ${sampleTq} TQz = ${sampleTq*tq} ns`;
+  document.getElementById('dutyText').textContent=`高 ${A} TQz / 低 ${B+C} TQz，占空比 ${(A/T*100).toFixed(0)}%`;
+  const margin=sampleTq*tq-loopNs;
+  const r=document.getElementById('sampleResult');
+  const lag=Math.ceil(loopNs/(T*tq));
+  r.innerHTML=margin>0
+    ? `<span>位周期 ${T} TQz = ${T*tq} ns（fSCLK ${(1000/(T*tq)).toFixed(2)} MHz）；采样点 ${sampleTq*tq} ns ≥ 回环延迟 ${loopNs} ns</span><strong>PASS · 余量 +${margin.toFixed(0)} ns</strong>`
+    : margin===0
+    ? `<span>采样点与数据到达<b>同时发生</b>，没有 setup/hold 余量；且 ${loopNs} ns 还只是典型值，未含 tSU、抖动与温漂</span><strong style="color:var(--amber)">临界 · 0 ns</strong>`
+    : `<span>位周期 ${T} TQz = ${T*tq} ns（fSCLK ${(1000/(T*tq)).toFixed(2)} MHz）；采样点 ${sampleTq*tq} ns &lt; 回环延迟 ${loopNs} ns，锁存到的是更早的位（落后约 ${lag} 位）</span><strong style="color:var(--red)">MISS · 差 ${margin.toFixed(0)} ns</strong>`;
+}
+['sA','sB','sC','sTq','sLoop'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',renderSample)});
+document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('[data-preset]').forEach(o=>o.classList.toggle('active',o===b));
+  const late=b.dataset.preset==='late';
+  document.getElementById('sA').value=4;document.getElementById('sB').value=late?1:0;document.getElementById('sC').value=late?2:3;
+  renderSample();
+}));
+renderSample();
+
+const clkIds=['clkFper','clkTq','clkQ','clkA','clkB','clkC'];
+function calcClock(){const v=Object.fromEntries(clkIds.map(id=>[id,Math.max(0,+document.getElementById(id).value||0)]));const A=v.clkA+1,B=v.clkB,C=(B===0&&v.clkC===0)?1:v.clkC;const div=(v.clkTq+1)*(v.clkQ+1)*(A+B+C);const f=v.clkFper/div;const over=(f>50.001||v.clkFper>200);document.getElementById('clkResult').textContent=f.toFixed(3)+' MHz'+(over?' ⚠':'')+'';const bit=(v.clkQ+1)*(A+B+C),ok=bit>=4;const tper=1000/Math.max(0.001,v.clkFper),tqz=tper*(v.clkTq+1)*(v.clkQ+1);document.getElementById('clkExplain').textContent=`TPER=${tper.toFixed(2)} ns → TQz=${tqz.toFixed(2)} ns（通道时间量子）· 真实长度 A=${A}, B=${B}, C=${C}（A=raw+1）· (Q+1)(A+B+C)=${bit} ${ok?'≥':'<'} 4 · 位周期 ${(A+B+C)*tqz} ns · 总除数 ${div}${C!==v.clkC?' · C 被硬件强制为 1':''}${over?' · ⚠ 超过 TC39xB 上限：fQSPI ≤ 200 MHz、QSPI ≤ 50 Mbit/s':''}`;document.getElementById('clkResult').style.color=(ok&&!over)?'var(--green)':'var(--red)'}
+clkIds.forEach(id=>document.getElementById(id).addEventListener('input',calcClock));calcClock();
+
+function calcHeadroom(){const bits=+document.getElementById('hrBits').value,clk=Math.max(.1,+document.getElementById('hrClock').value||.1),n=Math.max(1,Math.min(4,+document.getElementById('hrEntries').value||1));const us=n*bits/clk;document.getElementById('hrResult').textContent=(us<1?us.toFixed(3):us.toFixed(2))+' μs'}
+['hrBits','hrClock','hrEntries'].forEach(id=>document.getElementById(id).addEventListener('input',calcHeadroom));calcHeadroom();
+
+const modes={short:{t:[['LEAD','gap'],['D · 2…32 bit',''],['TRAIL','gap']],cfg:'BYTE=0 · LAST=1',end:'一个 short block 完成后 TRAIL 并释放 CS',use:'寄存器命令、ADC/传感器'},long:{t:[['LEAD','gap'],['d0',''],['d1',''],['…','dim'],['rest',''],['TRAIL','gap']],cfg:'BYTE=1 · LAST=1 · DL=2…32 byte',end:'声明的 byte count 完成',use:'中等 packet / burst'},cshort:{t:[['L','gap'],['D0 ≤32b',''],['T gap','gap'],['D1 ≤32b',''],['T gap','gap'],['Dlast','']],cfg:'BYTE=0 · LAST=0…0→1',end:'最终 BACON.LAST=1 后释放 CS',use:'bit-oriented stream'},clong:{t:[['L','gap'],['BLOCK0',''],['C1','c'],['BLOCK1',''],['Cend','c'],['FINAL','']],cfg:'BYTE=1 · 每 block 有 C + N×D',end:'最终 long block 的 LAST=1',use:'DMA bulk stream'},single:{t:[['C once','c'],['D0 · upper16=0',''],['D1 · upper16=0',''],['D2 · upper16=0','']],cfg:'DL≤15 · MIX only · 复用首次 BACON',end:'LAST=1 为独立 frames；LAST=0 可保持 CS',use:'同一 slave 的多个 ≤16-bit words'},xxl:{t:[['LEAD','gap'],['ONE BLOCK · 2…65,536 bytes',''],['TRAIL','gap']],cfg:'BYTE=1 · DL=0 · XXLCON.XDL',end:'BYTECOUNT → 0',use:'已知大 byte count 的 payload'},mc:{t:[['L','gap'],['MOVE 4',''],['MOVE 3',''],['MOVE 2',''],['MOVE 1',''],['T','gap']],cfg:'MCEN=1 · BYTE=0 · LAST=0',end:'MC.CURRENT → 0，硬件自动释放 SLSO',use:'DMA move count / daisy-chain'}};
+const modeSw={
+short:{steps:['初始化时先配 <b>ECON</b>：Q、A、B、C、CPOL/CPH 一次定死，运行期不再动。','每帧在 RAM 里把整个 BACON 字拼好：CS、DL、BYTE、MSB、LAST。','<b>一次性</b>写 BACONENTRY——写几次就入队几个 C。','写 DATAENTRY[0]；这一个 32-bit entry 就是本帧全部 payload。','LAST=1 时硬件在 TRAIL 后自动释放 SLSO 并置 EoF。'],code:`/* 目标：SLSO2 上发一个 16-bit 命令字 */
+uint32_t b;
+
+/* ① 通道电气参数：初始化时配一次 */
+QSPI0->ECON[2].B.Q = 0;    /* 通道量子分频 = Q+1 = 1（TQz = TPER×(TQ+1)×1） */
+QSPI0->ECON[2].B.A = 3;    /* A = A+1 = 4 个 TQz      */
+QSPI0->ECON[2].B.B = 1;    /* 采样点 A+B = 5 TQz      */
+QSPI0->ECON[2].B.C = 2;    /* 低电平 B+C = 3 TQz      */
+
+/* ② 先在 RAM 里拼好整字 */
+b  = (2u  & 0xFu)  << 28;  /* CS   = 2  → SLSO2 + ECON2     */
+b |= (15u & 0x1Fu) << 23;  /* DL   = 16-1（raw 0 也是 2 bit）*/
+b |= (0u)          << 22;  /* BYTE = 0 → 位模式             */
+b |= (1u)          << 21;  /* MSB  = 1 → 高位先出           */
+b |= (1u)          << 0;   /* LAST = 1 → 本帧结束即释放 CS  */
+
+QSPI0->BACONENTRY.U = b;   /* 一次写 = 恰好 1 个 C entry    */
+
+/* ③ 数据紧跟配置 */
+QSPI0->DATAENTRY[0].U = 0x1234u;`,dma:'把拼好的 BACON 字和 DATA 一起放 RAM 数组，DMA 固定写 DATAENTRY0，descriptor 用 CPU 写 BACON_ENTRY——类型最不容易错。',pit:'<code>QSPI0-&gt;BACONENTRY.B.CS = 2;</code> 这种逐字段赋值：每个字段一次写，等于往 FIFO 塞了 5 个 C，帧序列全乱。BACONENTRY 是入口，不是普通寄存器。'},
+long:{steps:['长度按 <b>字节</b>算：DL = bytes−1，BYTE=1。','先算 <b>N = ceil(bytes/4)</b>：硬件按 DL 数完就走 TRAIL，不数 entry。','一个 BACON + N 个 DATA，同一次 CS 窗口内完成。','最后那个 entry 只有低几个 byte 有效。','超过 32 byte（256 bit）就转 XXL。'],code:`/* 目标：10-byte block，N = ceil(10/4) = 3 个 DATA entry */
+uint32_t b  = (2u) << 28;   /* CS2               */
+b |= (9u) << 23;            /* DL = 10-1 = 9     */
+b |= (1u) << 22;            /* BYTE = 1 → 按字节 */
+b |= (1u) << 21;            /* MSB               */
+b |= (1u) << 0;             /* LAST              */
+QSPI0->BACONENTRY.U = b;
+
+/* 按块序写入：W0..Wn；末尾残余字 W2=0x0000090A（有效字节在低位） */
+for (uint32_t i = 0; i < 3u; i++)
+    QSPI0->DATAENTRY[0].U = w[i];`,dma:'DMA 一次搬 4 byte；源缓冲区按 32-bit 对齐，长度传 ceil(bytes/4)×4，别按 bytes 直接算。',pit:'10 byte 只写 2 个 entry：状态机等第 3 个 D，CS 一直不释放，现象是“卡在最后一个字节”。'},
+cshort:{steps:['第一个 block 的 BACON 置 <b>LAST=0</b>：帧不结束，SLSO 保持。','每个 block 都要自己的 C（可在 C 里改 CS/DL 做跳转）。','最后一个 block 置 <b>LAST=1</b>：TRAIL 变成真正的帧尾并释放 CS。','数据供给断档会进 EXPECT 相位，超时报错但 CS 不一定释放。'],code:`/* 目标：3 个 block 共用一次 CS 窗口 */
+uint32_t base = (2u)<<28 | (15u)<<23 | (1u)<<21;  /* CS2 / DL / MSB */
+
+for (uint32_t i = 0; i < 3u; i++) {
+    uint32_t b = base;
+    if (i == 2u) b |= 1u;        /* 只有最后一个置 LAST */
+    QSPI0->BACONENTRY.U = b;     /* 每 block 一份 C     */
+    QSPI0->DATAENTRY[0].U = blk[i];
+}
+/* LAST=0：TRAIL 后进 WAIT 等下一块，SLSO2 保持低 */`,dma:'用 linked-list DMA 把 C/D 交错写入同一个 FIFO；一旦供给断档，CS 会停在低电平等数据（EXPECT）。',pit:'忘了给最后一个 block 置 LAST=1：CS 永远不释放，总线上看它一直低电平，像“总线被独占”。'},
+clong:{steps:['与 Continuous Short 同一套 grammar，只是每个 block 是 N 个 DATA。','每个 block 仍需要一份 BACON：长块减少的是 D 的数量，不是 C。','中间 block 全部 LAST=0，最后一个 LAST=1。','适合 DMA 批量灌数据时按策略块切分（如 Flash page）。'],code:`/* 3 个 10-byte long block 串成一次 CS 窗口 */
+for (uint32_t k = 0; k < 3u; k++) {
+    uint32_t b = (2u)<<28 | (9u)<<23 | (1u)<<22 | (1u)<<21;
+    if (k == 2u) b |= 1u;          /* 最后一个 block */
+    QSPI0->BACONENTRY.U = b;
+    for (uint32_t i = 0; i < 3u; i++)
+        QSPI0->DATAENTRY[0].U = page[k][i];
+}`,dma:'每个 block 的 C+D 在 RAM 里连续排布，DMA 顺序搬运即可；注意 C 与 D 之间不能插入别的通道的 C。',pit:'以为“长块省配置”：Long 只是 D 变长，C 的数量不变。要真正省 C 得用 XXL 或 Move Counter。'},
+single:{steps:['前提三条同时成立：<b>DL ≤ 15</b>、只用 <b>MIX_ENTRY</b>、高 16 位为 0。','整个序列只写<b>一次</b> BACON，之后每个 32-bit word 高 16 位为 0 即判为数据。','LAST 仍决定 CS：LAST=1 每个 word 独立成帧，LAST=0 就退化成 continuous。','手册保证：不存在高 16 位全 0 的合法配置字，所以这段编码空间是安全的。'],code:`/* 前提：BACON.DL ≤ 15（≤16 bit）+ 只用 MIX_ENTRY */
+uint32_t b  = (2u) << 28;
+b |= (9u) << 23;            /* DL = 10-1 → 每帧 10 bit */
+b |= (1u) << 0;             /* LAST = 1 → 每 word 独立成帧 */
+QSPI0->BACONENTRY.U = b;    /* 整个序列只写这一次 C */
+
+QSPI0->MIXENTRY.U = 0x00001234u;  /* upper16=0 → 判为 DATA */
+QSPI0->MIXENTRY.U = 0x00008001u;
+QSPI0->MIXENTRY.U = 0x00000000u;  /* 全 0 也是合法数据 */
+
+/* 有符号数必须零扩展，不能符号扩展 */
+int16_t v = -1;
+QSPI0->MIXENTRY.U = (uint32_t)(uint16_t)v;  /* 0x0000FFFF ✓ */`,dma:'DMA 一个通道固定写 MIX_ENTRY；源缓冲里每个 32-bit word 必须是零扩展后的 16-bit 数据。',pit:'<code>(uint32_t)v</code> 直接转：-1 变成 0xFFFFFFFF，upper16≠0，parser 把它当配置字，触发 Unexpected Configuration Error。'},
+xxl:{steps:['长度搬到 <b>XXLCON.XDL</b>（2…65536 byte），BACON 必须 <b>BYTE=1 且 DL=0</b>——这就是 XXL 的触发条件。','一个 BACON 覆盖整个超长 block，中间不再需要 C，这是相对 Continuous 省的地方。','只允许 BACON_ENTRY + DATA_ENTRY，<b>禁止 MIX_ENTRY</b>。','进度读 XXLCON.BYTECOUNT（只读倒计数，到 0 即发完）。'],code:`/* 触发 XXL：BACON.BYTE=1 且 BACON.DL=0 */
+QSPI0->XXLCON.B.XDL = len - 1u;   /* 2…65536 byte */
+
+uint32_t b  = (2u) << 28;   /* CS2              */
+b |= (1u) << 22;            /* BYTE = 1         */
+b |= (0u) << 23;            /* DL   = 0 → XXL   */
+b |= (1u) << 21;            /* MSB              */
+b |= (1u) << 0;             /* LAST             */
+QSPI0->BACONENTRY.U = b;
+
+/* 之后只有 DATA，不再有 C */
+for (uint32_t i = 0; i < (len + 3u) / 4u; i++)
+    QSPI0->DATAENTRY[0].U = w[i];
+
+/* 进度：QSPI0->XXLCON.B.BYTECOUNT 递减到 0 */`,dma:'DMA 源地址自增、目的固定 DATAENTRY0，搬 ceil(len/4) 次；再用 BYTECOUNT 或 DMA 剩余计数交叉校验。',pit:'len 不是 4 的倍数时，最后一个 entry 的多余 byte 仍会被移出（硬件按 XDL 的字节数移位），缓冲区尾部要留够。'},
+mc:{steps:['MCCON.MCEN=1 使能，MC.MCOUNT 写 move 数（1…8191）。','BACON 必须 <b>LAST=0</b>：结束条件交给计数器，不看 LAST。','只送 DATA，禁止 MIX_ENTRY。','MC.CURRENT 递减到 0 时硬件自动释放 SLSO。','IBL/IAL 中断分别在倒数第二个、最后一个 move 之后触发；用完后软件清 MCEN。'],code:`/* 使能 + 装载 move 数 */
+QSPI0->MCCON.B.MCEN = 1;
+QSPI0->MC.B.MCOUNT  = moves;      /* 1…8191 */
+
+uint32_t b  = (2u) << 28;   /* CS2                 */
+b |= (15u) << 23;           /* DL                  */
+b |= (1u) << 21;            /* MSB                 */
+b |= (0u) << 0;             /* LAST = 0：交给计数器 */
+QSPI0->BACONENTRY.U = b;
+
+/* 之后只送 DATA，计数到 0 自动释放 SLSO */
+for (uint32_t i = 0; i < moves; i++)
+    QSPI0->DATAENTRY[0].U = w[i];
+
+/* IBLF：倒数第二个 move 移完后置位
+   IALF：最后一个 move 移完后置位   */`,dma:'典型用法：CPU 写一次 BACON，DMA 按固定 move 数灌 DATA，MC 与 DMA 计数天然对齐，不需要软件数 entry。',pit:'BACON 里写了 LAST=1：第一个 move 就结束帧，Move Counter 形同虚设——CS 抬起来时数据还没发完。'}};
+function showMode(k){const d=modes[k];document.getElementById('modeTokens').innerHTML=d.t.map(([x,c],i)=>`${i?'<span class="arr">→</span>':''}<span class="token ${c}">${x}</span>`).join('');document.getElementById('modeConfig').textContent=d.cfg;document.getElementById('modeFinish').textContent=d.end;document.getElementById('modeUse').textContent=d.use;document.getElementById('modeEnd').textContent=d.end;const s=modeSw[k];if(s){document.getElementById('modeSteps').innerHTML=s.steps.map(x=>`<li>${x}</li>`).join('');document.getElementById('modeCode').textContent=s.code;document.getElementById('modeDma').innerHTML='<b>DMA 视角：</b>'+s.dma;document.getElementById('modePit').innerHTML='<b>常见坑：</b>'+s.pit}}
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x===b));showMode(b.dataset.mode)}));showMode('short');
+
+const qRecipe=[{label:'C · BACON A · CS2 · LAST=0',k:'c',msg:'装载 BACON A；选择 SLSO2 + ECON2。',b:'A · CS2 · LAST=0'},{label:'D · DATA A0',k:'d',msg:'进入 shift register；开始 FRAME A。',d:'A0'},{label:'D · DATA A1',k:'d',msg:'复用当前 BACON；CS2 保持。',d:'A1'},{label:'C · BACON A · CS2 · LAST=1',k:'c',msg:'更新 frame descriptor；下一 block 将结束 CS2。',b:'A · CS2 · LAST=1'},{label:'D · DATA A2',k:'d',msg:'移出 A2，TRAIL 后释放 CS2。',d:'A2'},{label:'C · BACON B · CS5 · LAST=1',k:'c',msg:'切换到 SLSO5 + ECON5。',b:'B · CS5 · LAST=1'},{label:'D · DATA B0',k:'d',msg:'执行 FRAME B，完成后释放 CS5。',d:'B0'}];let qIndex=0;
+function drawQueue(){document.getElementById('queueRecipe').innerHTML=qRecipe.map((x,i)=>`<div class="fifo-slot ${x.k==='c'?'c':''}" style="opacity:${i<qIndex ? .32 : 1}">${i<qIndex?'✓ ':''}${x.label}</div>`).join('')}
+document.getElementById('queueStep').addEventListener('click',()=>{if(qIndex>=qRecipe.length)return;const x=qRecipe[qIndex++];if(x.b)document.getElementById('queueBacon').textContent=x.b;if(x.d){document.getElementById('queueShift').textContent=x.d;document.getElementById('queueWire').insertAdjacentHTML('beforeend',`<span class="token">${x.d}</span>`)}document.getElementById('queueStatus').innerHTML=`<b>${x.k==='c'?'CONFIG DISPATCH':'DATA DISPATCH'}：</b>${x.msg}`;drawQueue()});
+document.getElementById('queueReset').addEventListener('click',()=>{qIndex=0;document.getElementById('queueBacon').textContent='尚未加载';document.getElementById('queueShift').textContent='等待 DATA';document.getElementById('queueWire').innerHTML='';document.getElementById('queueStatus').innerHTML='<b>READY：</b>队首 configuration 将装载 frame descriptor。';drawQueue()});drawQueue();
+
+document.getElementById('csSlider').addEventListener('input',e=>{const cs=+e.target.value,z=cs&7;document.getElementById('csValue').textContent=cs;document.getElementById('csBacon').textContent='BACON.CS = '+cs;document.getElementById('csSlso').textContent='SLSO'+cs;document.getElementById('csEcon').textContent='ECON'+z;document.getElementById('csPair').textContent=`shared by CS${z} / CS${z+8}`;document.getElementById('csSentence').innerHTML=`<b>当前：</b>激活 SLSO${cs}，并用 ECON${z} 扩展本次 BACON。`});
+
+const entries={short:{t:[['C · BACON','c'],['D · one word','']],legal:'MIX_ENTRY 或 BACON_ENTRY + DATA_ENTRY',rule:'EXPECT C → 1×D → next C'},long:{t:[['C · length','c'],['D0',''],['D1',''],['…','dim'],['Drest','']],legal:'MIX_ENTRY 或 BACON_ENTRY + DATA_ENTRY',rule:'C 计算 N=ceil(bytes/4)，随后严格消费 N×D'},continuous:{t:[['C0 · LAST=0','c'],['D×N',''],['C1 · LAST=1','c'],['D×N','']],legal:'MIX_ENTRY 或 BACON_ENTRY + DATA_ENTRY',rule:'每个 block 完成后期待 C；LAST 只控制 CS'},single:{t:[['C once','c'],['D0 · upper16=0',''],['D1 · upper16=0',''],['D2 · upper16=0','']],legal:'MIX_ENTRY only',rule:'DL≤15；upper16=0 → D，非0 → new C'},xxl:{t:[['C · XXL','c'],['D0',''],['D1',''],['…','dim'],['Dlast','']],legal:'BACON_ENTRY + DATA_ENTRY only',rule:'MIX unsupported；XXLCON.XDL/BYTECOUNT 管长度'},mc:{t:[['C once','c'],['D · move0',''],['D · move1',''],['…','dim']],legal:'BACON_ENTRY + DATA_ENTRY only',rule:'MIX unsupported；MC.MCOUNT/CURRENT 管 moves'}};
+function showEntry(k){const d=entries[k];document.getElementById('entryTokens').innerHTML=d.t.map(([x,c],i)=>`${i?'<span class="arr">→</span>':''}<span class="token ${c}">${x}</span>`).join('');document.getElementById('entryLegal').textContent=d.legal;document.getElementById('entryRule').textContent=d.rule}
+document.querySelectorAll('[data-entry]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-entry]').forEach(x=>x.classList.toggle('active',x===b));showEntry(b.dataset.entry)}));showEntry('short');
+
+/* ============ Ch06：寄存器位图 + 字段表 ============ */
+const REG={
+bacon:{fields:[
+{n:'CS',hi:31,lo:28,g:'blue',role:'选中本次事务的通道：决定拉低哪条 SLSO，以及用哪份 ECON 扩展（ECON[CS&amp;7]）。',enc:'0…15；CS2 与 CS10 共用 ECON2',risk:'选错通道 → 别的从机被选中，或按另一颗器件的时序跑：CS 抖动、采样点整体偏移'},
+{n:'DL',hi:27,lo:23,g:'blue',role:'本次 data block 的长度。BYTE=0 时单位是 bit，BYTE=1 时是 byte。',enc:'00H→2 bit（BYTE=0）/ XXL（BYTE=1）；01H→2；… 1FH→32。即 raw = 长度−1，raw 0 不是“零长度”',risk:'少算一位 → 从机收到半截命令；多算 → 多移出 bit，整帧命令错位'},
+{n:'BYTE',hi:22,lo:22,g:'green',role:'长度单位。',enc:'0=bit，1=byte；slave 模式必须为 0',risk:'该按字节却按位 → 帧长缩到 1/8，命令被提前截断'},
+{n:'MSB',hi:21,lo:21,g:'green',role:'移位方向：先出最高位还是最低位。',enc:'0=LSB first，1=MSB first；块 &gt;32 bit 时末尾残余字的有效字节在低位（见第 04 章打包示例）',risk:'与从机约定相反 → 位序颠倒，读回的数据看起来像“随机值”'},
+{n:'UINT',hi:20,lo:20,g:'green',role:'把 PT1 事件路由到 User Interrupt 的使能；在“后续帧”中持续有效，直到被下一个 BACON 关掉。',enc:'0=关，1=开',risk:'一般不影响帧本身；误开会在无关帧边界触发用户中断，ISR 误判成数据事件'},
+{n:'PARTYP',hi:19,lo:19,g:'green',role:'奇偶校验类型（PAREN=1 时才起作用）。',enc:'0=偶校验，1=奇校验',risk:'与从机约定相反 → 每帧都报奇偶错，而数据本身看起来是对的'},
+{n:'TRAIL',hi:18,lo:16,g:'amber',role:'帧尾延时：最后一条 SCLK 边沿到 SLSO 释放之间的等待。',enc:'1…8 个单位（×4^TPRE）',risk:'太小 → 从机没锁完最后一位 CS 就抬起；太大 → 帧间吞吐下降'},
+{n:'TPRE',hi:15,lo:13,g:'amber',role:'TRAIL 的预分频，每档 ×4。',enc:'n=0…7 → 1, 4, 16, …, 16384',risk:'与 TRAIL 组合算错 → 实际延时差 4 倍（示波器上最容易发现的错）'},
+{n:'LEAD',hi:12,lo:10,g:'amber',role:'帧头延时：SLSO 有效到第一条 SCLK 边沿。',enc:'1…8 个单位（×4^LPRE）',risk:'小于从机 tCSS → 第一条边沿被忽略，整帧错一位'},
+{n:'LPRE',hi:9,lo:7,g:'amber',role:'LEAD 的预分频，每档 ×4。',enc:'n=0…7 → 1…16384',risk:'同上，4 倍量级的偏差'},
+{n:'IDLE',hi:6,lo:4,g:'amber',role:'帧前空闲长度：同时定义 IDLEA 与 IDLEB 两个等长子相位，二者交界处切换 SCLK 极性。',enc:'1…8 个单位（×4^IPRE）',risk:'多从机共用 SCLK 且 CPOL 不同时太小 → 极性切换未稳，下一帧首个边沿出毛刺'},
+{n:'IPRE',hi:3,lo:1,g:'amber',role:'IDLE 的预分频，每档 ×4。',enc:'n=0…7 → 1…16384',risk:'同上'},
+{n:'LAST',hi:0,lo:0,g:'blue',role:'本 block 之后是否结束整个 CS 窗口。',enc:'0=保持 SLSO 等下一个 block（见下方 WAIT/EXPECT 说明）；1=释放 SLSO',risk:'一直写 1 → 做不了连续流；一直写 0 → CS 永不释放，总线看起来“挂住”'}
+]},
+econ:{fields:[
+{n:'BE',hi:31,lo:30,g:'green',role:'字节序重排：只作用于 DATA 通路，BACON 与 STATUS 不会被重排。',enc:'00=关，01=16-bit big endian，10=32-bit big endian，11=关',risk:'只在主机与 big-endian 从机之间才需要；开错 → 字节序颠倒，数值差 256 倍'},
+{n:'reserved',hi:29,lo:15,g:'res',role:'保留位。',enc:'读回 0，写入应写 0',risk:'写 1 行为无定义；部分派生型号会在此扩展新功能，移植时要核对'},
+{n:'PAREN',hi:14,lo:14,g:'green',role:'校验使能：发送方向生成、接收方向检查。',enc:'0=关，1=开',risk:'从机不支持却打开 → 多出一位被当成数据；从机要求却没开 → 从机报校验错'},
+{n:'CPOL',hi:13,lo:13,g:'green',role:'SCLK 空闲电平。',enc:'0=空闲低，1=空闲高',risk:'SPI 模式错档 → 整帧错位，常表现为读回全 0 或全 1'},
+{n:'CPH',hi:12,lo:12,g:'green',role:'相位：把采样沿整体移半个 SCLK。',enc:'0=第一条边沿锁存；1=第一条边沿让从机移出、第二条锁存',risk:'与 CPOL 组合错档 → 首 bit 丢失或重复'},
+{n:'C',hi:11,lo:10,g:'violet',role:'第三段长度（B/C 交界之后到本 bit 结束）。',enc:'0…3 个 TQz；B=0 时硬件强制 C 最少为 1',risk:'B+C 太小 → 低电平时间不足，从机采样失败'},
+{n:'B',hi:9,lo:8,g:'violet',role:'第二段长度。B 与 C 的交界就是主机采样点。',enc:'0…3 个 TQz',risk:'太小 → 采样点太靠前，采到上一位旧值'},
+{n:'A',hi:7,lo:6,g:'violet',role:'第一段长度 = A+1。',enc:'00B=1 … 11B=4 个 TQz',risk:'与 B+C 一起决定占空比；写 0 在硬件里已经是 1'},
+{n:'Q',hi:5,lo:0,g:'violet',role:'通道时间量子的分频。',enc:'00H=1 … 3FH=64',risk:'与 TQ、A/B/C 共同决定 SCLK；不满足 (Q+1)(A+1+B+C) ≥ 4 时手册不允许'}
+]}};
+function segsOf(fs,from,to){const o=[];for(const f of fs){const a=Math.max(f.lo,from),b=Math.min(f.hi,to);if(a<=b)o.push({f,a,b})}return o.sort((p,q)=>q.b-p.b)}
+function renderReg(key,mapId,tableId){
+  const def=REG[key],host=document.getElementById(mapId),tb=document.querySelector('#'+tableId+' tbody');
+  if(!host)return;
+  host.innerHTML='';
+  const rows={};
+  [31,15].forEach(function(top){
+    const bot=top-15;
+    const h=document.createElement('div');h.className='strip-h';
+    h.innerHTML=`<span>bit ${top}</span><span>MSB ← 位序 → LSB</span><span>bit ${bot}</span>`;
+    const bar=document.createElement('div');bar.className='bitbar strip';
+    for(const s of segsOf(def.fields,bot,top)){
+      const d=document.createElement('div');
+      const full=(s.a===s.f.lo&&s.b===s.f.hi);
+      const width=s.b-s.a+1;
+      const label=full?s.f.n:(width>=2?s.f.n+'…':'↳');
+      const range=(s.a===s.b)?String(s.a):s.b+':'+s.a;
+      d.className='f g-'+s.f.g;
+      d.style.gridColumn=`${top-s.b+1} / span ${width}`;
+      d.style.gridRow='1';
+      d.innerHTML=`${label}<small>${range}</small>`;
+      d.title=`${s.f.n} [${range}]`;
+      d.dataset.field=s.f.n;
+      bar.appendChild(d);
+    }
+    host.appendChild(h);host.appendChild(bar);
+  });
+  const sorted=def.fields.slice().sort((a,b)=>a.lo-b.lo);
+  let pos=0,ok=true,gaps=[];
+  for(const f of sorted){if(f.lo!==pos){ok=false;gaps.push(pos+'…'+(f.lo-1))}pos=f.hi+1}
+  if(pos!==32){ok=false;gaps.push(pos+'…31')}
+  const chk=document.createElement('div');
+  chk.className='selfcheck'+(ok?'':' bad');
+  chk.textContent=ok?`位域自检：32/32 bit 全覆盖，无重叠、无空洞 ✓`
+    :`位域自检失败：空/重叠段 ${gaps.join(', ')}`;
+  host.appendChild(chk);
+  if(tb){
+    tb.innerHTML=def.fields.map(f=>`<tr data-field="${f.n}"><td>${f.n}</td><td>${f.lo===f.hi?f.lo:f.hi+':'+f.lo}</td><td>${f.hi-f.lo+1}</td><td>${f.role}</td><td>${f.enc}</td><td>${f.risk}</td></tr>`).join('');
+    def.fields.forEach(f=>{rows[f.n]=tb.querySelector(`tr[data-field="${f.n}"]`)});
+    host.querySelectorAll('.f').forEach(cell=>{
+      const on=()=>{const r=rows[cell.dataset.field];if(r)r.classList.add('hl')};
+      const off=()=>{const r=rows[cell.dataset.field];if(r)r.classList.remove('hl')};
+      cell.addEventListener('mouseenter',on);cell.addEventListener('mouseleave',off);
+    });
+  }
+}
+renderReg('bacon','baconMap','baconTable');
+renderReg('econ','econMap','econTable');
+
+/* ============ Ch06：帧包络波形 ============ */
+function fmtT(ns){return ns>=1000?(ns/1000).toFixed(2)+' µs':ns.toFixed(ns<10?2:0)+' ns'}
+function renderEnv(){
+  const host=document.getElementById('envWave');if(!host)return;
+  const tper=Math.max(0.1,parseFloat(document.getElementById('eTper').value)||5);
+  const ipre=+document.getElementById('eIpre').value,idle=+document.getElementById('eIdle').value;
+  const lpre=+document.getElementById('eLpre').value,lead=+document.getElementById('eLead').value;
+  const tpre=+document.getElementById('eTpre').value,trail=+document.getElementById('eTrail').value;
+  document.getElementById('eIpreV').textContent=ipre;document.getElementById('eIdleV').textContent=idle+1;
+  document.getElementById('eLpreV').textContent=lpre;document.getElementById('eLeadV').textContent=lead+1;
+  document.getElementById('eTpreV').textContent=tpre;document.getElementById('eTrailV').textContent=trail+1;
+  const tIA=Math.pow(4,ipre)*(idle+1)*tper,tL=Math.pow(4,lpre)*(lead+1)*tper,tT=Math.pow(4,tpre)*(trail+1)*tper;
+  const BITS=6,tData=BITS*8*tper,bwTxt=`${BITS} bit × 8 TQz`;
+  const W=1000,H=340,X0=84,X1=978,avail=X1-X0;
+  const dataW=Math.max(160,avail*0.30),rest=avail-dataW,raw=[tIA,tIA,tL,tT];
+  const sum=raw.reduce((a,b)=>a+b,0)||1,minW=72;
+  let ws=raw.map(v=>Math.max(minW,rest*v/sum));
+  const wsSum=ws.reduce((a,b)=>a+b,0);
+  if(wsSum>rest)ws=ws.map(w=>w*rest/wsSum);
+  const segs=[{k:'IDLEA',t:tIA,w:ws[0]},{k:'IDLEB',t:tIA,w:ws[1]},{k:'LEAD',t:tL,w:ws[2]},{k:'DATA',t:tData,w:dataW,txt:bwTxt+' = '+fmtT(tData)},{k:'TRAIL',t:tT,w:ws[3]}];
+  const tot=segs.reduce((a,s)=>a+s.w,0);let cx=X0;
+  segs.forEach(s=>{s.w=s.w*avail/tot;s.x0=cx;cx+=s.w;s.x1=cx});
+
+  const svg=mk('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'xMidYMid meet',role:'img'});
+  const yT=40,yB=274,csH=64,csL=100,ckH=140,ckL=176,moT=212,moB=244;
+  const tint={IDLEA:'w-band',IDLEB:'w-band',LEAD:'w-band2',DATA:'w-band4',TRAIL:'w-band3'};
+  segs.forEach(s=>{svg.appendChild(mk('rect',{x:s.x0,y:yT,width:Math.max(0,s.w),height:yB-yT,class:tint[s.k]}));svg.appendChild(mk('line',{x1:s.x1,y1:yT,x2:s.x1,y2:yB,class:'w-sep'}))});
+  const leadSeg=segs[2],dataSeg=segs[3],trailSeg=segs[4];
+  svg.appendChild(txt(10,86,'SLSO','w-name','start'));svg.appendChild(txt(10,99,'片选','w-small','start'));
+  svg.appendChild(txt(10,162,'SCLKO','w-name','start'));svg.appendChild(txt(10,175,'CPOL=0','w-small','start'));
+  svg.appendChild(txt(10,232,'MTSR','w-name','start'));
+
+  svg.appendChild(mk('path',{d:`M ${X0} ${csH} H ${leadSeg.x0} V ${csL} H ${trailSeg.x1} V ${csH} H ${X1}`,class:'w-sig s-cs'}));
+  let d=`M ${X0} ${ckL} H ${dataSeg.x0}`;
+  const bw=dataSeg.w/BITS;
+  for(let i=0;i<BITS;i++){const a=dataSeg.x0+i*bw;d+=` V ${ckH} H ${a+bw/2} V ${ckL} H ${a+bw}`}
+  d+=` H ${X1}`;
+  svg.appendChild(mk('path',{d,class:'w-sig s-clk'}));
+  svg.appendChild(band(dataSeg.x0,dataSeg.x1,moT,moB,'f-mosi',true,true));
+  svg.appendChild(txt((dataSeg.x0+dataSeg.x1)/2,moT-8,'数据在这段时间移出','w-small'));
+
+  svg.appendChild(mk('line',{x1:leadSeg.x0,y1:28,x2:leadSeg.x0,y2:yB+6,class:'w-samp'}));
+  svg.appendChild(mk('line',{x1:trailSeg.x1,y1:28,x2:trailSeg.x1,y2:yB+6,class:'w-samp'}));
+  svg.appendChild(txt(Math.min(Math.max(leadSeg.x0,X0+80),X1-240),22,'SLSO↓ 帧开始','w-lbl'));
+  svg.appendChild(txt(Math.min(Math.max(trailSeg.x1,X0+240),X1-80),22,'SLSO↑ 帧结束','w-lbl'));
+
+  const xPol=segs[1].x0;
+  svg.appendChild(mk('line',{x1:xPol,y1:yT,x2:xPol,y2:yB,class:'w-samp'}));
+  svg.appendChild(txt(Math.min(Math.max(xPol,X0+96),X1-96),126,'SCLK 极性在此切换给下一个从机','w-small'));
+
+  segs.forEach((s,i)=>{
+    const y=i%2?308:290;
+    svg.appendChild(txt((s.x0+s.x1)/2,y,s.k,'w-lbl'));
+    svg.appendChild(txt((s.x0+s.x1)/2,y+13,s.txt||fmtT(s.t),'w-small'));
+  });
+  host.replaceChildren(svg);
+  document.getElementById('envIdle').innerHTML=`<b>${fmtT(tIA*2)}</b>（= IDLEA ${fmtT(tIA)} × 2）<br><span class="mini">TIDLEA = TIDLEB = TPER × 4^${ipre} × (${idle}+1)；帧前总空闲是两者的和</span>`;
+  document.getElementById('envLead').innerHTML=`<b>${fmtT(tL)}</b><br><span class="mini">TLEAD = TPER × 4^${lpre} × (${lead}+1)</span>`;
+  document.getElementById('envTrail').innerHTML=`<b>${fmtT(tT)}</b><br><span class="mini">TTRAIL = TPER × 4^${tpre} × (${trail}+1)</span>`;
+}
+['eIpre','eIdle','eLpre','eLead','eTpre','eTrail','eTper'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('input',renderEnv)});
+renderEnv();
+
+/* ============ Ch04：Long 模式连续性 ============ */
+function renderLong(){
+  const host=document.getElementById('longWave');if(!host)return;
+  const W=1000,H=250,X0=150,X1=960,BITS=40,x=b=>X0+(b/BITS)*(X1-X0);
+  const svg=mk('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'xMidYMid meet',role:'img','aria-label':'Long 模式连续性'});
+  function row(y,label,stall){
+    svg.appendChild(txt(10,y+18,label,'w-name','start'));
+    let d=`M ${x(0)} ${y+34}`;
+    for(let i=0;i<BITS;i++){
+      if(stall&&i===32){ d+=` H ${x(32)+34}`; }
+      const xa=stall&&i>=32?x(i)+34:x(i), w=(stall&&i>=32?(X1-X0-34)/40:(X1-X0)/40);
+      d+=` V ${y+8} H ${xa+w/2} V ${y+34} H ${xa+w}`;
+    }
+    svg.appendChild(mk('path',{d,class:'w-sig s-clk'}));
+    if(stall){
+      svg.appendChild(mk('rect',{x:x(32),y:y+2,width:34,height:40,class:'w-old'}));
+      svg.appendChild(txt(x(32)+17,y-2,'EXPECT','w-small'));
+    }
+  }
+  row(40,'SCLK 连续','');
+  row(140,'SCLK 断供',true);
+  svg.appendChild(mk('line',{x1:x(32),y1:30,x2:x(32),y2:210,class:'w-sep'}));
+  svg.appendChild(txt(x(32),226,'第 32 位：entry0 结束 / entry1 开始','w-small'));
+  svg.appendChild(txt(x(0),226,'bit 0','w-small','start'));
+  svg.appendChild(txt(x(40),226,'bit 39','w-small','end'));
+  host.replaceChildren(svg);
+}
+renderLong();
+
+/* ============ Ch03：CPH 对照图 ============ */
+function renderCph(){
+  const host=document.getElementById('cphWave');if(!host)return;
+  const A=2,B=1,C=2,LEAD=2,TRAIL=1,PER=A+B+C,BITS=2,DATA=BITS*PER,T=LEAD+DATA+TRAIL;
+  const W=1000,H=392,X0=118,X1=944,x=t=>X0+(t/T)*(X1-X0);
+  const svg=mk('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'xMidYMid meet',role:'img','aria-label':'CPH 对照'});
+  function panel(y0,cph){
+    const bandT=y0+18,bandB=y0+120,csHi=y0+26,csLo=y0+50,ckLo=y0+96,ckHi=y0+72;
+    svg.appendChild(txt(12,y0+16,cph?'CPH = 1':'CPH = 0','w-name','start'));
+    svg.appendChild(mk('rect',{x:x(0),y:bandT,width:x(LEAD)-x(0),height:bandB-bandT,class:'w-band2'}));
+    svg.appendChild(mk('rect',{x:x(LEAD),y:bandT,width:x(LEAD+DATA)-x(LEAD),height:bandB-bandT,class:'w-band4'}));
+    svg.appendChild(mk('rect',{x:x(LEAD+DATA),y:bandT,width:x(T)-x(LEAD+DATA),height:bandB-bandT,class:'w-band3'}));
+    [0,LEAD,LEAD+PER,LEAD+DATA,T].forEach(function(t){svg.appendChild(mk('line',{x1:x(t),y1:bandT,x2:x(t),y2:bandB,class:'w-sep'}))});
+    svg.appendChild(mk('path',{d:`M ${x(0)-8} ${csHi} H ${x(0)} V ${csLo} H ${x(T)} V ${csHi} H ${x(T)+8}`,class:'w-sig s-cs'}));
+    svg.appendChild(mk('line',{x1:x(0),y1:ckLo,x2:x(T),y2:ckLo,class:'w-dim'}));
+    const first=cph?LEAD:LEAD+A, last=cph?LEAD+DATA-(B+C):null;
+    svg.appendChild(mk('line',{x1:x(first),y1:ckLo-16,x2:x(first),y2:ckLo+16,class:'w-samp'}));
+    svg.appendChild(txt(x(first),ckHi-6,cph?'首边沿（移位）':'首边沿（锁存）','w-small'));
+    if(last!==null){
+      svg.appendChild(mk('line',{x1:x(last),y1:ckLo-16,x2:x(last),y2:ckLo+16,class:'w-samp'}));
+      svg.appendChild(txt(x(last),ckHi-6,'末边沿（锁存）','w-small'));
+    }
+    const by=y0+140;
+    function br(a,b,label){
+      svg.appendChild(mk('path',{d:`M ${x(a)} ${by} v 9 H ${x(b)} v -9`,class:'w-brace'}));
+      svg.appendChild(txt((x(a)+x(b))/2,by+20,label,'w-lbl'));
+    }
+    function brDown(a,b,label){
+      svg.appendChild(mk('path',{d:`M ${x(a)} ${by} v -9 H ${x(b)} v 9`,class:'w-brace'}));
+      svg.appendChild(txt((x(a)+x(b))/2,by-8,label,'w-lbl'));
+    }
+    if(cph){
+      brDown(0,LEAD,'LEAD = 2');
+      br(last,T,'TRAIL + B + C = 4');
+    }else{
+      brDown(0,LEAD+A,'LEAD + A = 4');
+      br(LEAD+DATA,T,'TRAIL = 1');
+    }
+    svg.appendChild(txt(x(T)+6,csLo+4,'SLSO','w-small','start'));
+  }
+  panel(8,0); panel(204,1);
+  svg.appendChild(txt(X0,388,'SCLK 仅示意边沿位置；位内电平形状见第 02 章','w-small','start'));
+  host.replaceChildren(svg);
+}
+renderCph();
+
+/* ============ 新增：从机首拍竞态波形 ============ */
+function renderSlaveWave(){
+  const host=document.getElementById('slaveWave');if(!host)return;
+  const W=1000,H=330,X0=108,X1=972,T=16,x=t=>X0+(t/T)*(X1-X0);
+  const csHi=52,csLo=82,ckHi=110,ckLo=140,okT=170,okB=200,badT=228,badB=258;
+  const svg=mk('svg',{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:'xMidYMid meet',role:'img','aria-label':'从机首拍竞态'});
+  svg.appendChild(txt(10,72,'SLSI','w-name','start'));
+  svg.appendChild(txt(10,130,'SCLKI','w-name','start'));
+  svg.appendChild(txt(10,184,'MTSR 正常','w-name','start'));
+  svg.appendChild(txt(10,242,'MTSR 欠载','w-name','start'));
+
+  svg.appendChild(mk('path',{d:`M ${X0} ${csHi} H ${x(1)} V ${csLo} H ${x(14)} V ${csHi} H ${X1}`,class:'w-sig st-vio'}));
+  svg.appendChild(txt(x(1)+8,44,'SLSI↓ 选中','w-small','start'));
+
+  let d=`M ${X0} ${ckLo} H ${x(4)}`;
+  for(let i=0;i<4;i++){const a=4+i*2;d+=` V ${ckHi} H ${x(a+1)} V ${ckLo} H ${x(a+2)}`}
+  d+=` H ${X1}`;
+  svg.appendChild(mk('path',{d,class:'w-sig s-clk'}));
+  svg.appendChild(txt((X0+x(4))/2,104,'CPOL=0 空闲低','w-small'));
+
+  for(let i=0;i<4;i++) svg.appendChild(band(x(4+i*2),x(4+(i+1)*2),okT,okB,'f-mosi',i===0,true));
+  svg.appendChild(txt(x(12)+10,(okT+okB)/2+4,'4 个 bit 全部有效','w-small','start'));
+  svg.appendChild(band(x(4),x(12),badT,badB,'f-old',true,true));
+  svg.appendChild(txt((x(4)+x(12))/2,(badT+badB)/2+4,'全 1（TXFIFO 为空 → underflow）','w-small'));
+
+  svg.appendChild(mk('line',{x1:x(4),y1:34,x2:x(4),y2:268,class:'w-samp'}));
+  svg.appendChild(txt(Math.min(Math.max(x(4),X0+110),X1-110),24,'第一个 SCLKI 边沿 · TXFIFO 必须已就位','w-lbl'));
+  host.replaceChildren(svg);
+}
+renderSlaveWave();
+
+(function(){
+  const st=document.getElementById('slaveSteps'),cd=document.getElementById('slaveCode');
+  if(st) st.innerHTML=['<b>先配引脚</b>：PISEL 选 SCLKI / SLSI / MRST 输入源与电平、上下拉——手册要求必须在 MS 置位<b>之前</b>完成。','确保处于 wait 状态，做一次状态机复位。','置 <b>GLOBALCON.MS=1x</b> 进从机。','在 BACON.CS 指向的 ECONz 里写 <b>CPOL=0 / CPH=1</b>——值是固定的，但字段仍必须真的写进去。','TX：<b>第一个 SCLKI 边沿之前</b>把 BACON+DATA 预装进 FIFO；空 FIFO 会对外移出全 1。','RX：按帧节律读空 RXFIFO；SRF 在从机被忽略，没有背压可用。'].map(s=>`<li>${s}</li>`).join('');
+  if(cd) cd.textContent=`/* 1) 引脚选择：必须在 MS 置位之前 */
+QSPI0->PISEL.B.SLSIS = 3;   /* 选一路 SLSI；000B = 完全不用片选输入 */
+QSPI0->PISEL.B.SCIS  = 1;   /* SCLKI 输入源 */
+QSPI0->PISEL.B.MRIS  = 1;   /* MRST  输入源 */
+
+/* 2) 确保在 wait 状态，先复位状态机（复位粒度见生命周期章） */
+QSPI0->GLOBALCON.B.EN = 0;  /* 请求 PAUSE */
+
+/* 3) 进从机模式 */
+QSPI0->GLOBALCON.B.MS = 1;  /* 1x = slave */
+
+/* 4) 从机契约：值固定，但字段必须真的写进 ECON */
+QSPI0->ECON[0].B.CPOL = 0;
+QSPI0->ECON[0].B.CPH  = 1;
+QSPI0->ECON[0].B.Q    = 15; /* 从机下 Q/A/B/C 只当波特率看门狗基准 */
+
+/* 5) 发送：第一个 SCLKI 边沿之前必须已经在 FIFO 里 */
+uint32_t b = (0u<<28) | (15u<<23) | (0u<<22) | (1u<<21) | (1u<<0);
+QSPI0->BACONENTRY.U = b;    /* CS=0 / DL=15 → 16 bit / BYTE=0 / LAST */
+QSPI0->DATAENTRY[0].U = tx;
+
+/* 6) 接收：按帧节律读空（SRF 在从机被忽略） */
+while (QSPI0->STATUS.B.RXFIFOLEVEL > 0)
+    rx[i++] = QSPI0->RXEXIT.U;`;
+})();
+
+
+</script>
+</body>
+</html>
