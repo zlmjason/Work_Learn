@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="基于端侧视觉AI、ROS2与AURIX TC3xx的单自由度机器人视觉随动关节：总体架构与分阶段实施路线。">
+  <title>具身智能视觉随动关节｜总体架构与实施路线</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-2: #edf3ff;
+      --ink: #17233d;
+      --muted: #64718b;
+      --line: #d7dfec;
+      --blue: #2563eb;
+      --blue-2: #1748b3;
+      --cyan: #0891b2;
+      --green: #15803d;
+      --orange: #c45b0a;
+      --red: #c2414d;
+      --purple: #7c3aed;
+      --shadow: 0 18px 50px rgba(26, 51, 92, .10);
+      --radius: 20px;
+      --radius-sm: 13px;
+      --max: 1180px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1422;
+        --surface: #141e30;
+        --surface-2: #172743;
+        --ink: #edf3ff;
+        --muted: #a9b6cc;
+        --line: #2c3a52;
+        --blue: #74a4ff;
+        --blue-2: #a9c3ff;
+        --cyan: #55c7dc;
+        --green: #67c98a;
+        --orange: #f5a75f;
+        --red: #ff8a96;
+        --purple: #b99aff;
+        --shadow: 0 22px 60px rgba(0, 0, 0, .28);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 7% 4%, color-mix(in srgb, var(--blue) 13%, transparent), transparent 28rem),
+        radial-gradient(circle at 96% 18%, color-mix(in srgb, var(--cyan) 10%, transparent), transparent 24rem),
+        var(--bg);
+      line-height: 1.7;
+    }
+
+    a { color: inherit; }
+    button { font: inherit; }
+    .wrap { width: min(calc(100% - 32px), var(--max)); margin: 0 auto; }
+
+    .hero {
+      padding: 54px 0 34px;
+    }
+    .hero-shell {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(28px, 5vw, 58px);
+      border: 1px solid color-mix(in srgb, var(--blue) 18%, var(--line));
+      border-radius: 28px;
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--surface) 96%, var(--blue)), var(--surface)),
+        var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .hero-shell::after {
+      content: "";
+      position: absolute;
+      width: 320px;
+      height: 320px;
+      right: -90px;
+      top: -150px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--blue) 12%, transparent);
+      pointer-events: none;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      color: var(--blue-2);
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+    .eyebrow::before {
+      content: "";
+      width: 28px;
+      height: 3px;
+      border-radius: 99px;
+      background: var(--blue);
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      max-width: 900px;
+      margin-bottom: 18px;
+      font-size: clamp(34px, 6vw, 66px);
+      line-height: 1.08;
+      letter-spacing: -.035em;
+    }
+    .hero-lead {
+      max-width: 860px;
+      margin-bottom: 28px;
+      color: var(--muted);
+      font-size: clamp(17px, 2vw, 21px);
+    }
+    .hero-goal {
+      max-width: 930px;
+      padding: 18px 20px;
+      border-left: 4px solid var(--blue);
+      background: color-mix(in srgb, var(--blue) 7%, var(--surface));
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-weight: 650;
+    }
+    .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 9px 15px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      color: var(--ink);
+      background: var(--surface);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .btn.primary { color: #fff; background: #245fd8; border-color: #245fd8; }
+    .btn:hover { transform: translateY(-1px); }
+
+    .nav-shell {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-block: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: blur(15px);
+    }
+    nav {
+      display: flex;
+      gap: 6px;
+      padding: 10px 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    nav::-webkit-scrollbar { display: none; }
+    nav a {
+      flex: 0 0 auto;
+      padding: 7px 11px;
+      border-radius: 9px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 650;
+    }
+    nav a:hover { color: var(--ink); background: var(--surface); }
+
+    main { padding: 34px 0 76px; }
+    section { scroll-margin-top: 78px; margin-top: 56px; }
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(240px, 430px);
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+    .section-kicker {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    h2 { margin-bottom: 0; font-size: clamp(27px, 4vw, 40px); line-height: 1.2; letter-spacing: -.025em; }
+    h3 { margin-bottom: 8px; font-size: 18px; line-height: 1.35; }
+    .section-head p { margin-bottom: 0; color: var(--muted); }
+
+    .grid { display: grid; gap: 16px; }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .card {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 10px 30px rgba(26, 51, 92, .045);
+    }
+    .card p:last-child, .card ul:last-child { margin-bottom: 0; }
+    .card p { color: var(--muted); }
+    .number {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      margin-bottom: 16px;
+      border-radius: 11px;
+      color: #fff;
+      background: #245fd8;
+      font-weight: 800;
+    }
+    .tag {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      color: var(--blue-2);
+      background: color-mix(in srgb, var(--blue) 11%, transparent);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .application {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+    }
+    .demo-panel {
+      position: relative;
+      overflow: hidden;
+      min-height: 340px;
+      padding: 26px;
+      border-radius: var(--radius);
+      color: #f7fbff;
+      background: linear-gradient(150deg, #142d63, #174fc0 58%, #078aa0);
+      box-shadow: var(--shadow);
+    }
+    .demo-panel::after {
+      content: "";
+      position: absolute;
+      inset: auto -50px -100px auto;
+      width: 260px;
+      height: 260px;
+      border: 50px solid rgba(255,255,255,.08);
+      border-radius: 50%;
+    }
+    .demo-panel p { max-width: 680px; color: rgba(255,255,255,.76); }
+    .demo-flow {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 30px;
+    }
+    .demo-step {
+      padding: 13px 10px;
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 13px;
+      background: rgba(255,255,255,.08);
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .goal-list { display: grid; gap: 12px; }
+    .goal-item {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 17px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+    }
+    .goal-item b {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      color: var(--blue-2);
+      background: color-mix(in srgb, var(--blue) 10%, transparent);
+    }
+    .goal-item p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+
+    .architecture {
+      overflow: hidden;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .architecture svg { display: block; width: 100%; height: auto; }
+    .architecture .node { fill: var(--surface-2); stroke: var(--line); stroke-width: 2; }
+    .architecture .node-ai { fill: color-mix(in srgb, var(--blue) 13%, var(--surface)); stroke: var(--blue); }
+    .architecture .node-rt { fill: color-mix(in srgb, var(--green) 11%, var(--surface)); stroke: var(--green); }
+    .architecture .node-phy { fill: color-mix(in srgb, var(--orange) 10%, var(--surface)); stroke: var(--orange); }
+    .architecture .title { fill: var(--ink); font: 700 18px system-ui, sans-serif; }
+    .architecture .sub { fill: var(--muted); font: 500 13px system-ui, sans-serif; }
+    .architecture .arrow { fill: none; stroke: var(--blue); stroke-width: 3; }
+    .architecture .arrow-back { fill: none; stroke: var(--cyan); stroke-width: 3; stroke-dasharray: 8 7; }
+    .architecture .arrow-safe { fill: none; stroke: var(--red); stroke-width: 3; }
+    .architecture .label { fill: var(--ink); font: 650 12px system-ui, sans-serif; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      padding: 12px 6px 2px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .legend i { width: 22px; height: 3px; border-radius: 99px; background: var(--blue); }
+    .legend .feedback { background: var(--cyan); }
+    .legend .safe { background: var(--red); }
+
+    .layers { margin-top: 18px; }
+    .layer-card { position: relative; padding-top: 44px; }
+    .layer-card::before {
+      content: attr(data-layer);
+      position: absolute;
+      top: 16px;
+      left: 22px;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .09em;
+    }
+    .layer-card ul { margin: 0; padding-left: 18px; color: var(--muted); }
+
+    .boundary {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+    .boundary-side { padding: 24px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface); }
+    .boundary-side.ai { border-top: 4px solid var(--blue); }
+    .boundary-side.mcu { border-top: 4px solid var(--green); }
+    .boundary-side ul { margin: 14px 0 0; padding-left: 20px; color: var(--muted); }
+    .boundary-middle { display: grid; place-items: center; color: var(--muted); font-weight: 800; }
+
+    .portable {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .portable .card { box-shadow: none; }
+    .stack {
+      display: grid;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .stack div {
+      padding: 11px 13px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+      font-size: 14px;
+      font-weight: 650;
+    }
+    .stack div:last-child { border-style: dashed; color: var(--muted); }
+
+    .roadmap { position: relative; display: grid; gap: 14px; }
+    .roadmap::before {
+      content: "";
+      position: absolute;
+      left: 113px;
+      top: 24px;
+      bottom: 24px;
+      width: 2px;
+      background: var(--line);
+    }
+    .phase {
+      position: relative;
+      display: grid;
+      grid-template-columns: 94px 1fr;
+      gap: 38px;
+      align-items: start;
+    }
+    .phase::before {
+      content: "";
+      position: absolute;
+      left: 106px;
+      top: 25px;
+      width: 14px;
+      height: 14px;
+      border: 4px solid var(--bg);
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 0 2px var(--blue);
+    }
+    .phase-time {
+      padding-top: 13px;
+      text-align: right;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+    }
+    .phase-body {
+      display: grid;
+      grid-template-columns: minmax(170px, .7fr) minmax(220px, 1.3fr) minmax(170px, .8fr);
+      gap: 16px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--surface);
+    }
+    .phase-id { color: var(--blue); font-size: 12px; font-weight: 900; letter-spacing: .08em; }
+    .phase-body h3 { margin: 4px 0 4px; }
+    .phase-body p { margin: 0; color: var(--muted); font-size: 14px; }
+    .phase-body strong { display: block; margin-bottom: 5px; font-size: 13px; }
+    .gate {
+      padding: 11px 13px;
+      border-radius: 11px;
+      color: var(--green);
+      background: color-mix(in srgb, var(--green) 9%, transparent);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .demo-cases { counter-reset: demo; }
+    .demo-case { position: relative; padding-left: 70px; }
+    .demo-case::before {
+      counter-increment: demo;
+      content: "0" counter(demo);
+      position: absolute;
+      left: 22px;
+      top: 22px;
+      color: var(--blue);
+      font-weight: 900;
+    }
+
+    .matrix { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    th, td { padding: 15px 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--muted); background: color-mix(in srgb, var(--surface-2) 70%, transparent); font-size: 13px; }
+    tr:last-child td { border-bottom: 0; }
+    .status { font-weight: 800; white-space: nowrap; }
+    .status.strong { color: var(--green); }
+    .status.build { color: var(--orange); }
+    .status.optional { color: var(--purple); }
+
+    .scope {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .scope .card:first-child { border-top: 4px solid var(--green); }
+    .scope .card:last-child { border-top: 4px solid var(--red); }
+    .scope ul { margin: 12px 0 0; padding-left: 20px; color: var(--muted); }
+
+    .finish {
+      padding: clamp(28px, 5vw, 52px);
+      border-radius: 26px;
+      color: #f7fbff;
+      background: linear-gradient(135deg, #11295a, #1b59d8 62%, #078aa0);
+      box-shadow: var(--shadow);
+    }
+    .finish p { max-width: 880px; color: rgba(255,255,255,.78); }
+    .finish-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-top: 22px; }
+    .finish-grid div { padding: 14px; border: 1px solid rgba(255,255,255,.22); border-radius: 13px; background: rgba(255,255,255,.07); font-size: 14px; font-weight: 700; }
+
+    .references { color: var(--muted); font-size: 13px; }
+    .references a { color: var(--blue); text-underline-offset: 3px; }
+    footer { padding: 24px 0 44px; color: var(--muted); font-size: 13px; text-align: center; }
+
+    @media (max-width: 940px) {
+      .grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .application, .section-head, .portable { grid-template-columns: 1fr; }
+      .phase-body { grid-template-columns: 1fr 1fr; }
+      .phase-body .gate { grid-column: 1 / -1; }
+      .finish-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 680px) {
+      .wrap { width: min(calc(100% - 20px), var(--max)); }
+      .hero { padding-top: 20px; }
+      .hero-shell { border-radius: 20px; }
+      .grid.three, .grid.four, .scope { grid-template-columns: 1fr; }
+      .demo-flow { grid-template-columns: 1fr; }
+      .boundary { grid-template-columns: 1fr; }
+      .boundary-middle { min-height: 34px; transform: rotate(90deg); }
+      .roadmap::before, .phase::before { display: none; }
+      .phase { grid-template-columns: 1fr; gap: 5px; }
+      .phase-time { text-align: left; padding: 0 4px; }
+      .phase-body { grid-template-columns: 1fr; }
+      .phase-body .gate { grid-column: auto; }
+      .finish-grid { grid-template-columns: 1fr; }
+      .architecture { padding: 8px; overflow-x: auto; }
+      .architecture svg { min-width: 760px; }
+    }
+
+    @media print {
+      :root { --bg: #fff; --surface: #fff; --surface-2: #f4f7fb; --ink: #111827; --muted: #526079; --line: #d6dce6; }
+      body { background: #fff; }
+      .nav-shell, .hero-actions { display: none; }
+      .hero { padding-top: 0; }
+      .hero-shell, .card, .architecture, .finish { box-shadow: none; break-inside: avoid; }
+      section { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap hero-shell">
+      <div class="eyebrow">PROJECT NORTH STAR · 2026.10—2027.05</div>
+      <h1>具身智能视觉随动关节</h1>
+      <p class="hero-lead">从现有 AURIX TC3xx、PMSM 与 FreeRTOS 工程出发，逐步构建“端侧视觉AI + Linux/ROS2 + 实时控制MCU”的完整感知—决策—执行闭环。</p>
+      <div class="hero-goal">最终目标：摄像头识别人或指定目标，端侧计算平台生成目标方向，TC3xx 驱动 PMSM 转动摄像头保持目标居中；目标丢失、通信异常或执行器故障时，系统自主进入安全状态。</div>
+      <div class="hero-actions">
+        <a class="btn primary" href="#architecture">查看总体架构</a>
+        <a class="btn" href="#roadmap">查看阶段路线</a>
+        <button class="btn" type="button" onclick="window.print()">打印 / 导出PDF</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="nav-shell">
+    <nav class="wrap" aria-label="文档导航">
+      <a href="#application">应用目标</a>
+      <a href="#architecture">总体架构</a>
+      <a href="#boundary">控制边界</a>
+      <a href="#portability">平台迁移</a>
+      <a href="#roadmap">阶段路线</a>
+      <a href="#demo">最终演示</a>
+      <a href="#job-map">岗位映射</a>
+      <a href="#scope">范围控制</a>
+    </nav>
+  </div>
+
+  <main class="wrap">
+    <section id="application">
+      <div class="section-head">
+        <div><span class="section-kicker">01 · Application</span><h2>先明确要实现什么</h2></div>
+        <p>不以“学会若干技术”为目标，而以一个可观察、可测试、可演示的具身应用为目标。</p>
+      </div>
+
+      <div class="application">
+        <article class="demo-panel">
+          <span class="tag" style="color:#fff;background:rgba(255,255,255,.14)">单自由度机器人头部</span>
+          <h3 style="font-size:26px">会看、会转、会反馈、会自保</h3>
+          <p>摄像头固定在旋转关节上。人的移动改变视觉目标位置，电机动作又改变摄像头视角，因此系统形成真实的物理闭环，而不是“模型推理后打印一个结果”。</p>
+          <div class="demo-flow" aria-label="具身闭环五个步骤">
+            <div class="demo-step">看到目标</div>
+            <div class="demo-step">判断偏差</div>
+            <div class="demo-step">生成目标量</div>
+            <div class="demo-step">驱动关节</div>
+            <div class="demo-step">重新观察</div>
+          </div>
+        </article>
+
+        <div class="goal-list">
+          <div class="goal-item"><b>1</b><div><strong>AI有真实作用</strong><p>识别并持续跟踪目标，解决“应该朝哪里转”。</p></div></div>
+          <div class="goal-item"><b>2</b><div><strong>MCU有不可替代作用</strong><p>稳定执行目标，并完成限幅、保护和安全兜底。</p></div></div>
+          <div class="goal-item"><b>3</b><div><strong>现有资源可直接利用</strong><p>TC3xx、PMSM、FreeRTOS成为关节实时控制核心。</p></div></div>
+          <div class="goal-item"><b>4</b><div><strong>能自然扩展</strong><p>一轴验证后可扩展到双轴云台、机器人头部或机械臂关节。</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <div class="section-head">
+        <div><span class="section-kicker">02 · Architecture</span><h2>总体系统架构</h2></div>
+        <p>端侧计算平台负责感知与高层目标，TC3xx负责确定性执行与安全；二者通过清晰的命令—状态契约协同。</p>
+      </div>
+
+      <div class="architecture">
+        <svg viewBox="0 0 1180 560" role="img" aria-labelledby="arch-title arch-desc">
+          <title id="arch-title">端侧AI平台、TC3xx和PMSM构成的视觉随动闭环</title>
+          <desc id="arch-desc">环境目标经摄像头进入AI和ROS2平台，平台将目标角度速度或转矩发送给TC3xx，TC3xx执行实时控制并驱动PMSM带动摄像头旋转，同时将状态和故障反馈给上位平台。</desc>
+          <defs>
+            <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="var(--blue)"/></marker>
+            <marker id="arrow-cyan" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="var(--cyan)"/></marker>
+            <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="var(--red)"/></marker>
+          </defs>
+
+          <rect class="node node-phy" x="40" y="70" rx="20" width="190" height="112"/>
+          <text class="title" x="135" y="112" text-anchor="middle">现实目标</text>
+          <text class="sub" x="135" y="140" text-anchor="middle">人 / 物体 / 场景</text>
+
+          <rect class="node" x="300" y="70" rx="20" width="190" height="112"/>
+          <text class="title" x="395" y="112" text-anchor="middle">视觉传感</text>
+          <text class="sub" x="395" y="140" text-anchor="middle">摄像头 · 后续可加IMU</text>
+
+          <rect class="node node-ai" x="570" y="54" rx="22" width="320" height="145"/>
+          <text class="title" x="730" y="98" text-anchor="middle">端侧计算平台</text>
+          <text class="sub" x="730" y="128" text-anchor="middle">Windows → Linux/ROS2 → Jetson/RK3588</text>
+          <text class="sub" x="730" y="153" text-anchor="middle">检测 · 跟踪 · 目标生成 · 系统编排</text>
+
+          <rect class="node node-rt" x="570" y="325" rx="22" width="320" height="155"/>
+          <text class="title" x="730" y="368" text-anchor="middle">AURIX TC3xx + FreeRTOS</text>
+          <text class="sub" x="730" y="399" text-anchor="middle">命令校验 · 轨迹约束 · 实时闭环</text>
+          <text class="sub" x="730" y="424" text-anchor="middle">看门狗 · 故障检测 · 安全状态</text>
+
+          <rect class="node node-phy" x="970" y="325" rx="22" width="170" height="155"/>
+          <text class="title" x="1055" y="368" text-anchor="middle">物理执行</text>
+          <text class="sub" x="1055" y="399" text-anchor="middle">逆变器 + PMSM</text>
+          <text class="sub" x="1055" y="424" text-anchor="middle">编码器 / 电流 / 温度</text>
+
+          <path class="arrow" d="M230 126 H292" marker-end="url(#arrow-blue)"/>
+          <path class="arrow" d="M490 126 H562" marker-end="url(#arrow-blue)"/>
+          <path class="arrow" d="M730 199 V315" marker-end="url(#arrow-blue)"/>
+          <text class="label" x="744" y="260">目标位置 / 速度 / 转矩</text>
+          <path class="arrow" d="M890 403 H960" marker-end="url(#arrow-blue)"/>
+
+          <path class="arrow-back" d="M970 450 C920 530, 500 535, 418 190" marker-end="url(#arrow-cyan)"/>
+          <text class="label" x="460" y="520">动作改变视角，重新形成视觉误差</text>
+
+          <path class="arrow-back" d="M672 325 V210" marker-end="url(#arrow-cyan)"/>
+          <text class="label" x="500" y="286">角度 / 电流 / 温度 / 故障</text>
+
+          <path class="arrow-safe" d="M890 350 C930 285, 1035 270, 1055 315" marker-end="url(#arrow-red)"/>
+          <text class="label" x="930" y="267">本地安全否决权</text>
+        </svg>
+        <div class="legend" aria-label="架构图图例">
+          <span><i></i>命令与控制方向</span>
+          <span><i class="feedback"></i>状态与物理反馈</span>
+          <span><i class="safe"></i>故障保护与安全边界</span>
+        </div>
+      </div>
+
+      <div class="grid four layers">
+        <article class="card layer-card" data-layer="感知层"><h3>看见环境</h3><ul><li>摄像头获取场景</li><li>后续可增加IMU</li><li>动作改变下一帧视觉</li></ul></article>
+        <article class="card layer-card" data-layer="智能与系统层"><h3>理解并给出目标</h3><ul><li>目标检测与跟踪</li><li>ROS2节点协同</li><li>生成关节目标量</li></ul></article>
+        <article class="card layer-card" data-layer="实时控制层"><h3>确定性地执行</h3><ul><li>限幅与轨迹约束</li><li>位置/速度/电流闭环</li><li>故障诊断与降级</li></ul></article>
+        <article class="card layer-card" data-layer="物理层"><h3>作用于真实世界</h3><ul><li>功率级与PMSM</li><li>旋转机械结构</li><li>编码器与电流反馈</li></ul></article>
+      </div>
+    </section>
+
+    <section id="boundary">
+      <div class="section-head">
+        <div><span class="section-kicker">03 · Responsibility Boundary</span><h2>AI与实时控制的边界</h2></div>
+        <p>AI决定“想做什么”，实时MCU决定“能不能做、怎样稳定做，以及异常时怎么办”。</p>
+      </div>
+
+      <div class="boundary">
+        <article class="boundary-side ai">
+          <span class="tag">端侧AI / Linux / ROS2</span>
+          <h3>软实时、高计算量、允许迭代</h3>
+          <ul>
+            <li>目标检测、识别与持续跟踪</li>
+            <li>根据像素偏差生成高层目标</li>
+            <li>系统编排、日志、可视化与模型更新</li>
+            <li>输出位置、速度、转矩或轨迹参考量</li>
+          </ul>
+        </article>
+        <div class="boundary-middle" aria-hidden="true">⇄</div>
+        <article class="boundary-side mcu">
+          <span class="tag" style="color:var(--green);background:color-mix(in srgb,var(--green) 10%,transparent)">TC3xx / FreeRTOS</span>
+          <h3>硬实时、确定性、最终安全权</h3>
+          <ul>
+            <li>命令有效性、时效性和边界检查</li>
+            <li>平滑轨迹、位置/速度/FOC闭环</li>
+            <li>过流、超温、堵转与通信超时保护</li>
+            <li>即使上位机失效，仍能进入安全状态</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="portability">
+      <div class="section-head">
+        <div><span class="section-kicker">04 · Portability</span><h2>Windows起步，但不锁死在Windows</h2></div>
+        <p>迁移不是复制可执行文件，而是复用业务逻辑、协议与ROS2接口，并替换平台相关驱动与推理后端。</p>
+      </div>
+
+      <div class="portable">
+        <article class="card">
+          <span class="tag">通信分层</span>
+          <h3>上层逻辑不感知具体CAN驱动</h3>
+          <div class="stack">
+            <div>ROS2节点 / 状态机 / 数据解释</div>
+            <div>统一通信接口 ITransport</div>
+            <div>Windows厂商API · Linux SocketCAN · Ethernet</div>
+          </div>
+        </article>
+        <article class="card">
+          <span class="tag">推理分层</span>
+          <h3>保留源模型，按目标平台生成后端</h3>
+          <div class="stack">
+            <div>检测 / 跟踪 / 目标生成逻辑</div>
+            <div>统一推理接口 InferenceBackend</div>
+            <div>ONNX Runtime · TensorRT · RKNN Runtime</div>
+          </div>
+        </article>
+      </div>
+
+      <div class="grid three" style="margin-top:16px">
+        <article class="card"><div class="number">A</div><h3>Windows阶段</h3><p>快速连接现有AURIX工具、CAN设备和摄像头，把功能链路跑通。</p></article>
+        <article class="card"><div class="number">B</div><h3>Linux/ROS2阶段</h3><p>在WSL或Linux环境形成标准C++、CMake、ROS2工程结构。</p></article>
+        <article class="card"><div class="number">C</div><h3>ARM64端侧部署</h3><p>在Jetson或RK3588重新编译并替换驱动/推理后端，完成性能复验。</p></article>
+      </div>
+    </section>
+
+    <section id="roadmap">
+      <div class="section-head">
+        <div><span class="section-kicker">05 · Roadmap</span><h2>从现在到2027年5月的阶段路线</h2></div>
+        <p>每一阶段只增加一个主要能力，并设置明确“出口”；上一阶段没有闭环，不进入下一阶段。</p>
+      </div>
+
+      <div class="roadmap">
+        <article class="phase">
+          <div class="phase-time">2026.10—11</div>
+          <div class="phase-body">
+            <div><span class="phase-id">PHASE 0</span><h3>确定边界与硬件条件</h3><p>把已有资源、缺失硬件和安全边界一次讲清。</p></div>
+            <div><strong>本阶段形成</strong><p>TC3xx型号与开发环境清单；逆变器、编码器、电流采样、通信接口与机械结构清单；系统模块边界；第一版命令/状态接口。</p></div>
+            <div class="gate">出口：确认电机可安全驱动，确定第一版系统框图和接口边界。</div>
+          </div>
+        </article>
+
+        <article class="phase">
+          <div class="phase-time">2026.11—12</div>
+          <div class="phase-body">
+            <div><span class="phase-id">PHASE 1</span><h3>TC3xx实时执行层</h3><p>先让“肌肉与小脑”独立可靠运行。</p></div>
+            <div><strong>本阶段形成</strong><p>PMSM基本控制；编码器与电流反馈；FreeRTOS任务边界；运行/停止/故障状态；本地保护；周期与抖动测量框架。</p></div>
+            <div class="gate">出口：无上位机参与时，也能稳定控制、受控停止并报告故障。</div>
+          </div>
+        </article>
+
+        <article class="phase">
+          <div class="phase-time">2027.01</div>
+          <div class="phase-body">
+            <div><span class="phase-id">PHASE 2</span><h3>Windows上位机协同</h3><p>先验证“目标—执行—状态”闭环。</p></div>
+            <div><strong>本阶段形成</strong><p>Windows C++或Python控制端；CAN/串口/Ethernet通信；目标命令下发；实时状态曲线；序号、时间戳、CRC、心跳和超时机制。</p></div>
+            <div class="gate">出口：电脑给定目标，TC3xx执行并反馈；断开上位机后安全停机。</div>
+          </div>
+        </article>
+
+        <article class="phase">
+          <div class="phase-time">2027.02</div>
+          <div class="phase-body">
+            <div><span class="phase-id">PHASE 3</span><h3>Linux与ROS2系统化</h3><p>把专用Demo升级为机器人软件组件。</p></div>
+            <div><strong>本阶段形成</strong><p>ROS2 C++通信节点；关节状态与控制命令消息；日志与回放；硬件抽象；条件允许时接入ros2_control。</p></div>
+            <div class="gate">出口：ROS2能查看关节状态、发送目标并诊断通信状态。</div>
+          </div>
+        </article>
+
+        <article class="phase">
+          <div class="phase-time">2027.03</div>
+          <div class="phase-body">
+            <div><span class="phase-id">PHASE 4</span><h3>视觉闭环与具身应用</h3><p>让系统从“被控制”变成“自主跟随”。</p></div>
+            <div><strong>本阶段形成</strong><p>摄像头采集；目标检测与跟踪；像素偏差到关节目标的转换；目标丢失策略；摄像头随PMSM转动形成视觉反馈。</p></div>
+            <div class="gate">出口：目标左右移动时，关节自主跟随并保持目标接近画面中心。</div>
+          </div>
+        </article>
+
+        <article class="phase">
+          <div class="phase-time">2027.04</div>
+          <div class="phase-body">
+            <div><span class="phase-id">PHASE 5</span><h3>迁移到端侧AI平台</h3><p>证明架构可迁移，不停留在Windows。</p></div>
+            <div><strong>本阶段形成</strong><p>选择Jetson或RK3588；ARM64重新编译；Linux通信驱动；TensorRT或RKNN推理后端；目标板延迟、负载和温度测试。</p></div>
+            <div class="gate">出口：同一应用在真实端侧板运行，TC3xx协议与控制固件保持稳定。</div>
+          </div>
+        </article>
+
+        <article class="phase">
+          <div class="phase-time">2027.05</div>
+          <div class="phase-body">
+            <div><span class="phase-id">PHASE 6</span><h3>工程验证与求职包装</h3><p>把“能跑”变成“能证明”。</p></div>
+            <div><strong>本阶段形成</strong><p>端到端延迟与抖动报告；长时间运行；故障注入；架构与接口文档；项目仓库；演示视频；四个可深挖面试案例。</p></div>
+            <div class="gate">出口：形成可投递、可演示、可复盘、可继续扩展的完整项目。</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="demo">
+      <div class="section-head">
+        <div><span class="section-kicker">06 · Final Demo</span><h2>最终演示必须讲清五个场景</h2></div>
+        <p>演示重点不是模型有多复杂，而是整条物理链路的实时性、协同性和故障边界。</p>
+      </div>
+      <div class="grid three demo-cases">
+        <article class="card demo-case"><h3>正常跟随</h3><p>人或目标左右移动，摄像头关节自动跟随并保持居中。</p></article>
+        <article class="card demo-case"><h3>状态可视</h3><p>ROS2实时显示目标误差、关节角度、转速、电流和系统状态。</p></article>
+        <article class="card demo-case"><h3>目标丢失</h3><p>短时丢失进入等待，超时后停止或平滑回到中位。</p></article>
+        <article class="card demo-case"><h3>通信中断</h3><p>拔掉上位机链路，TC3xx独立识别超时并进入安全状态。</p></article>
+        <article class="card demo-case"><h3>非法命令</h3><p>上位机给出越界目标，TC3xx完成限幅、拒绝或降级处理。</p></article>
+        <article class="card demo-case"><h3>平台迁移</h3><p>从Windows切换至ARM64端侧板，上层逻辑复用、平台后端替换。</p></article>
+      </div>
+    </section>
+
+    <section id="job-map">
+      <div class="section-head">
+        <div><span class="section-kicker">07 · Job Mapping</span><h2>与目标岗位的能力映射</h2></div>
+        <p>这个项目的价值不是“看起来像AI”，而是把你已有的车规MCU深度迁移到机器人计算平台与实时执行协同。</p>
+      </div>
+
+      <div class="matrix">
+        <table>
+          <thead><tr><th>岗位能力</th><th>项目中的证明方式</th><th>定位</th></tr></thead>
+          <tbody>
+            <tr><td>底层驱动与嵌入式应用</td><td>TC3xx外设、ADC/PWM、编码器、通信与故障状态机</td><td><span class="status strong">核心优势</span></td></tr>
+            <tr><td>RTOS与实时调度</td><td>控制中断与FreeRTOS任务分层、周期/抖动/超时分析</td><td><span class="status strong">核心优势</span></td></tr>
+            <tr><td>执行器与控制算法</td><td>PMSM、位置/速度/电流闭环、目标约束与安全停机</td><td><span class="status strong">核心优势</span></td></tr>
+            <tr><td>总线与软硬件调试</td><td>CAN/串口/Ethernet协议、波形、错误帧、故障注入</td><td><span class="status strong">核心优势</span></td></tr>
+            <tr><td>Linux、C++与ROS2</td><td>ROS2 C++节点、硬件抽象、消息与日志体系</td><td><span class="status build">重点补齐</span></td></tr>
+            <tr><td>ARM64端侧计算平台</td><td>Jetson或RK3588部署、驱动适配与性能复验</td><td><span class="status build">重点补齐</span></td></tr>
+            <tr><td>传感器与数据链路</td><td>摄像头、编码器，后续增加IMU与时间同步</td><td><span class="status build">项目补齐</span></td></tr>
+            <tr><td>模型部署与推理优化</td><td>ONNX源模型迁移至TensorRT或RKNN运行时</td><td><span class="status optional">加分能力</span></td></tr>
+            <tr><td>架构与技术文档</td><td>总体架构、接口契约、阶段验收与测试报告</td><td><span class="status strong">核心优势</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="scope">
+      <div class="section-head">
+        <div><span class="section-kicker">08 · Scope Control</span><h2>第一版做什么，不做什么</h2></div>
+        <p>范围稳定比堆叠功能重要。先把一条链路做深，再扩展自由度、传感器和算法复杂度。</p>
+      </div>
+      <div class="scope">
+        <article class="card">
+          <span class="tag" style="color:var(--green);background:color-mix(in srgb,var(--green) 10%,transparent)">第一版必须完成</span>
+          <h3>一轴、一个目标、一条完整闭环</h3>
+          <ul>
+            <li>一个摄像头和一个PMSM旋转关节</li>
+            <li>目标检测、跟踪与关节目标生成</li>
+            <li>ROS2/通信/TC3xx/PMSM全链路</li>
+            <li>超时、越界、目标丢失与本地保护</li>
+            <li>延迟、抖动、状态与故障可观测</li>
+          </ul>
+        </article>
+        <article class="card">
+          <span class="tag" style="color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent)">第一版暂不展开</span>
+          <h3>不让目标被复杂度淹没</h3>
+          <ul>
+            <li>完整人形机器人或多关节动力学</li>
+            <li>从零训练VLA或机器人基础模型</li>
+            <li>用AI替代FOC/PID等确定性控制</li>
+            <li>同时适配多块AI芯片和多种总线</li>
+            <li>一开始就追求双轴云台或复杂机械臂</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="finish">
+        <span class="tag" style="color:#fff;background:rgba(255,255,255,.14)">2027年5月的最终形态</span>
+        <h2 style="margin-top:6px">不是“学过AI、ROS2和电机控制”，而是交付过一条真实的具身闭环</h2>
+        <p>面试时可以从总体架构讲到任务边界、通信协议、实时控制、平台迁移、性能验证和故障兜底，并用真实演示证明系统确实工作。</p>
+        <div class="finish-grid">
+          <div>一套TC3xx实时控制固件</div>
+          <div>一个Linux/ROS2 C++工程</div>
+          <div>一次ARM64端侧板迁移</div>
+          <div>一组性能与故障验证结果</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="references">
+      <span class="section-kicker">Reference Direction</span>
+      <p>后续实施阶段可对照：NVIDIA Isaac ROS Manipulation参考架构、Unitree SDK2的低层关节命令/状态接口、AgiBot Link‑U OS的南向硬件适配与北向智能应用分层。本文只定义项目总路线，具体硬件选型、控制参数、消息字段与测试方案将在各阶段独立展开。</p>
+    </section>
+  </main>
+
+  <footer class="wrap">版本：2026-10-26 · 具身智能视觉随动关节总体架构与阶段路线</footer>
+</body>
+</html>
