@@ -629,3 +629,185 @@ AGENTS.md 与 .claude/CLAUDE.md 统一为逐字节一致的同一内容（泛化
 - Pattern-Key: workflow.dual_guide_sync
 - Recurrence-Count: 1
 - First-Seen: 2026-10-14
+
+## [LRN-20261020-001] knowledge_gap/psw_is_bit_position
+
+**Logged**: 2026-10-20
+**Priority**: medium
+**Status**: open
+**Area**: hardware
+
+### Summary
+
+TriCore PSW 的 IS 位是 **bit 9**；复位默认值 `0x980` 中 **IS=0**（清 IS），GW(bit8)=1。此前讲解中曾误写成"IS 置 1"，与 C 注释（clear PSW.IS）矛盾，已修正。
+
+### Details
+
+- PSW 位定义（`IfxCpu_bf.h`）：CDC=0、GW=8、IS=9、IO=10、PRS=12、S=14、USB=24
+- `0x980 = 0x800 + 0x100 + 0x80`，不包含 bit9，因此 IS=0
+- 教训：涉及位域/复位值时，必须同时核对寄存器位定义与 C 注释，不能凭"复位后应该开中断栈"的直觉推断
+
+### Suggested Action
+
+- 讲 PSW/CSFR 前先查 `_Reg/IfxCpu_bf.h` 的 `_OFF` 定义
+- 在启动流程 HTML 的 S2 节保留该核对过程（先想一想 Q5）
+
+### Metadata
+
+- Related Files: `Reports/gen_startup_html.py`, `00_ExecutionModel_程序运行模型/AURIX_Startup_C_Assembly.html`
+- Pattern-Key: hardware.psw_bit_positions
+
+## [LRN-20261020-002] correction/teach_with_questions_not_commentary
+
+**Logged**: 2026-10-20
+**Priority**: high
+**Status**: open
+**Area**: workflow
+
+### Summary
+
+用户反馈：技术讲解 HTML 不能"照本宣科"地注释汇编，要主动触发思考——例如"为什么这里用 `ji` 不用 `call`？"并要求贯穿"举一反三"的精神。
+
+### Details
+
+- 原版 HTML 只有 C/汇编并排 + 逐段说明，缺少"为什么不是另一种写法""如果写错会怎样""ARM/TriCore 对照"
+- 用户明确要求："要多触发这种举一反三的精神"
+- 已改造：每节加入"先想一想"（问题 + 提示 + 答案，默认折叠）、"举一反三 · 跨架构/跨层对照"、"如果写错会怎样"；共 38 道题
+
+### Suggested Action
+
+- 后续所有教学型文档（阶段笔记、HTML、讲解）默认包含三类追问：
+  1. 为什么选这个写法？替代写法会怎样？
+  2. 与 ARM/其他 RTOS 层/其他模块如何对照？
+  3. 写错会触发什么故障？
+- 答案放进折叠块，先让学习者自己想
+
+### Metadata
+
+- Related Files: `Reports/gen_startup_html.py`, `00_ExecutionModel_程序运行模型/AURIX_Startup_C_Assembly.html`
+- Pattern-Key: workflow.think_first_teaching
+
+## [LRN-20261020-003] best_practice/proactive_what_why_audit
+
+**Logged**: 2026-10-20
+**Priority**: high
+**Status**: open
+**Area**: workflow
+
+### Summary
+
+用户要求：教学/学习材料不能只讲"是什么"，要**主动判断并补齐"为什么"**，不要等用户逐条指出。已把该要求固化为教学型输出的默认审计清单。
+
+### Details
+
+- 触发：用户指出启动流程 HTML 像"注释版汇编"，并点名 `ji` vs `call`、PSW 位域、`mtcr #65028` 三处
+- 用户进一步要求："这个学习思路记下来，以后不断地做得更好"
+- 默认审计清单（每次教学型输出必过）：
+  1. 为什么选这个写法？替代写法会怎样？
+  2. 魔数/位域/地址的来源与解码（十进制→十六进制→寄存器）
+  3. 每一步在为下一步准备什么前提？
+  4. 写错会触发什么故障模式？
+  5. 与 ARM / 其他 RTOS 层 / 其他模块如何对照？
+  6. 能否用调试器或上板实验验证？
+- 执行证据：启动 HTML 新增 5 条设计直觉、PSW 位域逐位 why、ICR.IE 修正、clz/rsub 链条、div.u E4、startCore PC>>1、GW 与 A0/A1/A8/A9 的关系、xTaskCreate 参数/栈单位
+
+### Suggested Action
+
+- 教学型文档默认带"先想一想 / 举一反三 / 写错会怎样"三块
+- 发现事实错误立即修正并记录（如 PSW.IS、`enable`/ICR.IE）
+- 按 CLAUDE.md §6.4 的新增反模式行长期执行
+
+### Metadata
+
+- Related Files: `Reports/gen_startup_html.py`, `.claude/CLAUDE.md`, `AGENTS.md`
+- Pattern-Key: workflow.what_why_audit
+
+## [LRN-20261029-001] correction/check-manual-index-before-hunting
+
+**Logged**: 2026-10-29
+**Priority**: high
+**Status**: pending
+**Area**: 资料检索流程
+
+### Summary
+
+核对 AURIX 寄存器时，我先在 vault 里 `find` PDF、又去外网抓 Infineon 手册，而没有先读仓库里已存在的 `AURIX_TC3xx_Manual_Library_Index.md`。用户两次纠正（"手册你应该知道在哪吧，你在哪找的"、"以后建立索引"）。
+
+### Details
+
+- 触发：优化 QSPI HTML 时需要核对 BACON/ECON 位域与 IDLEA/IDLEB 语义
+- 实际路径：vault `find -iname "*qspi*"` → 无 → WebFetch infineon.com 被拦 → curl 抓 55MB UM part2 → 才核对
+- 正确路径：先读索引 → 索引第 51 行直接写明"QSPI | TC3xx UM part2 | Ch37" → 本地 `D:\TriCore_Manunal\TC3xx_UserManual\TC3xx User Manual part2.pdf`
+- 代价：多花了抓取与外部核验的时间；且若外网版本与本地版本不同（v2.0.0 vs 更新版）会引入版本错配
+
+### Suggested Action
+
+- 任何"查手册 / 核对寄存器 / 找章节"任务，第一步读 `AURIX_TC3xx_Manual_Library_Index.md`，按其"使用纪律"执行
+- 新资料落库时同步补索引（文档简称、路径、页数、章节号），不要把索引留在旧状态
+- 引用格式统一 `[文档简称] Ch.X.Y（p.N）`
+
+### Metadata
+
+- Related Files: `01_Hardware_硬件层/01_Core/01_AURIX_TC3xx/AURIX_TC3xx_Manual_Library_Index.md`, `AURIX_TC3xx_QSPI_Study_Atlas.html`
+- Pattern-Key: workflow.manual_index_first
+
+## [LRN-20261029-002] best_practice/html-diagram-anti-overlap-and-selfcheck
+
+**Logged**: 2026-10-29
+**Priority**: medium
+**Status**: pending
+**Area**: 教学型 HTML 可视化
+
+### Summary
+
+修"标签重叠"这类问题，靠调 margin/padding 是碰运气；改成**结构上不可能重叠 + 运行时自检 + 截图自查**，一次性收敛。
+
+### Details
+
+- 触发：QSPI 学习页第 1 节采样点图、第 6 节 BACON/ECON 位图出现文字互相压住
+- 三条可复用做法：
+  1. **位宽图**：`grid-template-columns: repeat(16, minmax(0,1fr))` + 字段 `grid-column: start/span n`，配 `min-width:0; overflow:hidden`。宽度严格等于位宽，文字只会被裁不会被挤出。
+  2. **波形图**：用 SVG 生成，每条信息（信号名/数值/区间名/标记）占独立 y 车道；文字统一加 `paint-order:stroke` + 背景色描边光晕，即使有地线穿过也保持可读；标签 x 位置做 clamp。
+  3. **位域自检**：把字段表作为唯一数据源，运行时排序后检查 `lo == prev.hi+1` 且覆盖到 31，页面上直接打印"32/32 bit 全覆盖，无重叠、无空洞 ✓"。写错一位，页面自己会报红。
+- 验证手段：`chrome --headless=new --screenshot` + PIL 裁剪放大，逐图看；再用 `--dump-dom` 抓生成后的 SVG path 校验几何（本轮就是靠它确认脉冲末端 = dataSeg.x1，排除了误判）。
+- 顺带发现：`node --check` 能抓出 `const lead` 重名这类 IDE 也会报的错，写大段模板字符串前先跑一遍。
+
+### Suggested Action
+
+- 以后凡是"图/位域/时序"类教学页，先按上面的结构写，再谈样式
+- 图表类断言（宽度、比例、位置）用 dump-dom 验算，不靠肉眼
+
+### Metadata
+
+- Related Files: `AURIX_TC3xx_QSPI_Study_Atlas.html`
+- Pattern-Key: ui.diagram.anti_overlap
+
+## [LRN-20261101-001] best_practice/html-tag-balance-after-patch
+
+**Logged**: 2026-11-01
+**Priority**: medium
+**Status**: pending
+**Area**: 单文件 HTML 教学页维护
+
+### Summary
+
+用脚本做**区间替换**（找起止标记、剪掉中间、塞入新块）时，很容易在接缝处多留或少留闭合标签；这类错误 `node --check` 查不出（JS 语法没问题），只有渲染后才表现为"某一节被吞进上一节"。用户一眼看出，我才发现。
+
+### Details
+
+- 触发：替换 QSPI 教学页第 04 章"残余 entry 与 MSB"整块内容，新块以 `</div>` 结尾，而原文本自己的 `</div>` 仍在，导致 div 多闭合一层（789 开 / 790 闭）
+- 后果：「精确模式对照」整节被嵌进上一节 board 内，版式错位
+- 检测方法（10 秒）：
+  `open div` vs `</div>`、`<section>` vs `</section>`、`<table>` vs `</table>`、`<pre>` vs `</pre>` 四组计数必须相等
+- 修复方法：定位到具体行，按行统计开闭数，找出 `1 开 / 2 闭` 的那一行
+
+### Suggested Action
+
+- 任何脚本化的区间替换之后，**立刻跑标签配对计数**，再截图
+- 替换块尽量以"整节（section）"为单位，减少手工补闭合标签
+- 把这条加入单文件 HTML 的验收清单
+
+### Metadata
+
+- Related Files: `AURIX_TC3xx_QSPI_Study_Atlas.html`
+- Pattern-Key: html.patch.tag_balance
