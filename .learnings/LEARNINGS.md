@@ -811,3 +811,33 @@ TriCore PSW 的 IS 位是 **bit 9**；复位默认值 `0x980` 中 **IS=0**（清
 
 - Related Files: `AURIX_TC3xx_QSPI_Study_Atlas.html`
 - Pattern-Key: html.patch.tag_balance
+
+## [LRN-20261102-001] knowledge_gap/spi-channel-buffers-allowed-semantics
+
+**Logged**: 2026-11-02
+**Priority**: high
+**Status**: pending
+**Area**: AUTOSAR SPI MCAL 配置语义
+
+### Summary
+
+`SpiChannelBuffersAllowed` 的取值我按"0=仅IB、1=IB+EB、2=仅EB"理解并写进了笔记和交互页，实际 SWS 原文是 **`IB = 0; EB = 1; IB/EB = 2`**——1 和 2 的含义完全颠倒。写文档时凭"递增即更宽"的直觉推断枚举，是这类错误的根因。
+
+### Details
+
+- SWS R4.2.2 `ECUC_Spi_00227`（PDF 第 86 页）原文：`IB = 0; EB = 1; IB/EB = 2;`
+- 交叉验证：ECUC 依赖关系里，`SpiIbNBuffers` 要求该参数为 **0 或 2**，`SpiEbMaxLength` 要求为 **1 或 2**——与原文一致
+- 该错误同时污染了三处：笔记 01 的对照表、笔记 01 的脚注、交互页的按钮与生成注释
+- 发现路径：写"待补充问题"时决定顺手核对一次，而不是直接进入评审
+
+### Suggested Action
+
+- 枚举型 ECUC 参数一律回 SWS 原文取值域，**不按数值大小推断语义**
+- 笔记里凡出现"0/1/2 分别表示…"这类断言，必须带 SWS 需求 ID 作为出处
+- 交付前对"我自己推断出来、没有直接引用"的结论单独列一遍，逐条找证据
+
+### Metadata
+
+- Related Files: `02_Middleware_中间件层/01_AUTOSAR/01_Communication/03_SPI/AUTOSAR_Comm_SPI_MCAL_01_Requirement_Model.md`、`.../AUTOSAR_Comm_SPI_MCAL_Config_Explorer.html`
+- Evidence: `D:\AUTOSAR_MCAL\docs\AUTOSAR_SWS_SPIHandlerDriver_R4.2.2.pdf` p.86, ECUC_Spi_00227
+- Pattern-Key: autosar.ecuc.enum_semantics

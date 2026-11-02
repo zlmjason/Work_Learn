@@ -665,3 +665,31 @@ httpx.HTTPStatusError: Client error '401 Unauthorized' for url 'https://mineru.n
 - Pattern-Key: tools.bash_exit_code_clobber
 - Recurrence-Count: 1
 - First-Seen: 2026-09-11
+
+## [ERR-20261102-001] tool/subagent-402-insufficient-balance
+
+**Logged**: 2026-11-02
+**Priority**: high
+**Status**: pending
+**Area**: 子代理编排（Agent 工具）
+
+### Summary
+
+并行启动 3 个 general-purpose 子代理做对抗性评审，全部在运行中途以 `API Error: 402 Insufficient Balance`（model: deepseek-flash）终止，均未产出报告。
+
+### Details
+
+- 3 个代理分别在"即将开始核对源码 / 已通读待核对 / 已定位窄屏溢出"阶段中断，说明失败与任务内容无关，是账户额度问题
+- 任务状态为 `failed`，结果字段只留下中断前的一句话进度，不能当作评审结论使用
+- 影响：用户要求的"另外 agent 做对抗性评审"未能完成，改由主会话自查
+
+### Suggested Action
+
+- 启动多代理评审前，先用一次极小的 Agent 调用探活；失败则直接改主会话自查
+- 子代理失败时不要假设其"部分完成了"，只能按零产出处理
+- 额度恢复后可重跑同一批评审任务
+
+### Metadata
+
+- Related Files: 6 篇 SPI MCAL 笔记 + Config_Explorer.html
+- Pattern-Key: agent.api.balance_exhausted
