@@ -143,13 +143,13 @@ S0 的实战结论：四件套缺任何一件都可能出现"编译链接全过�
           ┌─────────────────────────┴─────────────────────────┐
           │                                                   │
 ┌─────────▼──────────┐                              ┌─────────▼──────────┐
-│ A 轨：内核概念       │                              │ B 轨：平台实现 SP   │
-│ S1 任务/TCB         │                              │ SP1 上下文切换 ✅   │
-│ S2 调度             │                              │ SP2 临界区/首任务   │
-│ S3 同步             │                              │ SP3 tick/中断路径   │
-│ S4 内存             │                              │ SP4 栈/CSA 回收     │
-│ S5 中断             │                              └─────────┬──────────┘
-│ S6 时间             │                                        │
+│ A 轨：内核概念       │                              │ B 轨：平台实现       │
+│ S1 任务/TCB         │                              │ EM 运行模型（前置） │
+│ S2 调度             │                              │ SP1 上下文切换 ✅   │
+│ S3 同步             │                              │ SP2 临界区/首任务   │
+│ S4 内存             │                              │ SP3 tick/中断路径   │
+│ S5 中断             │                              │ SP4 栈/CSA 回收     │
+│ S6 时间             │                              └─────────┬──────────┘
 └─────────┬──────────┘                                        │
           └──────────────────────┬─────────────────────────────┘
                                  │
@@ -160,6 +160,7 @@ S0 的实战结论：四件套缺任何一件都可能出现"编译链接全过�
 ```
 
 - **A 轨**解决"RTOS 语义是什么"；**B 轨**解决"在 TriCore 上到底怎么实现"。两轨交织，但各自可独立推进。
+- **B 轨新增 EM 前置**：port 层与目标芯片的程序运行模型强相关。2026-10-20 起，B 轨先完成 **EM 程序运行模型**（寄存器 → Upper/Lower Context → CSA → FCX/PCXI/LCX → CALL/RET → IRQ → Trap → 调试观察），再进入 SP2。SP1（CSA 切换概念）已提前完成，作为 EM 的接入点。
 - **交织规则**：A 轨每学一个机制，B 轨有对应实现时优先补上（例如学完 S2 调度，回看 SP1 的 `vTaskSwitchContext` 调用点）。B 轨不阻塞 A 轨。
 - **C 轨**只在 A/B 轨积累足够后进入；S7 综合实战是能力试金石。
 
@@ -218,6 +219,26 @@ S0 的实战结论：四件套缺任何一件都可能出现"编译链接全过�
 | S8 调试排查 | 系统崩了怎么定位？ | 掌握故障树排查法 + 工具链 | 九页 P8 | 精读 | 运行时间统计（configGENERATE_RUN_TIME_STATS+STM）；ADS/TASKING 调试器实操 | 调试方法笔记（FreeRTOS_Port_ 或 Tools_ 前缀） |
 | S9 进阶+车规映射 | FreeRTOS 与 AUTOSAR OS 的概念如何对照？ | 能在两种 OS 语境间翻译概念 | 九页 P9 + AUTOSAR OS 规范选读 | 支撑读 | tickless idle 实验；双核 AMP 演示（core0+core1 各跑 FreeRTOS） | FreeRTOS vs AUTOSAR OS 对照笔记 |
 
+### EM 程序运行模型（SP 前置，2026-10-20 新增）
+
+| 阶段 | 主题 | 主材料 |
+|---|---|---|
+| EM0 | 总图与程序员可见寄存器（A0/A1/A8/A9 特殊含义） | CSA 交互实验台 §0–1 |
+| EM1 | Upper / Lower Context 的划分与设计原因 | §2 |
+| EM2 | CSA 内存布局与 CSA 指针编码 | §3 |
+| EM3 | FCX / PCXI / LCX 三指针 | §4、§6 |
+| EM4 | 保存/恢复的链表本质 | §5 |
+| EM5 | 普通 CALL/RET 的硬件动作 | §7 |
+| EM6 | IRQ 入口：A10/ISP/PSW.IS 切栈 | §8、§11 |
+| EM7 | BISR / SVLCX / RSLCX 与 Lower Context | §9 |
+| EM8 | Trap 与 IRQ 的异同（FCD/FCU/NEST） | §10、§15 |
+| EM9 | 嵌套中断与 CSA 链增长 | §12–13 |
+| EM10 | 与 Cortex-M7 异常/栈模型对比 | §14 |
+| EM11 | 调试器观察真实 CSA 链 | §16 |
+| EM12 | CSA/ISTACK/USTACK 容量预算 | §18 |
+
+详细路线、检查点与 7 个验证用例见 [[FreeRTOS_ExecutionModel_TC3xx_Runtime_Model]]。
+
 ### SP Port 深潜系列分解
 
 | 子系列 | 核心问题 | 关键函数/机制 | 状态 |
@@ -258,6 +279,7 @@ S0 的实战结论：四件套缺任何一件都可能出现"编译链接全过�
 | 2026-08-30 | 工具链决策：单轨 ADS | 放弃 HighTec + UDE；SX 转型为 SP Port 深潜系列 | 阶段表与假设表同步更新 |
 | 2026-08-31 | SP1 落盘 | 补写 CSA 上下文切换笔记；LED1+LED2 上板确认全闪 | 新增纪律：讲授与落盘同阶段完成 |
 | 2026-10-19 | **方案重构** | 工程与笔记状态核验；重新对齐学习/实践方案 | 路线文档升级为总体方案；新增学习/实践两份支点清单；支点记录按需创建 |
+| 2026-10-20 | **EM 主线建立** | 用户提供 CSA 交互实验台与启动流程 HTML；port 依赖芯片运行模型 | 在 SP 前插入 EM 程序运行模型（EM0–EM12）；SP2 顺延至 EM 完成后 |
 
 ## 待补充问题
 
@@ -272,6 +294,7 @@ S0 的实战结论：四件套缺任何一件都可能出现"编译链接全过�
 - [[FreeRTOS_01_学习TODO]]（知识支点跟踪清单）
 - [[FreeRTOS_02_实践TODO]]（板级实验跟踪清单）
 - [[AURIX_TC3xx_Manual_Library_Index]]（官方手册索引：按任务查手册与章节号）
+- [[FreeRTOS_ExecutionModel_TC3xx_Runtime_Model]]（EM 程序运行模型主线：CSA/上下文/CALL/IRQ/Trap）
 - [[FreeRTOS_Port_TC3xx_PortLayer_Full_Walkthrough]]（SP 主参考：port.c/portmacro.h 逐行注解 + 全流程图）
 - [[FreeRTOS_Port_TC3xx_Context_Switch_CSA]]（SP1：任务切换 = 换 CSA 链）
 - [[Core_Comparison_Exception_CallStack_M7_vs_TC3xx]]（SP 硬件地基：M7 vs TC3xx 异常模型与调用栈对比）

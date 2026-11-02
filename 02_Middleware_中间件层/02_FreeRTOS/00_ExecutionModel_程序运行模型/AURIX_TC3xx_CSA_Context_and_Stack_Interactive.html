@@ -1,0 +1,1956 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>AURIX TC3xx CSA与栈深入学习</title>
+  <style>
+    :root {
+      --ink:#13233a; --muted:#627089; --paper:#f5f7fb; --card:#ffffff;
+      --nav:#101c31; --nav2:#172945; --line:#dbe3ef; --cyan:#16a6c9;
+      --blue:#3467e8; --orange:#f29f3d; --green:#1e9d70; --red:#dd5b62;
+      --purple:#7a60d1; --shadow:0 14px 36px rgba(26,46,82,.10);
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.78 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+    button,select,input{font:inherit}
+    a{color:var(--blue);text-decoration:none}
+    a:hover{text-decoration:underline}
+    #progress{position:fixed;z-index:1000;top:0;left:0;height:4px;width:0;background:linear-gradient(90deg,var(--cyan),var(--blue),var(--orange));box-shadow:0 0 8px rgba(52,103,232,.35)}
+    .shell{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:100vh}
+    .sidebar{position:sticky;top:0;height:100vh;overflow:auto;background:linear-gradient(180deg,var(--nav),#0b1424);color:#eaf2ff;padding:24px 18px;border-right:1px solid rgba(255,255,255,.07)}
+    .brand{display:flex;gap:12px;align-items:center;padding:4px 6px 18px}
+    .brand-mark{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,var(--cyan),var(--blue));display:grid;place-items:center;font-weight:900;box-shadow:0 8px 24px rgba(22,166,201,.28)}
+    .brand strong{display:block;font-size:15px}.brand span{font-size:12px;color:#9fb2cf}
+    .side-search{position:relative;margin:0 0 14px}.side-search input{width:100%;padding:10px 12px;border:1px solid #2e4263;border-radius:10px;background:#15243c;color:#fff;outline:none}.side-search input:focus{border-color:var(--cyan)}
+    .nav-title{font-size:11px;color:#7f94b2;letter-spacing:.13em;text-transform:uppercase;margin:18px 8px 8px}
+    #toc a{display:block;color:#c4d2e8;padding:7px 9px;border-radius:8px;font-size:13px;line-height:1.35;margin:1px 0}
+    #toc a:hover,#toc a.active{background:#203453;color:#fff;text-decoration:none}
+    #toc a.sub{padding-left:22px;font-size:12px;color:#91a5c3}
+    .side-legend{margin-top:18px;padding:14px;border:1px solid #273b5b;background:#14233b;border-radius:12px;font-size:12px;color:#aebed4}
+    .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px}.dot.c{background:var(--cyan)}.dot.o{background:var(--orange)}.dot.g{background:var(--green)}
+    .main{min-width:0}
+    .hero{background:radial-gradient(circle at 86% 10%,rgba(22,166,201,.20),transparent 27%),linear-gradient(135deg,#172b4d,#24436f);color:#fff;padding:58px clamp(28px,6vw,86px) 42px;position:relative;overflow:hidden}
+    .hero:after{content:"CSA";position:absolute;right:3vw;bottom:-48px;color:rgba(255,255,255,.035);font-size:190px;font-weight:900;letter-spacing:-.08em}
+    .eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#7be1f3;font-weight:800}
+    .hero h1{font-size:clamp(30px,4.4vw,56px);line-height:1.13;margin:12px 0 18px;max-width:920px;letter-spacing:-.035em}
+    .hero p{max-width:860px;color:#cbd9ee;margin:0;font-size:17px}
+    .chips{display:flex;gap:9px;flex-wrap:wrap;margin-top:24px}.chip{padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);font-size:12px;color:#e5f2ff}
+    .content-wrap{max-width:1280px;margin:auto;padding:34px clamp(22px,4vw,54px) 80px}
+    .quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:-58px;position:relative;z-index:2}
+    .quick-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+    .quick-card .k{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+    .quick-card strong{font-size:20px;display:block;margin:4px 0}.quick-card p{font-size:13px;color:var(--muted);margin:0;line-height:1.5}
+    .lab{margin:30px 0 40px;background:#0f1c31;color:#eaf2ff;border-radius:20px;overflow:hidden;box-shadow:var(--shadow);border:1px solid #203655}
+    .lab-head{padding:20px 22px;border-bottom:1px solid #273a58;display:flex;gap:14px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+    .lab-head h2{margin:0;font-size:21px;color:#fff}.lab-head p{margin:2px 0 0;color:#9fb2cf;font-size:13px}
+    .lab-controls{display:flex;gap:8px;flex-wrap:wrap}.lab select,.lab button{border:1px solid #375274;background:#172a47;color:#fff;border-radius:9px;padding:8px 11px;cursor:pointer}.lab button:hover{border-color:#68d4e9}.lab button.primary{background:var(--blue);border-color:var(--blue)}
+    .lab-body{padding:22px;display:grid;grid-template-columns:260px 1fr;gap:22px}
+    .stage-meta{background:#152743;border:1px solid #294363;border-radius:14px;padding:16px}.stage-meta .num{font-size:12px;color:#78d8eb;font-weight:800}.stage-meta h3{font-size:19px;margin:6px 0;color:#fff}.stage-meta p{font-size:13px;color:#b8c7dc;line-height:1.6}
+    .pips{display:flex;gap:5px;margin-top:15px}.pip{height:5px;flex:1;background:#314665;border-radius:3px}.pip.on{background:var(--cyan)}
+    .stage-view{min-height:270px;background:linear-gradient(180deg,#13253f,#101d32);border:1px solid #294363;border-radius:14px;padding:18px;display:grid;align-content:center;gap:14px}
+    .state-row{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap}.state-unit{flex:1 1 125px;min-height:68px;background:#1b3150;border:1px solid #355170;border-radius:11px;padding:10px}.state-unit b{display:block;font-size:11px;color:#7bd7e8;text-transform:uppercase;letter-spacing:.05em}.state-unit span{display:block;margin-top:4px;color:#fff;font-weight:700;font-size:14px}.state-unit.orange{border-color:#855b2b}.state-unit.orange b{color:#ffbf6e}.state-unit.green{border-color:#287455}.state-unit.green b{color:#70d4ad}.state-unit.purple{border-color:#594a8e}.state-unit.purple b{color:#bba9ff}.stage-arrow{text-align:center;color:#6e87aa;font-size:23px;line-height:1}
+    .callout{background:linear-gradient(135deg,#ecfbff,#f3f7ff);border-left:5px solid var(--cyan);padding:17px 18px;border-radius:5px 12px 12px 5px;margin:26px 0;color:#18324c}.callout b{color:#0e7995}
+    article{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:clamp(24px,4vw,55px);box-shadow:var(--shadow)}
+    article h1{display:none}
+    article h2{font-size:30px;line-height:1.25;margin:58px 0 22px;padding-top:12px;border-top:1px solid var(--line);letter-spacing:-.025em;scroll-margin-top:22px}
+    article h2:first-of-type{margin-top:0;border-top:0;padding-top:0}
+    article h3{font-size:21px;margin:34px 0 13px;scroll-margin-top:22px;color:#193a62}
+    article h4{font-size:17px;color:#36506f}
+    article p{margin:12px 0}
+    article strong{color:#112f51}
+    article blockquote{margin:18px 0;padding:14px 18px;background:#f0f8ff;border-left:4px solid var(--blue);border-radius:4px 10px 10px 4px;color:#294965}
+    article blockquote p{margin:0}
+    article ul,article ol{padding-left:1.4em}
+    article li{margin:5px 0}
+    article hr{border:0;border-top:1px solid var(--line);margin:45px 0}
+    table{width:100%;border-collapse:separate;border-spacing:0;margin:18px 0 26px;font-size:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+    th{background:#eaf1fb;color:#18395e;text-align:left;font-weight:800}th,td{padding:11px 13px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);vertical-align:top}tr:last-child td{border-bottom:0}th:last-child,td:last-child{border-right:0}tbody tr:nth-child(even){background:#fafcff}
+    code{font-family:"Cascadia Code","SFMono-Regular",Consolas,monospace;background:#eef2f8;color:#24446b;padding:.15em .38em;border-radius:5px;font-size:.9em}
+    pre{background:#111d2f;color:#deebff;border:1px solid #263b5c;border-radius:13px;padding:17px;overflow:auto;line-height:1.55;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}pre code{background:transparent;color:inherit;padding:0}
+    .viz{margin:24px 0;padding:20px;background:linear-gradient(145deg,#f5fbff,#f7f5ff);border:1px solid #d9e5f4;border-radius:16px}.viz-title{font-weight:900;color:#16385c;margin-bottom:14px}.viz-row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}.viz-box{min-width:135px;max-width:190px;padding:13px;border-radius:11px;background:#fff;border:2px solid #bad5ef;text-align:center;box-shadow:0 6px 16px rgba(38,69,112,.08);font-size:13px}.viz-box b{display:block;color:#163c64;margin-bottom:4px}.viz-box.cyan{border-color:#49bad4}.viz-box.orange{border-color:#f0a84e}.viz-box.green{border-color:#57b88d}.viz-box.purple{border-color:#9076df}.viz-arrow{color:#8295ad;font-size:23px;font-weight:900}.viz-note{margin-top:13px;padding:10px 12px;background:#fff;border-radius:9px;color:#53657a;font-size:13px;text-align:center}
+    mark{background:#ffe98e;padding:0 2px;border-radius:2px}
+    .search-empty{display:none;padding:20px;background:#fff3d7;border:1px solid #f3cd73;border-radius:12px;margin-bottom:20px}
+    .top-btn{position:fixed;right:24px;bottom:24px;width:45px;height:45px;border:0;border-radius:50%;background:var(--blue);color:white;font-size:20px;cursor:pointer;box-shadow:0 10px 24px rgba(52,103,232,.28);opacity:0;pointer-events:none;transition:.2s}.top-btn.show{opacity:1;pointer-events:auto}
+    .footer{text-align:center;color:#73819a;font-size:12px;padding:28px}
+    @media(max-width:980px){.shell{display:block}.sidebar{position:relative;width:100%;height:auto;max-height:420px}.quick-grid{grid-template-columns:1fr;margin-top:-26px}.lab-body{grid-template-columns:1fr}.hero{padding-top:42px}.content-wrap{padding-top:18px}}
+    @media(max-width:620px){body{font-size:15px}.hero h1{font-size:32px}.content-wrap{padding-left:12px;padding-right:12px}article{padding:22px 16px;border-radius:14px}.lab{border-radius:14px}.lab-head,.lab-body{padding:15px}article h2{font-size:25px}table{display:block;overflow:auto;white-space:nowrap}.viz-arrow{transform:rotate(90deg);width:100%;text-align:center}}
+    @media print{#progress,.sidebar,.lab-controls,.top-btn{display:none!important}.shell{display:block}.hero{color:#000;background:#fff;padding:20px 0}.hero p{color:#333}.content-wrap{max-width:none;padding:0}.quick-grid{margin:0}.lab{background:#fff;color:#000;box-shadow:none}.lab-body{display:block}.stage-view,.stage-meta{background:#fff;color:#000}.stage-unit span,.stage-meta h3{color:#000}article{box-shadow:none;border:0;padding:0}article h2{break-after:avoid}pre,table,.viz{break-inside:avoid}}
+  </style>
+</head>
+<body>
+  <div id="progress"></div>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark">TC</div><div><strong>AURIX TC3xx 学习手册</strong><span>Context · CSA · Stack</span></div></div>
+      <div class="side-search"><input id="search" type="search" placeholder="搜索：PCXI、BISR、MSP…"></div>
+      <div class="nav-title">章节导航</div>
+      <nav id="toc"></nav>
+      <div class="side-legend">
+        <div><span class="dot c"></span>Upper / 自动上下文</div>
+        <div><span class="dot o"></span>Lower / 按需上下文</div>
+        <div><span class="dot g"></span>Stack / 栈切换</div>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="hero">
+        <div class="eyebrow">TriCore TC1.6.2 · Deep Dive</div>
+        <h1>AURIX TC3xx 寄存器上下文、CSA 与 USTACK/ISTACK</h1>
+        <p>把寄存器、CSA 链表、CALL/RET、中断/Trap、PSW.IS 以及 Cortex-M7 MSP/PSP 放进同一套动态模型中理解。</p>
+        <div class="chips"><span class="chip">完整正文保留</span><span class="chip">6 组动态图解</span><span class="chip">交互式状态演示</span><span class="chip">调试与验证用例</span></div>
+      </header>
+      <div class="content-wrap">
+        <section class="quick-grid">
+          <div class="quick-card"><div class="k">Register Context</div><strong>Upper / Lower / Global</strong><p>先分清谁自动保存、谁按需保存、谁根本不进入 CSA。</p></div>
+          <div class="quick-card"><div class="k">Context Memory</div><strong>FCX ⇄ PCXI.PCX</strong><p>CSA 在空闲链与使用链之间移动，LCX 负责耗尽预警。</p></div>
+          <div class="quick-card"><div class="k">Stack Switching</div><strong>A10 + ISP + PSW.IS</strong><p>A10 是活动 SP；ISP 是首次异常切栈的装载源。</p></div>
+        </section>
+
+        <section class="lab" aria-label="上下文状态交互演示">
+          <div class="lab-head">
+            <div><h2>交互实验台</h2><p>选择场景，逐步观察寄存器、CSA 链与普通栈如何变化。</p></div>
+            <div class="lab-controls">
+              <select id="scenario" aria-label="选择场景">
+                <option value="call">普通 CALL → RET</option>
+                <option value="irq">第一层 IRQ：USTACK → ISTACK</option>
+                <option value="nested">嵌套 IRQ：不重新加载 ISP</option>
+                <option value="bisr">BISR + CALL + RSLCX + RFE</option>
+                <option value="m7">AURIX 与 Cortex-M7 对照</option>
+              </select>
+              <button id="prev">上一步</button><button id="next" class="primary">下一步</button><button id="reset">复位</button>
+            </div>
+          </div>
+          <div class="lab-body">
+            <div class="stage-meta"><div class="num" id="stageNum"></div><h3 id="stageTitle"></h3><p id="stageDesc"></p><div class="pips" id="pips"></div></div>
+            <div class="stage-view" id="stageView"></div>
+          </div>
+        </section>
+
+        <div class="callout"><b>阅读建议：</b>先玩一遍“普通 CALL”和“第一层 IRQ”，再阅读正文第 2～13 节；此时 Upper/Lower、CSA 链和 A10 切栈会自然串起来。</div>
+        <div class="search-empty" id="searchEmpty">没有找到匹配内容，请换一个关键词。</div>
+        <article id="article"><h1
+id="aurix-tc3xx-寄存器上下文csa-与-ustackistack-深入学习">AURIX TC3xx
+寄存器上下文、CSA 与 USTACK/ISTACK 深入学习</h1>
+<blockquote>
+<p>学习范围：TriCore TC1.6.2 的 GPR 分类、Upper/Lower Context、CSA
+链表、<code>CALL/RET</code>、中断/Trap
+上下文切换、<code>A10/ISP/PSW.IS</code>，以及与 Cortex-M7
+<code>MSP/PSP</code> 的系统对比。<br />
+本文不讨论 SSW、<code>_START → main</code> 或多核启动流程。</p>
+</blockquote>
+<hr />
+<h2 id="0-先建立一张不会混乱的总图">0. 先建立一张不会混乱的总图</h2>
+<p>理解 AURIX 的调用栈和异常栈，必须同时区分三套机制：</p>
+<table>
+<thead>
+<tr class="header">
+<th>机制</th>
+<th>核心对象</th>
+<th>保存什么</th>
+<th>谁管理</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>普通内存栈</td>
+<td><code>A10/SP</code></td>
+<td>局部变量、栈参数、寄存器溢出、局部数组、临时数据</td>
+<td>编译器与软件</td>
+</tr>
+<tr class="even">
+<td>CSA 上下文链</td>
+<td><code>FCX</code>、<code>PCXI.PCX</code>、<code>LCX</code></td>
+<td>Upper/Lower CPU 寄存器上下文</td>
+<td>CPU 硬件为主，软件初始化与维护</td>
+</tr>
+<tr class="odd">
+<td>中断栈切换</td>
+<td><code>A10</code>、<code>ISP</code>、<code>PSW.IS</code></td>
+<td>决定异常处理代码的普通栈使用哪片 RAM</td>
+<td>异常入口/返回硬件</td>
+</tr>
+</tbody>
+</table>
+<pre class="mermaid"><code>flowchart TD
+    E[&quot;程序正在执行&quot;] --&gt; Q{&quot;发生什么事件？&quot;}
+    Q --&gt;|普通 CALL| C[&quot;Upper Context → CSA&quot;]
+    Q --&gt;|IRQ / Trap| I[&quot;Upper Context → CSA&quot;]
+    C --&gt; S1[&quot;A10 继续使用当前普通栈&quot;]
+    I --&gt; S2{&quot;原 PSW.IS = 0？&quot;}
+    S2 --&gt;|是| S3[&quot;A10 ← ISP；进入 ISTACK&quot;]
+    S2 --&gt;|否| S4[&quot;保留 A10；继续当前 ISTACK&quot;]</code></pre>
+<p>最重要的第一句话是：</p>
+<blockquote>
+<p><strong>CSA 负责寄存器上下文；A10 指向的普通栈负责 C 语言栈数据。CSA
+不是 USTACK，也不是 ISTACK。</strong></p>
+</blockquote>
+<p>如果只盯着 <code>A10</code> 指向的内存去回溯 TriCore 调用链，会漏掉
+CSA 中的 Upper Context；如果只看
+CSA，又会漏掉函数局部变量和栈溢出寄存器。</p>
+<hr />
+<h2 id="1-tricore-有哪些程序员可见寄存器">1. TriCore
+有哪些程序员可见寄存器</h2>
+<p>TriCore TC1.6.2 有 32 个通用寄存器：</p>
+<ul>
+<li>16 个地址寄存器：<code>A0～A15</code></li>
+<li>16 个数据寄存器：<code>D0～D15</code></li>
+</ul>
+<p>此外，还有决定控制流与上下文管理的关键状态寄存器：</p>
+<ul>
+<li><code>PC</code>：当前程序计数器</li>
+<li><code>PSW</code>：程序状态字</li>
+<li><code>PCXI</code>：Previous Context Information</li>
+<li><code>FCX</code>：Free CSA List Head Pointer</li>
+<li><code>LCX</code>：Free CSA List Limit Pointer</li>
+<li><code>ISP</code>：Interrupt Stack Pointer</li>
+<li><code>ICR</code>：Interrupt Control Register</li>
+</ul>
+<h3 id="11-地址寄存器与数据寄存器">1.1 地址寄存器与数据寄存器</h3>
+<p>地址寄存器主要用于：</p>
+<ul>
+<li>指针和地址计算</li>
+<li>栈访问</li>
+<li>基址寻址</li>
+<li>函数返回地址</li>
+</ul>
+<p>数据寄存器主要用于：</p>
+<ul>
+<li>整数与位运算</li>
+<li>函数参数和返回值</li>
+<li>临时计算结果</li>
+<li>Trap 的 TIN 信息</li>
+</ul>
+<p>这里不要把“地址寄存器”理解为只能保存地址。架构和编译器主要按照上述用途使用它们，但本质上仍是
+32-bit 寄存器。</p>
+<h3 id="12-几个有固定架构含义的寄存器">1.2
+几个有固定架构含义的寄存器</h3>
+<table>
+<thead>
+<tr class="header">
+<th>寄存器</th>
+<th>架构角色</th>
+<th>工程含义</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>A0</code></td>
+<td>System Global Register</td>
+<td>编译器通常用作短寻址全局/常量区基址</td>
+</tr>
+<tr class="even">
+<td><code>A1</code></td>
+<td>System Global Register</td>
+<td>编译器使用的全局数据基址之一</td>
+</tr>
+<tr class="odd">
+<td><code>A8/A9</code></td>
+<td>System Global Register</td>
+<td>可保存系统级高频地址变量</td>
+</tr>
+<tr class="even">
+<td><code>A10</code></td>
+<td>Stack Pointer，SP</td>
+<td>当前真正参与普通栈访问的活动栈指针</td>
+</tr>
+<tr class="odd">
+<td><code>A11</code></td>
+<td>Return Address，RA</td>
+<td><code>CALL</code>、IRQ、Trap 的返回控制流地址</td>
+</tr>
+<tr class="even">
+<td><code>A15</code></td>
+<td>Implicit Address Register</td>
+<td>一些短指令隐含使用的地址寄存器</td>
+</tr>
+<tr class="odd">
+<td><code>D15</code></td>
+<td>Implicit Data Register</td>
+<td>一些短指令隐含使用；进入 Trap 时保存 <code>TIN</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="13-为什么-a0a1a8a9-特殊">1.3 为什么 A0、A1、A8、A9 特殊</h3>
+<p>这四个寄存器称为 System Global Registers：</p>
+<pre class="text"><code>A0、A1、A8、A9</code></pre>
+<p>它们不属于 Upper Context，也不属于 Lower Context，因此：</p>
+<ul>
+<li>普通 <code>CALL/RET</code> 不自动保存和恢复它们；</li>
+<li>IRQ/Trap 入口与 <code>RFE</code> 不自动保存和恢复它们；</li>
+<li>不应被普通函数、ISR、Trap Handler 随意当作私有临时寄存器使用。</li>
+</ul>
+<p><code>PSW.GW</code>
+控制当前执行流是否允许修改这四个全局地址寄存器：</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;"><code>PSW.GW</code></th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;"><code>0</code></td>
+<td>禁止修改 <code>A0/A1/A8/A9</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>1</code></td>
+<td>允许修改 <code>A0/A1/A8/A9</code></td>
+</tr>
+</tbody>
+</table>
+<p>进入 IRQ 或 Trap 时，硬件把 <code>PSW.GW</code>
+清零，避免异常处理程序无意破坏系统的全局基址约定。</p>
+<hr />
+<h2 id="2-为什么上下文被分成-upper-和-lower">2. 为什么上下文被分成 Upper
+和 Lower</h2>
+<p>TriCore
+不在每次调用或异常时无条件保存全部寄存器，而是把任务上下文拆成两组。</p>
+<h3 id="21-upper-context">2.1 Upper Context</h3>
+<p>Upper Context 包含：</p>
+<pre class="text"><code>PCXI
+PSW
+A10～A15
+D8～D15</code></pre>
+<p>一共 16 个 32-bit word，即 64 bytes。</p>
+<p>它的核心特点是：</p>
+<blockquote>
+<p><code>CALL</code>、IRQ、Trap 会由硬件自动保存 Upper
+Context；<code>RET/RFE</code> 会由硬件自动恢复 Upper Context。</p>
+</blockquote>
+<p>因此，可以把 Upper Context 理解为：</p>
+<blockquote>
+<p><strong>硬件自动为调用者或被中断者保护的寄存器状态。</strong></p>
+</blockquote>
+<p>但还要注意一个容易忽视的限制：在新的函数、ISR 或 Trap Handler
+中，除了架构明确定义的寄存器外，不应假定其他 Upper
+寄存器继承了进入前的值。</p>
+<p>架构明确定义的入口值主要包括：</p>
+<ul>
+<li><code>A10</code>：当前栈指针</li>
+<li><code>A11</code>：当前返回地址</li>
+<li><code>PSW/PCXI</code>：新的控制与上下文链状态</li>
+<li>Trap 入口时的 <code>D15 = TIN</code></li>
+</ul>
+<h3 id="22-lower-context">2.2 Lower Context</h3>
+<p>Lower Context 包含：</p>
+<pre class="text"><code>PCXI
+A11
+A2～A7
+D0～D7</code></pre>
+<p>同样是 16 个 32-bit word，即 64 bytes。</p>
+<p>它的核心特点是：</p>
+<blockquote>
+<p><code>CALL</code>、IRQ、Trap 不自动保存 Lower Context；需要软件通过
+<code>BISR</code> 或 <code>SVLCX</code> 显式保存，并用
+<code>RSLCX</code> 恢复。</p>
+</blockquote>
+<p>Lower Context 适合承担：</p>
+<ul>
+<li>函数参数传递</li>
+<li>函数返回值传递</li>
+<li>调用者与被调用者约定保存的寄存器</li>
+<li>ISR 需要时才付出保存成本的寄存器集合</li>
+</ul>
+<h3 id="23-为什么不在异常入口一次性保存全部寄存器">2.3
+为什么不在异常入口一次性保存全部寄存器</h3>
+<p>设计目标是降低确定性响应延迟。</p>
+<p>如果每个 IRQ 都先保存全部 GPR：</p>
+<ul>
+<li>极短 ISR 也要承担完整现场保存开销；</li>
+<li>总线和本地 RAM 产生更多访问；</li>
+<li>高优先级控制中断的第一条有效业务指令更晚执行。</li>
+</ul>
+<p>TriCore 的做法是：</p>
+<ol type="1">
+<li>硬件固定保存 Upper Context；</li>
+<li>ISR 可以先使用已被保护的 Upper 寄存器做最紧急的动作；</li>
+<li>如果后续需要 Lower 寄存器或需要调用函数，再执行
+<code>BISR/SVLCX</code>；</li>
+<li>返回前用 <code>RSLCX</code> 恢复 Lower Context。</li>
+</ol>
+<p>这是一种“固定低延迟入口 + 按需扩展现场”的设计。</p>
+<h3 id="24-总分类表">2.4 总分类表</h3>
+<table>
+<thead>
+<tr class="header">
+<th>寄存器/状态</th>
+<th>分类</th>
+<th style="text-align: right;"><code>CALL</code> 自动保存</th>
+<th style="text-align: right;">IRQ/Trap 自动保存</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>A0/A1/A8/A9</code></td>
+<td>Global</td>
+<td style="text-align: right;">否</td>
+<td style="text-align: right;">否</td>
+</tr>
+<tr class="even">
+<td><code>A2～A7</code></td>
+<td>Lower</td>
+<td style="text-align: right;">否</td>
+<td style="text-align: right;">否</td>
+</tr>
+<tr class="odd">
+<td><code>D0～D7</code></td>
+<td>Lower</td>
+<td style="text-align: right;">否</td>
+<td style="text-align: right;">否</td>
+</tr>
+<tr class="even">
+<td><code>A10～A15</code></td>
+<td>Upper</td>
+<td style="text-align: right;">是</td>
+<td style="text-align: right;">是</td>
+</tr>
+<tr class="odd">
+<td><code>D8～D15</code></td>
+<td>Upper</td>
+<td style="text-align: right;">是</td>
+<td style="text-align: right;">是</td>
+</tr>
+<tr class="even">
+<td><code>A11</code></td>
+<td>Upper + Lower</td>
+<td style="text-align: right;">是</td>
+<td style="text-align: right;">是</td>
+</tr>
+<tr class="odd">
+<td><code>PCXI</code></td>
+<td>Upper + Lower</td>
+<td style="text-align: right;">是</td>
+<td style="text-align: right;">是</td>
+</tr>
+<tr class="even">
+<td><code>PSW</code></td>
+<td>Upper</td>
+<td style="text-align: right;">是</td>
+<td style="text-align: right;">是</td>
+</tr>
+</tbody>
+</table>
+<h3 id="25-为什么-a11-和-pcxi-同时出现在两种-context-中">2.5 为什么 A11
+和 PCXI 同时出现在两种 Context 中</h3>
+<p>这不是重复设计，而是在两个不同时间点保存两条不同的返回链。</p>
+<p>以 ISR 为例：</p>
+<ol type="1">
+<li>IRQ 入口先把被中断任务的 Upper Context 保存到
+<code>CSA_U</code>；</li>
+<li>硬件为 ISR 设置新的 <code>A11</code> 和新的 <code>PCXI</code>；</li>
+<li>ISR 如果执行 <code>BISR</code>，会把 ISR 当前的
+<code>A11/PCXI</code> 保存到 <code>CSA_L</code>；</li>
+<li>ISR 内即使又发生 <code>CALL</code>，返回前也能用 <code>RSLCX</code>
+恢复异常返回链；</li>
+<li>最后 <code>RFE</code> 根据恢复后的 <code>A11/PCXI</code>
+返回原任务。</li>
+</ol>
+<pre class="mermaid"><code>flowchart TD
+    T[&quot;任务状态&quot;] --&gt; U[&quot;IRQ：Upper CSA 保存任务 A11/PCXI&quot;]
+    U --&gt; H[&quot;ISR 获得新的 A11/PCXI&quot;]
+    H --&gt; L[&quot;BISR：Lower CSA 保存 ISR 的 A11/PCXI&quot;]
+    L --&gt; R1[&quot;RSLCX：恢复 ISR 异常返回链&quot;]
+    R1 --&gt; R2[&quot;RFE：恢复任务 Upper Context&quot;]</code></pre>
+<p>一句话区分：</p>
+<blockquote>
+<p>Upper CSA 里的 <code>A11/PCXI</code>
+属于被打断或发起调用的一方；Lower CSA 里的 <code>A11/PCXI</code>
+属于显式保存 Lower Context 时的当前执行流。</p>
+</blockquote>
+<hr />
+<h2 id="3-csa-到底是什么">3. CSA 到底是什么</h2>
+<p>CSA 全称 Context Save Area。</p>
+<p>它不是 CPU 内部隐藏寄存器，而是软件预先在可用 RAM
+中划出并初始化的一组固定大小内存块。</p>
+<p>每个 CSA：</p>
+<pre class="text"><code>16 words × 4 bytes = 64 bytes</code></pre>
+<p>并且必须按 64 bytes 对齐。</p>
+<p>一个 CSA 一次只能保存：</p>
+<ul>
+<li>一个 Upper Context，或</li>
+<li>一个 Lower Context。</li>
+</ul>
+<p>不能在同一个 CSA 中同时放置完整 Upper 和 Lower Context。</p>
+<h3 id="31-upper-csa-的内存布局">3.1 Upper CSA 的内存布局</h3>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;">CSA 偏移</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;"><code>0x00</code></td>
+<td>保存的 <code>PCXI</code> / Link Word</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x04</code></td>
+<td><code>PSW</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>0x08</code></td>
+<td><code>A10/SP</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x0C</code></td>
+<td><code>A11/RA</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>0x10</code></td>
+<td><code>D8</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x14</code></td>
+<td><code>D9</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>0x18</code></td>
+<td><code>D10</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x1C</code></td>
+<td><code>D11</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>0x20</code></td>
+<td><code>A12</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x24</code></td>
+<td><code>A13</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>0x28</code></td>
+<td><code>A14</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x2C</code></td>
+<td><code>A15</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>0x30</code></td>
+<td><code>D12</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x34</code></td>
+<td><code>D13</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>0x38</code></td>
+<td><code>D14</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x3C</code></td>
+<td><code>D15</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="32-lower-csa-的内存布局">3.2 Lower CSA 的内存布局</h3>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;">CSA 偏移</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;"><code>0x00</code></td>
+<td>保存的 <code>PCXI</code> / Link Word</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x04</code></td>
+<td><code>A11/RA</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>0x08</code></td>
+<td><code>A2</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x0C</code></td>
+<td><code>A3</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>0x10</code></td>
+<td><code>D0</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x14</code></td>
+<td><code>D1</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>0x18</code></td>
+<td><code>D2</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x1C</code></td>
+<td><code>D3</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>0x20</code></td>
+<td><code>A4</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x24</code></td>
+<td><code>A5</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>0x28</code></td>
+<td><code>A6</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x2C</code></td>
+<td><code>A7</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>0x30</code></td>
+<td><code>D4</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x34</code></td>
+<td><code>D5</code></td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;"><code>0x38</code></td>
+<td><code>D6</code></td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>0x3C</code></td>
+<td><code>D7</code></td>
+</tr>
+</tbody>
+</table>
+<p>相同的 64-byte 尺寸带来两个工程优势：</p>
+<ul>
+<li>上下文分配和回收使用同一套链表机制；</li>
+<li>地址计算和上下文搬运可以采用固定序列，硬件时序更可预测。</li>
+</ul>
+<h3 id="33-csa-指针不是普通-32-bit-地址">3.3 CSA 指针不是普通 32-bit
+地址</h3>
+<p><code>FCX</code>、<code>LCX</code> 和 <code>PCXI.PCX</code> 里的 CSA
+指针使用压缩格式：</p>
+<pre class="text"><code>pointer[19:16] = Segment
+pointer[15:0]  = Offset</code></pre>
+<p>有效地址构造为：</p>
+<pre class="text"><code>EA[31:28] = Segment
+EA[27:22] = 0
+EA[21:6]  = Offset
+EA[5:0]   = 0</code></pre>
+<p>对应 C 语言公式：</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="dt">uint32_t</span> csa_ptr_to_addr<span class="op">(</span><span class="dt">uint32_t</span> csa_ptr<span class="op">)</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">((</span>csa_ptr <span class="op">&amp;</span> <span class="bn">0x000F0000</span><span class="bu">u</span><span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="dv">12</span><span class="op">)</span> <span class="op">|</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>           <span class="op">((</span>csa_ptr <span class="op">&amp;</span> <span class="bn">0x0000FFFF</span><span class="bu">u</span><span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="dv">6</span><span class="op">);</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>反向转换：</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="dt">uint32_t</span> addr_to_csa_ptr<span class="op">(</span><span class="dt">uint32_t</span> addr<span class="op">)</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">((</span>addr <span class="op">&gt;&gt;</span> <span class="dv">12</span><span class="op">)</span> <span class="op">&amp;</span> <span class="bn">0x000F0000</span><span class="bu">u</span><span class="op">)</span> <span class="op">|</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>           <span class="op">((</span>addr <span class="op">&gt;&gt;</span> <span class="dv">6</span><span class="op">)</span>  <span class="op">&amp;</span> <span class="bn">0x0000FFFF</span><span class="bu">u</span><span class="op">);</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>示例：</p>
+<pre class="text"><code>CSA 实际地址 = 0x7001_0000
+Segment       = 0x7
+Offset        = 0x0400
+CSA pointer   = 0x0007_0400</code></pre>
+<p>因此调试器里看到：</p>
+<pre class="text"><code>PCXI.PCX = 0x00070400</code></pre>
+<p>不能直接把它当成 <code>0x00070400</code> 的 RAM 地址；解码后才是
+<code>0x70010000</code>。</p>
+<p>最低 6 bit 不参与存储，天然保证 64-byte 对齐。每个 256 MB segment
+中，CSA 指针可覆盖其中固定的 4 MB CSA 地址范围，对应最多
+<code>2^16</code> 个 CSA。</p>
+<h3 id="34-csa-不能随便放在哪里">3.4 CSA 不能随便放在哪里</h3>
+<p>架构层面的基本限制包括：</p>
+<ul>
+<li>不能放在带 peripheral-space 属性的内存段；</li>
+<li>不能放在启用 MMU 后需要地址转换的内存区域；</li>
+<li>还要满足具体 TC3xx 产品对可用
+RAM、可访问路径和局部存储的额外约束。</li>
+</ul>
+<h3 id="35-软件直接读取活动-csa-前为什么要-dsync">3.5 软件直接读取活动
+CSA 前为什么要 DSYNC</h3>
+<p>实现可能在 CPU 内部暂存活动 CSA
+的寄存器状态，以提高上下文保存性能。因此内存中的 CSA
+镜像可能尚未反映最新内部状态。</p>
+<p>软件或调试辅助代码如果要直接访问活动 CSA，应先执行：</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode asm"><code class="sourceCode fasm"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>dsync</span></code></pre></div>
+<p><code>DSYNC</code> 会确保内部缓冲的 CSA
+状态已经提交到内存。它并不等于无效化 D-Cache，二者不能混为一谈。</p>
+<hr />
+<h2 id="4-三个关键指针fcxpcxipcxlcx">4.
+三个关键指针：FCX、PCXI.PCX、LCX</h2>
+<h3 id="41-fcx空闲-csa-链表头">4.1 FCX：空闲 CSA 链表头</h3>
+<pre class="text"><code>FCX → 第一个空闲 CSA</code></pre>
+<p>空闲 CSA 的第一个 word 是 Link Word，指向下一个空闲 CSA。</p>
+<pre class="text"><code>FCX → CSA3 → CSA4 → CSA5 → NULL</code></pre>
+<p>每次发生 Upper 或 Lower Context Save，CPU 都从 <code>FCX</code>
+指向的链头取走一个 CSA。</p>
+<h3 id="42-pcxipcx当前使用中的上下文链表头">4.2
+PCXI.PCX：当前使用中的上下文链表头</h3>
+<p><code>PCXI.PCX</code> 指向最近保存的上下文：</p>
+<pre class="text"><code>PCXI.PCX → 最新 CSA → 上一个 CSA → 更早的 CSA</code></pre>
+<p>这条链可以包含交错的 Upper CSA 与 Lower CSA；<code>PCXI.UL</code>
+用于说明当前链头是哪一种上下文。</p>
+<h3 id="43-lcx接近耗尽的警戒点">4.3 LCX：接近耗尽的警戒点</h3>
+<p><code>LCX</code>
+不是空闲链表尾指针，也不是“最多允许使用到这里”的硬限制。它是一个预警位置。</p>
+<p>当一次 Context Save 使用的 CSA 满足：</p>
+<pre class="text"><code>旧 FCX == LCX</code></pre>
+<p>则：</p>
+<ol type="1">
+<li>本次保存操作完成；</li>
+<li><code>FCX</code> 已经推进到下一个 CSA；</li>
+<li>随后触发 Class 3 / TIN 1 的 FCD Trap。</li>
+</ol>
+<p>因此 FCD 表示“即将耗尽”，不是“本次保存失败”。</p>
+<p>架构手册还要求考虑安全余量：</p>
+<ul>
+<li>FCD Trap 自身还需要一个 CSA；</li>
+<li>FCD Handler 期间可能再来一个异步 Trap，又需要一个 CSA；</li>
+<li>如果 FCD Handler 自己执行 <code>CALL</code>，还要继续增加余量。</li>
+</ul>
+<p>所以 <code>LCX</code> 不能指向真正的最后一个空闲 CSA。至少要在
+<code>LCX</code> 之后保留两个 CSA；实际安全软件通常根据可嵌套 Trap 和
+Handler 调用深度预留更多。</p>
+<hr />
+<h2 id="5-csa-保存与恢复的链表本质">5. CSA 保存与恢复的链表本质</h2>
+<h3 id="51-保存前">5.1 保存前</h3>
+<pre class="text"><code>Free List:
+FCX → CSA3 → CSA4 → CSA5
+
+Previous Context List:
+PCXI.PCX → CSA2 → CSA1</code></pre>
+<h3 id="52-保存操作">5.2 保存操作</h3>
+<p>可抽象为：</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>used_csa <span class="op">=</span> FCX<span class="op">;</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>new_fcx  <span class="op">=</span> used_csa<span class="op">-&gt;</span>link_word<span class="op">;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co">/* 第一个 word 改为旧 PCXI，接到使用链上 */</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>used_csa<span class="op">-&gt;</span>link_word <span class="op">=</span> old_PCXI<span class="op">;</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="co">/* 其余 15 words 写入 Upper 或 Lower Context */</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>save_selected_context<span class="op">(</span>used_csa<span class="op">);</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="co">/* 当前 CSA 成为新链头 */</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>PCXI<span class="op">.</span>PCX <span class="op">=</span> used_csa<span class="op">;</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>PCXI<span class="op">.</span>UL  <span class="op">=</span> context_type<span class="op">;</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="co">/* 空闲链表向后推进 */</span></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>FCX <span class="op">=</span> new_fcx<span class="op">;</span></span></code></pre></div>
+<p>保存后：</p>
+<pre class="text"><code>Free List:
+FCX → CSA4 → CSA5
+
+Previous Context List:
+PCXI.PCX → CSA3 → CSA2 → CSA1</code></pre>
+<h3 id="53-恢复操作">5.3 恢复操作</h3>
+<p>恢复前：</p>
+<pre class="text"><code>PCXI.PCX → CSA3 → CSA2 → CSA1
+FCX      → CSA4 → CSA5</code></pre>
+<p>可抽象为：</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>used_csa <span class="op">=</span> PCXI<span class="op">.</span>PCX<span class="op">;</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>old_pcxi <span class="op">=</span> used_csa<span class="op">-&gt;</span>link_word<span class="op">;</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>restore_selected_context<span class="op">(</span>used_csa<span class="op">);</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="co">/* 释放的 CSA 插回 Free List 头部 */</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>used_csa<span class="op">-&gt;</span>link_word <span class="op">=</span> FCX<span class="op">;</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>FCX <span class="op">=</span> used_csa<span class="op">;</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="co">/* Previous Context List 回退一层 */</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>PCXI <span class="op">=</span> old_pcxi<span class="op">;</span></span></code></pre></div>
+<p>恢复后：</p>
+<pre class="text"><code>PCXI.PCX → CSA2 → CSA1
+FCX      → CSA3 → CSA4 → CSA5</code></pre>
+<h3 id="54-一句话记忆">5.4 一句话记忆</h3>
+<pre class="text"><code>保存：Free List 出栈，Previous List 入栈
+恢复：Previous List 出栈，Free List 入栈</code></pre>
+<p>这里的“栈”是链表操作意义上的 LIFO，不是 <code>A10</code>
+指向的普通内存栈。</p>
+<hr />
+<h2 id="6-pcxi-为什么不只是一个地址指针">6. PCXI
+为什么不只是一个地址指针</h2>
+<p><code>PCXI</code> 的关键字段包括：</p>
+<table>
+<thead>
+<tr class="header">
+<th>字段</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>PCPN</code></td>
+<td>Previous CPU Priority Number</td>
+</tr>
+<tr class="even">
+<td><code>PIE</code></td>
+<td>Previous Interrupt Enable</td>
+</tr>
+<tr class="odd">
+<td><code>UL</code></td>
+<td>当前 <code>PCX</code> 指向 Upper 还是 Lower CSA</td>
+</tr>
+<tr class="even">
+<td><code>PCXS</code></td>
+<td>CSA Segment</td>
+</tr>
+<tr class="odd">
+<td><code>PCXO</code></td>
+<td>CSA Offset</td>
+</tr>
+</tbody>
+</table>
+<p>其中：</p>
+<pre class="text"><code>UL = 1：链头为 Upper Context
+UL = 0：链头为 Lower Context</code></pre>
+<p>恢复指令会检查类型：</p>
+<ul>
+<li><code>RET/RFE</code> 要恢复 Upper；如果 <code>UL=0</code>，触发 CTYP
+Trap；</li>
+<li><code>RSLCX</code> 要恢复 Lower；如果 <code>UL=1</code>，触发 CTYP
+Trap。</li>
+</ul>
+<p>因此 <code>PCXI</code> 同时承担：</p>
+<ol type="1">
+<li>Previous Context List 的链头；</li>
+<li>当前链头的上下文类型；</li>
+<li>异常前的中断使能和 CPU 优先级信息。</li>
+</ol>
+<hr />
+<h2 id="7-普通-callret-到底发生了什么">7. 普通 CALL/RET
+到底发生了什么</h2>
+<h3 id="71-call-的硬件动作">7.1 CALL 的硬件动作</h3>
+<p>以普通 <code>CALL</code> 为主线，可按下面顺序理解：</p>
+<ol type="1">
+<li>检查 <code>FCX</code> 是否为空；为空则触发 FCU；</li>
+<li>根据 <code>PSW.CDE/CDC</code> 做调用深度检查；</li>
+<li>记住返回地址，即 <code>CALL</code> 后的下一条指令地址；</li>
+<li>从 <code>FCX</code> 取出一个空闲 CSA；</li>
+<li>保存调用者的 Upper Context；</li>
+<li>把新 CSA 挂到 <code>PCXI.PCX</code> 链头，并令
+<code>PCXI.UL=1</code>；</li>
+<li><code>FCX</code> 指向下一个空闲 CSA；</li>
+<li><code>PC</code> 跳到被调用函数；</li>
+<li><code>A11</code> 更新为返回地址；</li>
+<li>如果本次使用的旧 <code>FCX == LCX</code>，触发 FCD。</li>
+</ol>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Caller as 调用者
+    participant CPU as TriCore
+    participant CSA as CSA 链表
+    participant Callee as 被调用函数
+    Caller-&gt;&gt;CPU: CALL target
+    CPU-&gt;&gt;CSA: 从 FCX 取 CSA
+    CPU-&gt;&gt;CSA: 保存调用者 Upper Context
+    CPU-&gt;&gt;CPU: PCXI.PCX 指向新 CSA
+    CPU-&gt;&gt;CPU: A11 = 返回地址
+    CPU-&gt;&gt;Callee: PC = target</code></pre>
+<h3 id="72-call-与-a10-普通栈的关系">7.2 CALL 与 A10 普通栈的关系</h3>
+<p>普通 <code>CALL</code> 不切换到
+ISTACK，也不会自动为局部变量分配普通栈空间。</p>
+<p>调用前后：</p>
+<ul>
+<li><code>A10</code> 仍指向当前任务的同一条普通栈；</li>
+<li>编译器生成的函数序言可能调整 <code>A10</code>，为局部变量和 spill
+分配空间；</li>
+<li>调用者 Upper Context 在 CSA 中；</li>
+<li>栈局部数据在 <code>A10</code> 指向的 RAM 中。</li>
+</ul>
+<p>所以一个函数调用可能同时产生两类存储开销：</p>
+<pre class="text"><code>固定上下文开销：1 个 Upper CSA = 64 bytes
+普通栈开销：由函数局部变量、ABI、优化等级和寄存器分配决定</code></pre>
+<h3 id="73-ret-的硬件动作">7.3 RET 的硬件动作</h3>
+<p><code>RET</code> 执行时：</p>
+<ol type="1">
+<li>检查调用深度是否下溢；</li>
+<li>检查 <code>PCXI.PCX != 0</code>，否则 CSU；</li>
+<li>检查 <code>PCXI.UL == 1</code>，否则 CTYP；</li>
+<li>先以当前 <code>A11</code> 形成返回目标 PC；</li>
+<li>从 <code>PCXI.PCX</code> 指向的 CSA 恢复调用者 Upper Context；</li>
+<li>把这个 CSA 插回 Free List 头部；</li>
+<li>恢复旧 <code>PCXI</code> 和 <code>PSW</code>；</li>
+<li>跳回调用者。</li>
+</ol>
+<p>一个关键细节是：</p>
+<blockquote>
+<p>返回目标来自执行 <code>RET</code> 前当前上下文的 <code>A11</code>；而
+CSA 中保存的旧 <code>A11</code> 会作为调用者自己的 RA
+被恢复，用于更外层返回。</p>
+</blockquote>
+<p>这就是多层调用可以连续展开的原因。</p>
+<h3 id="74-lower-context-为什么不随-call-自动保存">7.4 Lower Context
+为什么不随 CALL 自动保存</h3>
+<p>被调用函数会直接看到调用者留下的 Lower
+寄存器值，因此它们适合用于参数和返回值。</p>
+<p>这要求编译器与 ABI 明确约定：</p>
+<ul>
+<li>哪些 Lower 寄存器可由被调用者改写；</li>
+<li>哪些需要由调用者提前保护；</li>
+<li>哪些用于参数和返回值。</li>
+</ul>
+<p>Lower Context 的行为更接近传统 ABI 中的 caller-saved/callee-saved
+协作，而 Upper Context 是 TriCore 用 CSA 实现的硬件私有调用上下文。</p>
+<h3 id="75-fcallfret-与普通-callret-的区别">7.5 FCALL/FRET 与普通
+CALL/RET 的区别</h3>
+<p><code>FCALL</code> 用于不需要完整 Upper Context 切换的快速调用：</p>
+<ul>
+<li>不分配 CSA；</li>
+<li>只把旧 <code>A11</code> 保存到 <code>A10</code> 指向的普通栈；</li>
+<li>被调用函数与调用者共享其他寄存器上下文；</li>
+<li><code>FRET</code> 从普通栈恢复旧 <code>A11</code>。</li>
+</ul>
+<p>它降低 CSA
+开销，但把更多寄存器协作责任交给编译器和程序员，不能把它当作普通
+<code>CALL</code> 的无条件替代品。</p>
+<hr />
+<h2 id="8-irq-入口upper-csaa11isp-和-pswis-如何配合">8. IRQ 入口：Upper
+CSA、A11、ISP 和 PSW.IS 如何配合</h2>
+<h3 id="81-中断被接受的基本条件">8.1 中断被接受的基本条件</h3>
+<p>普通可屏蔽中断进入前，CPU 至少要满足：</p>
+<pre class="text"><code>ICR.IE == 1
+ICR.PIPN &gt; ICR.CCPN</code></pre>
+<p>并且 CPU
+当前没有处于禁止立即响应中断的架构阶段，例如正在执行不可中断的入口序列或某些多周期操作。</p>
+<h3 id="82-进入-isr-的主要动作">8.2 进入 ISR 的主要动作</h3>
+<p>CPU 接受中断后，主要完成：</p>
+<ol type="1">
+<li>保存当前任务的 Upper Context 到 CSA；</li>
+<li>设置 <code>A11</code> 为被中断程序的恢复地址；</li>
+<li>如果旧 <code>PSW.IS=0</code>，执行 <code>A10 ← ISP</code>；</li>
+<li>设置 <code>PSW.IS=1</code>；</li>
+<li>设置 Supervisor 权限与保护寄存器组等异常入口状态；</li>
+<li>清零并重新配置当前 Call Depth 状态；</li>
+<li>清零 <code>PSW.GW</code>，禁止修改全局地址寄存器；</li>
+<li>把旧 <code>ICR.IE/CCPN</code> 保存到新
+<code>PCXI.PIE/PCPN</code>；</li>
+<li><code>ICR.IE=0</code>，并把当前中断优先级装入
+<code>ICR.CCPN</code>；</li>
+<li>从中断向量表取得 ISR 入口。</li>
+</ol>
+<pre class="mermaid"><code>flowchart TD
+    A[&quot;接受 IRQ&quot;] --&gt; B[&quot;Upper Context → CSA&quot;]
+    B --&gt; C[&quot;A11 ← 恢复地址&quot;]
+    C --&gt; D{&quot;旧 PSW.IS = 0？&quot;}
+    D --&gt;|是| E[&quot;A10 ← ISP&quot;]
+    D --&gt;|否| F[&quot;A10 保持当前值&quot;]
+    E --&gt; G[&quot;PSW.IS ← 1；IE ← 0&quot;]
+    F --&gt; G
+    G --&gt; H[&quot;取中断向量，执行 ISR&quot;]</code></pre>
+<h3 id="83-为什么必须先保存-a10再把-a10-改成-isp">8.3 为什么必须先保存
+A10，再把 A10 改成 ISP</h3>
+<p><code>A10</code> 本身属于 Upper Context。</p>
+<p>如果 CPU 先执行：</p>
+<pre class="text"><code>A10 = ISP</code></pre>
+<p>再保存 Upper Context，那么原任务的栈指针就丢失了。</p>
+<p>正确因果链是：</p>
+<pre class="text"><code>先把旧 A10、旧 PSW.IS 保存到 Upper CSA
+→ 再根据旧 PSW.IS 决定是否加载 ISP
+→ RFE 时从 Upper CSA 恢复原 A10 和 PSW.IS</code></pre>
+<h3 id="84-为什么-isr-刚进入时中断是关闭的">8.4 为什么 ISR
+刚进入时中断是关闭的</h3>
+<p>ISR 入口时 <code>ICR.IE=0</code>，让 Handler
+有机会完成不可被打断的最小序言，例如：</p>
+<ul>
+<li>保存 Lower Context；</li>
+<li>调整当前优先级；</li>
+<li>处理必须原子完成的设备状态；</li>
+<li>建立软件要求的异常框架。</li>
+</ul>
+<p>之后可以选择：</p>
+<ul>
+<li><code>ENABLE</code>：只重新开启中断；</li>
+<li><code>BISR #priority</code>：保存 Lower Context、设置
+<code>CCPN</code> 并重新开启中断；</li>
+<li>保持关闭，执行不可嵌套 ISR。</li>
+</ul>
+<hr />
+<h2 id="9-bisrsvlcxrslcx什么时候需要-lower-context">9.
+BISR、SVLCX、RSLCX：什么时候需要 Lower Context</h2>
+<h3 id="91-三条指令的区别">9.1 三条指令的区别</h3>
+<table>
+<thead>
+<tr class="header">
+<th>指令</th>
+<th>CSA 动作</th>
+<th>额外中断动作</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>SVLCX</code></td>
+<td>保存 Lower Context，<code>UL=0</code></td>
+<td>不改变 <code>IE/CCPN</code></td>
+<td>只需要显式保护 Lower Context</td>
+</tr>
+<tr class="even">
+<td><code>BISR #n</code></td>
+<td>保存 Lower Context，<code>UL=0</code></td>
+<td><code>ICR.CCPN=n</code>，<code>ICR.IE=1</code></td>
+<td>标准 ISR 序言/允许嵌套</td>
+</tr>
+<tr class="odd">
+<td><code>RSLCX</code></td>
+<td>恢复 Lower Context并回收 CSA</td>
+<td>无</td>
+<td>在 <code>RFE</code> 前恢复 Lower Context</td>
+</tr>
+</tbody>
+</table>
+<h3 id="92-极小-isr-可以不保存-lower-context">9.2 极小 ISR 可以不保存
+Lower Context</h3>
+<p>如果 ISR：</p>
+<ul>
+<li>完全使用已经自动保护的 Upper 寄存器；</li>
+<li>不调用会破坏 Lower 寄存器的函数；</li>
+<li>不需要开放中断嵌套；</li>
+</ul>
+<p>则可以直接完成工作后执行 <code>RFE</code>，不必额外消耗一个 Lower
+CSA。</p>
+<p>概念流程：</p>
+<pre class="text"><code>IRQ
+→ 自动保存 Upper
+→ 用 Upper 寄存器完成极短处理
+→ RFE</code></pre>
+<h3 id="93-典型-c-isr-为什么通常需要保存-lower-context">9.3 典型 C ISR
+为什么通常需要保存 Lower Context</h3>
+<p>C 编译器生成的代码可能使用参数寄存器、临时寄存器，或者调用其他 C
+函数，这些操作可能改写 Lower Context。</p>
+<p>因此典型流程是：</p>
+<pre class="text"><code>IRQ 自动保存 Upper
+→ BISR 保存 Lower，并按设计重新开中断
+→ 执行 C ISR / 调用函数
+→ RSLCX 恢复 Lower
+→ RFE 恢复 Upper 并返回</code></pre>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Task as 被中断任务
+    participant HW as 硬件入口
+    participant ISR as ISR
+    participant CSA as CSA 链
+    Task-&gt;&gt;HW: IRQ accepted
+    HW-&gt;&gt;CSA: 保存 Task Upper
+    HW-&gt;&gt;ISR: 进入 ISR，IE=0
+    ISR-&gt;&gt;CSA: BISR 保存 Lower
+    ISR-&gt;&gt;ISR: IE=1，执行业务/允许嵌套
+    ISR-&gt;&gt;CSA: RSLCX 恢复 Lower
+    ISR-&gt;&gt;HW: RFE
+    HW-&gt;&gt;CSA: 恢复 Task Upper
+    HW-&gt;&gt;Task: 返回原控制流</code></pre>
+<h3 id="94-为什么-bisr-不一定是-isr-第一条指令">9.4 为什么 BISR 不一定是
+ISR 第一条指令</h3>
+<p>如果响应时间极敏感，ISR 可以先只用 Upper
+寄存器完成最紧急操作，例如：</p>
+<ul>
+<li>读取并锁存一个会快速变化的状态；</li>
+<li>清除必须尽快响应的硬件握手；</li>
+<li>记录时间戳；</li>
+</ul>
+<p>随后再执行 <code>BISR</code>，进入可以使用 Lower
+寄存器和允许更高优先级嵌套的阶段。</p>
+<p>但边界非常严格：</p>
+<blockquote>
+<p>在 <code>BISR/SVLCX</code> 之前，不能先改写随后想要保存的 Lower
+寄存器，否则保存下来的已经不是被中断任务的原值。</p>
+</blockquote>
+<hr />
+<h2 id="10-trap-与-irq-的相同点和不同点">10. Trap 与 IRQ
+的相同点和不同点</h2>
+<h3 id="101-相同点">10.1 相同点</h3>
+<p>正常 Trap 入口同样会：</p>
+<ul>
+<li>自动保存 Upper Context；</li>
+<li>更新 <code>A11</code>；</li>
+<li>如果旧 <code>PSW.IS=0</code>，把 <code>ISP</code> 装入
+<code>A10</code>；</li>
+<li>设置 <code>PSW.IS=1</code>；</li>
+<li>进入 Supervisor mode；</li>
+<li>清零 <code>PSW.GW</code>；</li>
+<li>关闭普通中断；</li>
+<li>通过 <code>RFE</code> 恢复原执行流。</li>
+</ul>
+<h3 id="102-trap-特有信息">10.2 Trap 特有信息</h3>
+<p>Trap 入口会设置：</p>
+<pre class="text"><code>D15 = TIN</code></pre>
+<p>Handler 由 Trap Class 和 TIN 共同判断具体原因。</p>
+<h3 id="103-a11-中的返回地址因-trap-类型不同">10.3 A11 中的返回地址因
+Trap 类型不同</h3>
+<table>
+<thead>
+<tr class="header">
+<th>事件</th>
+<th>新 <code>A11</code> 的语义</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>普通 <code>CALL</code></td>
+<td>CALL 后的下一条指令</td>
+</tr>
+<tr class="even">
+<td>IRQ</td>
+<td>被中断后下一条应执行的指令</td>
+</tr>
+<tr class="odd">
+<td>异步 Trap</td>
+<td>下一条应执行的指令</td>
+</tr>
+<tr class="even">
+<td><code>SYSCALL</code></td>
+<td><code>SYSCALL</code> 后的下一条指令</td>
+</tr>
+<tr class="odd">
+<td>一般同步 Trap</td>
+<td>触发 Trap 的指令地址</td>
+</tr>
+</tbody>
+</table>
+<p>同步 Trap 返回到故障指令，意味着 Handler
+必须修复原因、调整状态或选择其他恢复策略；否则 <code>RFE</code>
+后可能再次触发同一 Trap。</p>
+<h3 id="104-fcu-是特殊的不可恢复情况">10.4 FCU 是特殊的不可恢复情况</h3>
+<p>如果 <code>FCX=0</code> 时仍试图保存上下文，会触发 FCU。由于 Upper
+Context 无法完成保存，部分原架构状态已经丢失。</p>
+<p>因此：</p>
+<blockquote>
+<p>FCU 通常被视为不可恢复系统错误，Handler
+的最终动作应进入受控复位或其他安全状态，而不是尝试正常
+<code>RFE</code>。</p>
+</blockquote>
+<hr />
+<h2 id="11-pswisa10ispustackistack-的准确关系">11.
+PSW.IS、A10、ISP、USTACK、ISTACK 的准确关系</h2>
+<p>这是最容易与 Cortex-M7 混淆的部分。</p>
+<h3 id="111-aurix-真正参与栈寻址的只有-a10">11.1 AURIX
+真正参与栈寻址的只有 A10</h3>
+<pre class="text"><code>A10 = 当前活动 Stack Pointer</code></pre>
+<p>无论普通任务还是 ISR，编译器生成的普通栈访问最终都使用
+<code>A10</code>。</p>
+<p>所谓 USTACK 和 ISTACK，本质上是链接脚本或 RTOS 在 RAM
+中规划的不同区域，而不是两套会自动同时递增/递减的活动硬件 SP。</p>
+<h3 id="112-isp-是首次异常切栈时的装载源">11.2 ISP
+是“首次异常切栈时的装载源”</h3>
+<p>每个 TriCore CPU 核有自己的
+<code>CPUx_ISP</code>。启动软件通常把它初始化为本核 ISTACK 的栈顶。</p>
+<pre class="text"><code>CPU0_ISP = CPU0_ISTACK_TOP
+CPU1_ISP = CPU1_ISTACK_TOP
+...</code></pre>
+<p>进入第一层异常时，如果旧 <code>PSW.IS=0</code>：</p>
+<pre class="text"><code>A10 = ISP</code></pre>
+<p>ISR 后续的压栈、局部变量分配只改变 <code>A10</code>，不会让
+<code>ISP</code> 跟随变化。</p>
+<p>因此 ISP 更准确的理解是：</p>
+<blockquote>
+<p><strong>从用户栈首次进入异常栈时，提供给 A10 的入口值。</strong></p>
+</blockquote>
+<h3 id="113-pswis-是什么不是什么">11.3 PSW.IS 是什么，不是什么</h3>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;"><code>PSW.IS</code></th>
+<th>架构含义</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;"><code>0</code></td>
+<td>当前执行流被视为使用 User Stack</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;"><code>1</code></td>
+<td>当前执行流被视为使用 Shared Global/Interrupt Stack</td>
+</tr>
+</tbody>
+</table>
+<p><code>PSW.IS</code> 用于异常入口的栈切换判断，但它不是：</p>
+<ul>
+<li>另一个栈指针；</li>
+<li>内存地址范围比较器；</li>
+<li>栈访问权限保护；</li>
+<li>自动跟踪 <code>A10</code> 实际落在哪段 RAM 的硬件状态机。</li>
+</ul>
+<p>单独把 <code>PSW.IS</code> 写成 1，并不会立即执行
+<code>A10=ISP</code>。只有 IRQ/Trap 入口序列会根据进入前的
+<code>PSW.IS</code> 判断是否装载 <code>ISP</code>。</p>
+<h3 id="114-ustackistack-与-is-状态必须保持一致">11.4 USTACK/ISTACK 与
+IS 状态必须保持一致</h3>
+<p>如果软件错误造成：</p>
+<pre class="text"><code>A10 指向 USTACK
+PSW.IS = 1</code></pre>
+<p>下一次异常会认为当前已经在 ISTACK，不再加载 <code>ISP</code>，导致
+Handler 继续使用 USTACK。</p>
+<p>反过来：</p>
+<pre class="text"><code>A10 指向 ISTACK
+PSW.IS = 0</code></pre>
+<p>下一次异常会重新执行
+<code>A10=ISP</code>，可能覆盖当前异常栈中仍然有效的数据。</p>
+<p>因此，<code>PSW.IS</code>
+是软件必须维护正确的架构状态，而不是保护机制。</p>
+<h3 id="115-shared-global-stack共享到什么范围">11.5 “Shared Global
+Stack”共享到什么范围</h3>
+<p>这里的共享通常表示：</p>
+<ul>
+<li>同一个 CPU 核上的 IRQ 和 Trap 共享该核 ISTACK；</li>
+<li>同核嵌套异常在同一 ISTACK 上继续向下使用；</li>
+<li>并不表示 TC3xx 所有 CPU 核共用同一个物理中断栈。</li>
+</ul>
+<p>工程上通常为每个核独立配置：</p>
+<pre class="text"><code>CPU0 USTACK / CPU0 ISTACK / CPU0 ISP
+CPU1 USTACK / CPU1 ISTACK / CPU1 ISP
+...</code></pre>
+<hr />
+<h2 id="12-第一层中断与嵌套中断的完整例子">12.
+第一层中断与嵌套中断的完整例子</h2>
+<h3 id="121-初始任务状态">12.1 初始任务状态</h3>
+<p>假设：</p>
+<pre class="text"><code>A10    = 0x7001_FF00   // Task USTACK 当前 SP
+PSW.IS = 0
+ISP    = 0x7003_FF00   // CPU0 ISTACK 栈顶</code></pre>
+<h3 id="122-第一层-irq-进入">12.2 第一层 IRQ 进入</h3>
+<p>Upper CSA1 保存：</p>
+<pre class="text"><code>CSA1.A10    = 0x7001_FF00
+CSA1.PSW.IS = 0</code></pre>
+<p>随后硬件设置：</p>
+<pre class="text"><code>A10    = 0x7003_FF00
+PSW.IS = 1</code></pre>
+<p>第一层 ISR 执行一段代码后，假设普通栈变成：</p>
+<pre class="text"><code>A10 = 0x7003_FE80</code></pre>
+<h3 id="123-第二层更高优先级-irq-进入">12.3 第二层更高优先级 IRQ
+进入</h3>
+<p>此时旧 <code>PSW.IS=1</code>，所以硬件不会重新把 <code>ISP</code>
+装入 <code>A10</code>。</p>
+<p>Upper CSA2 保存：</p>
+<pre class="text"><code>CSA2.A10    = 0x7003_FE80
+CSA2.PSW.IS = 1</code></pre>
+<p>第二层 ISR 从当前 ISTACK 位置继续向下使用，例如：</p>
+<pre class="text"><code>A10 = 0x7003_FE00</code></pre>
+<h3 id="124-第二层-rfe">12.4 第二层 RFE</h3>
+<p>恢复 CSA2：</p>
+<pre class="text"><code>A10    = 0x7003_FE80
+PSW.IS = 1</code></pre>
+<p>返回第一层 ISR 的中断栈现场。</p>
+<h3 id="125-第一层-rfe">12.5 第一层 RFE</h3>
+<p>恢复 CSA1：</p>
+<pre class="text"><code>A10    = 0x7001_FF00
+PSW.IS = 0</code></pre>
+<p>返回原任务及其 USTACK。</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant T as Task / USTACK
+    participant U1 as Upper CSA1
+    participant I1 as IRQ1 / ISTACK
+    participant U2 as Upper CSA2
+    participant I2 as IRQ2 / ISTACK
+    T-&gt;&gt;U1: 保存 A10=Task_SP, IS=0
+    U1-&gt;&gt;I1: A10=ISP, IS=1
+    I1-&gt;&gt;U2: 保存 A10=IRQ1_SP, IS=1
+    U2-&gt;&gt;I2: 保留当前 A10
+    I2-&gt;&gt;U2: RFE 恢复 IRQ1_SP
+    U2-&gt;&gt;I1: 继续 IRQ1
+    I1-&gt;&gt;U1: RFE 恢复 Task_SP
+    U1-&gt;&gt;T: 继续任务</code></pre>
+<p>最关键的设计理由是：</p>
+<blockquote>
+<p>嵌套 IRQ 不能每次都把 <code>A10</code> 重装为 ISTACK_TOP，否则内层
+ISR 会覆盖外层 ISR 已经使用的栈空间。</p>
+</blockquote>
+<hr />
+<h2 id="13-isr-内再调用函数时csa-链如何增长">13. ISR 内再调用函数时，CSA
+链如何增长</h2>
+<p>假设任务被 IRQ 打断，ISR 执行 <code>BISR</code> 后又调用函数
+<code>foo()</code>：</p>
+<pre class="text"><code>步骤 1：IRQ 入口
+  分配 Upper CSA_U0，保存任务 Upper
+
+步骤 2：BISR
+  分配 Lower CSA_L0，保存任务/异常入口可见的 Lower
+
+步骤 3：ISR CALL foo
+  分配 Upper CSA_U1，保存 ISR 调用者 Upper
+
+步骤 4：foo RET
+  恢复并释放 CSA_U1
+
+步骤 5：ISR RSLCX
+  恢复并释放 CSA_L0
+
+步骤 6：ISR RFE
+  恢复并释放 CSA_U0</code></pre>
+<p>链头类型变化：</p>
+<pre class="text"><code>IRQ 后：          PCXI → U0，UL=1
+BISR 后：         PCXI → L0 → U0，UL=0
+CALL foo 后：     PCXI → U1 → L0 → U0，UL=1
+foo RET 后：      PCXI → L0 → U0，UL=0
+RSLCX 后：        PCXI → U0，UL=1
+RFE 后：          回到 IRQ 发生前的 PCXI</code></pre>
+<p>这也解释了为什么顺序必须匹配：</p>
+<pre class="text"><code>CALL       ↔ RET
+BISR/SVLCX ↔ RSLCX
+IRQ/Trap   ↔ RFE</code></pre>
+<p>如果跳过 <code>RSLCX</code> 直接 <code>RFE</code>，此时
+<code>PCXI.UL=0</code>，而 <code>RFE</code> 要求 Upper Context，于是触发
+CTYP。</p>
+<hr />
+<h2 id="14-aurix-与-cortex-m7-栈异常模型对比">14. AURIX 与 Cortex-M7
+栈/异常模型对比</h2>
+<h3 id="141-cortex-m7-确实有两个独立-sp">14.1 Cortex-M7 确实有两个独立
+SP</h3>
+<p>Cortex-M7 有：</p>
+<pre class="text"><code>MSP：Main Stack Pointer
+PSP：Process Stack Pointer</code></pre>
+<p>两者是同时存在、各自保持数值的硬件寄存器。</p>
+<table>
+<thead>
+<tr class="header">
+<th>Cortex-M7 执行状态</th>
+<th>活动 SP</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Thread mode，<code>CONTROL.SPSEL=0</code></td>
+<td>MSP</td>
+</tr>
+<tr class="even">
+<td>Thread mode，<code>CONTROL.SPSEL=1</code></td>
+<td>PSP</td>
+</tr>
+<tr class="odd">
+<td>Handler mode</td>
+<td>MSP</td>
+</tr>
+</tbody>
+</table>
+<p>RTOS 中常见配置是：</p>
+<pre class="text"><code>任务 Thread mode → PSP
+异常 Handler mode → MSP</code></pre>
+<p>任务被异常打断后，PSP 仍作为独立寄存器存在；Handler 改用
+MSP，不需要先把 PSP 保存到某个 CSA 才能记住任务栈指针。</p>
+<h3 id="142-m7-异常硬件栈帧压在哪里">14.2 M7 异常硬件栈帧压在哪里</h3>
+<p>异常入口时，Cortex-M7 会把基本栈帧压入异常发生前所使用的栈：</p>
+<pre class="text"><code>R0, R1, R2, R3, R12, LR, PC, xPSR</code></pre>
+<p>典型 RTOS 场景：</p>
+<pre class="text"><code>异常前：Thread 使用 PSP
+→ 基本硬件栈帧压入 PSP 指向的任务栈
+→ 进入 Handler mode
+→ Handler 使用 MSP</code></pre>
+<p>如果异常发生在 Handler mode，则原本就在使用
+MSP，嵌套异常的硬件栈帧继续压入 MSP。</p>
+<p>若启用 FPU，还要考虑扩展栈帧和 Lazy Stacking；这不改变 MSP/PSP
+是两个独立 SP 的基本事实。</p>
+<h3 id="143-aurix-异常现场放在哪里">14.3 AURIX 异常现场放在哪里</h3>
+<p>AURIX 的基本模型是：</p>
+<pre class="text"><code>Upper 寄存器现场        → Upper CSA
+需要时的 Lower 现场     → Lower CSA
+ISR/Trap 的 C 栈数据     → A10 指向的 ISTACK
+被中断任务的普通栈数据   → 原 USTACK，保持不动</code></pre>
+<p>第一层异常入口时，任务原 <code>A10</code> 不是保存在一个独立 USP
+中，而是保存在 Upper CSA 中。</p>
+<h3 id="144-核心差异表">14.4 核心差异表</h3>
+<table>
+<thead>
+<tr class="header">
+<th>对比项</th>
+<th>Cortex-M7</th>
+<th>AURIX TC3xx / TriCore</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>硬件活动 SP</td>
+<td>MSP 与 PSP 两个独立 SP</td>
+<td>一个活动 <code>A10/SP</code></td>
+</tr>
+<tr class="even">
+<td>任务栈</td>
+<td>常用 PSP</td>
+<td><code>A10</code> 指向 USTACK，<code>PSW.IS=0</code></td>
+</tr>
+<tr class="odd">
+<td>异常栈</td>
+<td>Handler 固定使用 MSP</td>
+<td><code>A10</code> 指向 ISTACK，<code>PSW.IS=1</code></td>
+</tr>
+<tr class="even">
+<td>异常栈入口值</td>
+<td>MSP 本身持续变化</td>
+<td><code>ISP</code> 仅在首次切栈时装入 <code>A10</code></td>
+</tr>
+<tr class="odd">
+<td>Thread 栈选择</td>
+<td><code>CONTROL.SPSEL</code></td>
+<td>无 MSP/PSP 式运行时二选一</td>
+</tr>
+<tr class="even">
+<td>异常硬件现场</td>
+<td>基本帧压入异常前活动栈</td>
+<td>Upper Context 保存到 CSA</td>
+</tr>
+<tr class="odd">
+<td>未自动保存寄存器</td>
+<td>如 R4～R11 由软件处理</td>
+<td>Lower Context 按需 <code>BISR/SVLCX</code></td>
+</tr>
+<tr class="even">
+<td>异常返回标识</td>
+<td>LR 中的 <code>EXC_RETURN</code></td>
+<td><code>A11 + PCXI + CSA</code></td>
+</tr>
+<tr class="odd">
+<td>嵌套异常栈</td>
+<td>Handler 一直使用 MSP</td>
+<td><code>IS=1</code>，保留当前 A10 继续用 ISTACK</td>
+</tr>
+<tr class="even">
+<td>普通函数调用</td>
+<td><code>BL</code> 写 LR；编译器按需用栈保存</td>
+<td>普通 <code>CALL</code> 自动分配 Upper CSA</td>
+</tr>
+<tr class="odd">
+<td>调用链回溯</td>
+<td>SP/LR/调试展开信息</td>
+<td>A10 普通栈 + A11 + CSA 链 + 调试信息</td>
+</tr>
+</tbody>
+</table>
+<h3 id="145-两种架构最容易发生的错误类比">14.5
+两种架构最容易发生的错误类比</h3>
+<p>错误类比：</p>
+<pre class="text"><code>AURIX ISP == Cortex-M MSP
+AURIX USTACK == Cortex-M PSP</code></pre>
+<p>更准确的说法是：</p>
+<pre class="text"><code>Cortex-M：MSP/PSP 是两个持续存在、独立变化的 SP。
+
+AURIX：A10 是唯一当前活动 SP；
+       ISP 是首次异常切入 ISTACK 时提供给 A10 的值；
+       任务旧 A10 依靠 Upper CSA 保存。</code></pre>
+<hr />
+<h2 id="15-上下文管理相关-trap">15. 上下文管理相关 Trap</h2>
+<p>Class 3 是 Context Management Trap。</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;">TIN</th>
+<th>名称</th>
+<th>触发条件</th>
+<th>工程含义</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td>FCD</td>
+<td>Context Save 使用了 <code>LCX</code> 指向的 CSA</td>
+<td>接近耗尽；本次保存已完成</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td>CDO</td>
+<td><code>CALL</code> 时 Call Depth Counter 溢出</td>
+<td>可能递归失控或深度预算不足</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td>CDU</td>
+<td><code>RET</code> 时 Call Depth Counter 下溢</td>
+<td>返回层次或软件深度管理异常</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td>FCU</td>
+<td><code>FCX=0</code> 仍尝试保存，或 Context 操作失败</td>
+<td>状态丢失，通常不可恢复</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td>CSU</td>
+<td>恢复时 <code>PCXI.PCX=0</code></td>
+<td>上下文链下溢/任务初始化错误</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">6</td>
+<td>CTYP</td>
+<td>恢复指令与 <code>PCXI.UL</code> 类型不匹配</td>
+<td><code>RET/RFE/RSLCX</code> 配对或链表错误</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td>NEST</td>
+<td>Call Depth 非零时执行 <code>RFE</code></td>
+<td>ISR/Trap 内仍有未退出的普通 CALL</td>
+</tr>
+</tbody>
+</table>
+<h3 id="151-fcd-与-fcu-的本质差异">15.1 FCD 与 FCU 的本质差异</h3>
+<pre class="text"><code>FCD：还能完成本次保存，是“预警”
+FCU：无法完成本次保存，是“状态已经丢失”</code></pre>
+<p>测试和安全反应中不能把二者用同一恢复策略处理。</p>
+<h3 id="152-nest-为什么能发现错误返回路径">15.2 NEST
+为什么能发现错误返回路径</h3>
+<p>正常 ISR 内的函数调用必须先逐层 <code>RET</code>，让 Call Depth
+回到异常入口层，再执行 <code>RFE</code>。</p>
+<p>如果在被调用函数内部直接跳到 <code>RFE</code>：</p>
+<ul>
+<li>当前还有普通 CALL 产生的 Upper CSA 留在链上；</li>
+<li><code>RFE</code> 会绕过正确的 <code>RET</code>；</li>
+<li>Call Depth 非零触发 NEST，阻止链表被错误展开。</li>
+</ul>
+<hr />
+<h2 id="16-调试时如何观察一条真实-csa-链">16. 调试时如何观察一条真实 CSA
+链</h2>
+<h3 id="161-建议同时观察的寄存器">16.1 建议同时观察的寄存器</h3>
+<pre class="text"><code>PC
+A10
+A11
+PSW
+PCXI
+FCX
+LCX
+ISP
+ICR</code></pre>
+<p>只看 <code>A10</code> 或只看 <code>PCXI</code> 都不够。</p>
+<h3 id="162-断点位置">16.2 断点位置</h3>
+<p>建议依次在以下位置停住：</p>
+<ol type="1">
+<li>普通函数 <code>CALL</code> 前；</li>
+<li>被调用函数第一条指令；</li>
+<li><code>RET</code> 前；</li>
+<li>IRQ 触发前的任务代码；</li>
+<li>中断向量第一条指令；</li>
+<li><code>BISR</code> 后；</li>
+<li><code>RSLCX</code> 前后；</li>
+<li><code>RFE</code> 前后；</li>
+<li>嵌套 IRQ 的第二层入口。</li>
+</ol>
+<h3 id="163-每个断点要记录什么">16.3 每个断点要记录什么</h3>
+<table>
+<thead>
+<tr class="header">
+<th>时点</th>
+<th>重点记录</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>CALL 前</td>
+<td><code>A10/A11/PCXI/FCX</code></td>
+</tr>
+<tr class="even">
+<td>CALL 后</td>
+<td>新 <code>A11</code>、<code>PCXI.UL=1</code>、FCX 是否前移</td>
+</tr>
+<tr class="odd">
+<td>IRQ 第一条</td>
+<td><code>A10</code> 是否等于
+ISP、<code>PSW.IS</code>、<code>PCXI.PIE/PCPN</code></td>
+</tr>
+<tr class="even">
+<td>BISR 后</td>
+<td><code>PCXI.UL=0</code>、FCX 再前移、<code>ICR.IE</code>
+是否开启</td>
+</tr>
+<tr class="odd">
+<td>嵌套 IRQ 第一条</td>
+<td>A10 是否保留外层 ISR 当前值，而不是回到 ISP</td>
+</tr>
+<tr class="even">
+<td>RSLCX 后</td>
+<td><code>PCXI.UL</code> 是否重新指向 Upper CSA</td>
+</tr>
+<tr class="odd">
+<td>RFE 后</td>
+<td>任务 <code>A10/PSW.IS/IE/CCPN</code> 是否恢复</td>
+</tr>
+</tbody>
+</table>
+<h3 id="164-解码-pcxi-指向的-csa">16.4 解码 PCXI 指向的 CSA</h3>
+<div class="sourceCode" id="cb63"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#define CSA_PTR_MASK   </span><span class="op">(</span><span class="bn">0x000FFFFF</span><span class="bu">u</span><span class="op">)</span></span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#define CSA_UL_MASK    </span><span class="op">(</span><span class="dv">1</span><span class="bu">u</span><span class="pp"> </span><span class="op">&lt;&lt;</span><span class="pp"> </span><span class="dv">20</span><span class="op">)</span></span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">uint32_t</span> csa_effective_address<span class="op">(</span><span class="dt">uint32_t</span> pcxi_or_fcx<span class="op">)</span></span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint32_t</span> p <span class="op">=</span> pcxi_or_fcx <span class="op">&amp;</span> CSA_PTR_MASK<span class="op">;</span></span>
+<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">((</span>p <span class="op">&amp;</span> <span class="bn">0x000F0000</span><span class="bu">u</span><span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="dv">12</span><span class="op">)</span> <span class="op">|</span></span>
+<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a>           <span class="op">((</span>p <span class="op">&amp;</span> <span class="bn">0x0000FFFF</span><span class="bu">u</span><span class="op">)</span> <span class="op">&lt;&lt;</span> <span class="dv">6</span><span class="op">);</span></span>
+<span id="cb63-9"><a href="#cb63-9" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>访问活动 CSA 前，在目标代码允许的情况下先执行
+<code>DSYNC</code>。调试器是否会自动处理内部缓冲依赖具体探针和调试实现，不能一概假定。</p>
+<h3 id="165-调用栈为什么不能只扫描-a10">16.5 调用栈为什么不能只扫描
+A10</h3>
+<p>TriCore 的函数返回关系分散在：</p>
+<ul>
+<li>当前 <code>PC</code>；</li>
+<li>当前 <code>A11</code>；</li>
+<li><code>PCXI</code> 指向的 CSA 链；</li>
+<li><code>A10</code> 指向的普通内存栈；</li>
+<li>编译器生成的 DWARF/unwind 信息；</li>
+<li><code>FCALL</code> 放到普通栈里的旧 <code>A11</code>。</li>
+</ul>
+<p>因此，调试器要正确显示完整 Call Stack，必须理解 TriCore ABI 和 CSA
+链，而不能使用简单的传统 SP 扫描算法。</p>
+<hr />
+<h2 id="17-建议做的系统验证用例">17. 建议做的系统验证用例</h2>
+<h3 id="用例-1单层-callret-的-csa-守恒">用例 1：单层 CALL/RET 的 CSA
+守恒</h3>
+<p><strong>目的</strong>：验证普通调用对 <code>FCX/PCXI</code>
+的影响。</p>
+<p>步骤：</p>
+<ol type="1">
+<li>记录 CALL 前
+<code>FCX</code>、<code>PCXI</code>、<code>A11</code>；</li>
+<li>单步执行 CALL；</li>
+<li>验证 <code>FCX</code> 指向下一个空闲 CSA；</li>
+<li>验证 <code>PCXI.PCX</code> 指向刚使用的
+CSA、<code>UL=1</code>；</li>
+<li>检查 Upper CSA 内容；</li>
+<li>执行 RET；</li>
+<li>验证原 CSA 回到 Free List 头部。</li>
+</ol>
+<p>期望：一次 CALL 消耗一个 Upper CSA，一次 RET 完整归还。</p>
+<h3 id="用例-2irq-从-ustack-切换到-istack">用例 2：IRQ 从 USTACK 切换到
+ISTACK</h3>
+<p><strong>目的</strong>：验证 <code>PSW.IS=0</code>
+的首次异常切栈。</p>
+<p>前置状态：</p>
+<pre class="text"><code>A10 指向任务 USTACK
+PSW.IS = 0
+ISP 指向独立 ISTACK</code></pre>
+<p>期望：</p>
+<ul>
+<li>Upper CSA 中保存旧 A10 与旧 <code>IS=0</code>；</li>
+<li>ISR 第一条指令处 <code>A10=ISP</code>；</li>
+<li><code>PSW.IS=1</code>；</li>
+<li>RFE 后恢复原 A10 和 <code>IS=0</code>。</li>
+</ul>
+<h3 id="用例-3嵌套-irq-不重复加载-isp">用例 3：嵌套 IRQ 不重复加载
+ISP</h3>
+<p><strong>目的</strong>：验证第二层中断继续使用当前 ISTACK。</p>
+<p>步骤：</p>
+<ol type="1">
+<li>外层 ISR 通过局部变量让 A10 离开 ISTACK_TOP；</li>
+<li>开启更高优先级中断；</li>
+<li>触发内层 IRQ；</li>
+<li>在内层第一条指令记录 A10。</li>
+</ol>
+<p>期望：内层入口 A10 等于外层被打断时的 A10，而不是等于 ISP。</p>
+<h3 id="用例-4bisrrslcx-配对">用例 4：BISR/RSLCX 配对</h3>
+<p><strong>目的</strong>：验证 Lower CSA 的分配与回收。</p>
+<p>期望：</p>
+<ul>
+<li>IRQ 后 <code>UL=1</code>；</li>
+<li>BISR 后 <code>UL=0</code>，并额外消耗一个 CSA；</li>
+<li>RSLCX 后链头恢复为 Upper、Lower CSA 被回收；</li>
+<li>RFE 正常返回。</li>
+</ul>
+<h3 id="用例-5故意跳过-rslcx">用例 5：故意跳过 RSLCX</h3>
+<p><strong>目的</strong>：验证 CTYP Trap。</p>
+<p>步骤：BISR 后直接执行 RFE。</p>
+<p>期望：因为 <code>PCXI.UL=0</code> 而触发 Class 3 / TIN 6 CTYP。</p>
+<p>该用例属于故障注入，应在隔离测试环境中执行，并确保 Trap Table、ISTACK
+和复位恢复路径已正确配置。</p>
+<h3 id="用例-6fcd-预警">用例 6：FCD 预警</h3>
+<p><strong>目的</strong>：验证 <code>LCX</code> 是预警点而不是最后一个
+CSA。</p>
+<p>步骤：在受控环境中缩短 Free List，并令一次 Context Save 使用
+<code>LCX</code> 指向的 CSA。</p>
+<p>期望：</p>
+<ul>
+<li>本次 Context Save 已完成；</li>
+<li>随后进入 FCD Handler；</li>
+<li>Handler 仍有安全保留 CSA 可用。</li>
+</ul>
+<h3 id="用例-7pswis-与-a10-故意不一致">用例 7：PSW.IS 与 A10
+故意不一致</h3>
+<p><strong>目的</strong>：证明 <code>PSW.IS</code>
+不做地址范围检查。</p>
+<p>该测试风险较高，只建议在仿真、验证平台或有完整恢复机制的测试镜像中进行。</p>
+<p>验证点：硬件根据 <code>PSW.IS</code> 决定是否加载 ISP，而不是根据 A10
+的地址判断它属于 USTACK 还是 ISTACK。</p>
+<hr />
+<h2 id="18-栈与-csa-的容量预算思路">18. 栈与 CSA 的容量预算思路</h2>
+<h3 id="181-csa-预算">18.1 CSA 预算</h3>
+<p>CSA 数量至少要覆盖同时存在的：</p>
+<pre class="text"><code>任务普通 CALL 深度
++ IRQ/Trap 自动 Upper Context
++ BISR/SVLCX Lower Context
++ ISR/Trap 内部 CALL 深度
++ 最大异常嵌套深度
++ FCD 与异步 Trap 安全余量
++ RTOS 非运行任务保留的 CSA Call Chain</code></pre>
+<p>不能只按“任务数量 × 一个 CSA”估算。</p>
+<h3 id="182-istack-预算">18.2 ISTACK 预算</h3>
+<p>ISTACK 主要覆盖：</p>
+<ul>
+<li>ISR/Trap 局部变量；</li>
+<li>编译器 spill；</li>
+<li>栈传参；</li>
+<li><code>FCALL</code> 保存的返回地址；</li>
+<li>同核最大异常嵌套路径；</li>
+<li>Handler 调用的普通函数栈开销。</li>
+</ul>
+<p>Upper/Lower 寄存器大部分进入 CSA，并不意味着 ISTACK
+可以设置得很小。大型局部数组、深层 C 调用和库函数仍可能快速消耗
+ISTACK。</p>
+<h3 id="183-ustack-预算">18.3 USTACK 预算</h3>
+<p>每个任务自己的 USTACK 覆盖：</p>
+<ul>
+<li>任务普通函数局部变量；</li>
+<li>普通函数栈传参；</li>
+<li>spill 与临时对象；</li>
+<li><code>FCALL/FRET</code> 开销；</li>
+<li>任务最深普通调用路径。</li>
+</ul>
+<p>如果 IRQ 正常切换到 ISTACK，ISR 的普通栈开销不会继续消耗被中断任务的
+USTACK；这正是独立 ISTACK 的重要价值。</p>
+<hr />
+<h2 id="19-常见误区快速纠正">19. 常见误区快速纠正</h2>
+<h3 id="误区-1csa-就是-tricore-的栈">误区 1：CSA 就是 TriCore 的栈</h3>
+<p>不准确。CSA 是寄存器上下文存储池；<code>A10</code> 指向的普通 RAM
+才是 C 语言意义上的栈。</p>
+<h3 id="误区-2isp-会随着-isr-压栈实时变化">误区 2：ISP 会随着 ISR
+压栈实时变化</h3>
+<p>不准确。普通栈操作改变的是 A10；ISP 通常保持为 ISTACK 入口值。</p>
+<h3 id="误区-3pswis1-会立即切换到-isp">误区 3：PSW.IS=1 会立即切换到
+ISP</h3>
+<p>不准确。<code>PSW.IS</code>
+是异常入口判断条件；单独修改它不会自动执行 <code>A10=ISP</code>。</p>
+<h3 id="误区-4每一层嵌套中断都会重新从-istack_top-开始">误区
+4：每一层嵌套中断都会重新从 ISTACK_TOP 开始</h3>
+<p>不准确。只有从 <code>IS=0</code> 首次进入异常时才加载
+ISP；嵌套异常在当前 A10 上继续使用 ISTACK。</p>
+<h3 id="误区-5irq-已经自动保存全部寄存器">误区 5：IRQ
+已经自动保存全部寄存器</h3>
+<p>不准确。IRQ 自动保存 Upper Context；Lower Context 要按需用
+<code>BISR/SVLCX</code> 保存。</p>
+<h3 id="误区-6fcd-说明当前上下文保存失败">误区 6：FCD
+说明当前上下文保存失败</h3>
+<p>不准确。FCD 发生时当前保存已经完成；FCU
+才表示无法完成保存并造成状态丢失。</p>
+<h3 id="误区-7aurix-isp-等于-m7-msp">误区 7：AURIX ISP 等于 M7 MSP</h3>
+<p>不准确。MSP 是持续变化的独立活动 SP；AURIX ISP
+主要是首次异常切栈时装入 A10 的源值。</p>
+<h3 id="误区-8a10-栈扫描就能还原完整-call-stack">误区 8：A10
+栈扫描就能还原完整 Call Stack</h3>
+<p>不准确。普通 <code>CALL</code> 的 Upper Context 位于 CSA 链，还要结合
+A11、PCXI 和调试展开信息。</p>
+<hr />
+<h2 id="20-最后形成的系统认知">20. 最后形成的系统认知</h2>
+<pre class="text"><code>32 个 GPR
+├── Global：A0、A1、A8、A9
+├── Lower：A2～A7、D0～D7，加 A11、PCXI 形成 Lower Context
+└── Upper：A10～A15、D8～D15，加 PSW、PCXI 形成 Upper Context
+
+普通内存栈
+└── 当前活动指针：A10
+
+异常栈切换
+├── ISP：首次异常切换时提供 ISTACK 入口值
+└── PSW.IS：记录当前执行流采用的栈类别
+
+CSA 管理
+├── FCX：空闲 CSA 链头
+├── PCXI.PCX：已使用上下文链头
+├── PCXI.UL：链头是 Upper 还是 Lower
+└── LCX：接近耗尽预警点</code></pre>
+<h3 id="201-普通函数调用">20.1 普通函数调用</h3>
+<pre class="text"><code>CALL：Upper → CSA，A11 ← return address
+函数局部数据：A10 指向的当前普通栈
+RET：Upper ← CSA，CSA 回到 Free List</code></pre>
+<h3 id="202-中断或-trap">20.2 中断或 Trap</h3>
+<pre class="text"><code>入口：Upper → CSA
+若旧 IS=0：A10 ← ISP
+PSW.IS ← 1
+必要时：BISR/SVLCX 保存 Lower
+返回前：RSLCX 恢复 Lower
+RFE：恢复 Upper、A10、PSW.IS、IE、CCPN</code></pre>
+<h3 id="203-和-m7-的一句话区别">20.3 和 M7 的一句话区别</h3>
+<pre class="text"><code>Cortex-M7：MSP 与 PSP 是两个独立、持续存在的栈指针；异常基本帧压入异常前活动栈。
+
+AURIX：A10 是唯一当前活动 SP；异常寄存器现场主要进入 CSA，ISP 只在首次异常切栈时装入 A10。</code></pre>
+<hr />
+<h2 id="21-自测题">21. 自测题</h2>
+<ol type="1">
+<li>为什么 A10 同时出现在 Upper CSA 中，又继续作为被调用函数的 SP？</li>
+<li>为什么 <code>A11</code> 同时出现在 Upper 和 Lower Context？</li>
+<li>如果 <code>PCXI.UL=0</code> 时执行
+<code>RFE</code>，会发生什么？</li>
+<li>为什么第二层 IRQ 不能重新执行 <code>A10=ISP</code>？</li>
+<li>FCD 与 FCU 对系统可恢复性的差异是什么？</li>
+<li>一个 ISR 执行 <code>BISR</code>
+后又调用两层普通函数，峰值额外需要多少个 CSA？</li>
+<li>为什么直接扫描 A10 指向的内存不能完整回溯 TriCore 调用链？</li>
+<li><code>PSW.IS=1</code> 能否证明 A10 一定落在 ISTACK 地址范围？</li>
+<li>为什么软件读取活动 CSA 前要执行 <code>DSYNC</code>？</li>
+<li>Cortex-M7 Thread 使用 PSP 时，异常基本帧和 Handler
+局部变量分别通常放在哪里？</li>
+</ol>
+<h3 id="参考答案要点">参考答案要点</h3>
+<ol type="1">
+<li>CALL 先保存调用者
+A10；被调用函数随后继续使用当前任务同一普通栈，编译器可再调整 A10。</li>
+<li>Upper 保存被打断/调用者的返回链；Lower 保存显式保护时当前 Handler
+的返回链。</li>
+<li><code>RFE</code> 期待 Upper Context，类型不匹配触发 CTYP。</li>
+<li>会覆盖外层 ISR 已经使用的 ISTACK 内容。</li>
+<li>FCD 本次保存已完成，是预警；FCU
+保存失败且状态丢失，通常不可恢复。</li>
+<li>IRQ Upper 1 个 + BISR Lower 1 个 + 两层 CALL Upper 2 个，共峰值 4
+个；若只问 BISR 后两层 CALL 的新增量，则再增加 2 个。</li>
+<li>普通 CALL 的 Upper Context 和返回链在 CSA 中，另外还可能存在 FCALL
+栈记录与调试展开规则。</li>
+<li>不能；硬件不会根据 A10 地址自动校验 <code>PSW.IS</code>。</li>
+<li>实现可能缓冲活动 CSA 状态，DSYNC 使其提交到内存。</li>
+<li>基本帧压入 PSP 指向的任务栈；进入 Handler 后，Handler
+局部变量通常使用 MSP。</li>
+</ol>
+<hr />
+<h2 id="22-主要手册依据">22. 主要手册依据</h2>
+<h3
+id="infineon-tricore-tc162-core-architecture-manual-volume-1">Infineon
+TriCore TC1.6.2 Core Architecture Manual, Volume 1</h3>
+<ul>
+<li>Chapter 1：Architectural Registers、Tasks and Contexts</li>
+<li>Section 3.1：General Purpose Registers</li>
+<li>Section 3.2：PSW、PCXI</li>
+<li>Section 3.3：Stack Management
+Registers，<code>A10/ISP/PSW.IS</code></li>
+<li>Chapter 4：Upper/Lower Context、CSA、FCX/LCX、Context Lists</li>
+<li>Section 4.4：Context Switching with Interrupts and Traps</li>
+<li>Section 4.5：Context Switching for Function Calls</li>
+<li>Section 4.9：Accessing CSA Memory Locations</li>
+<li>Section 5.1.3：Entering an ISR</li>
+<li>Section 5.2：Exiting an ISR</li>
+<li>Section 6.2.5：Initial State upon a Trap</li>
+<li>Section 6.3.4：Context Management Trap Class 3</li>
+</ul>
+<h3
+id="infineon-tricore-tc162-core-architecture-manual-volume-2">Infineon
+TriCore TC1.6.2 Core Architecture Manual, Volume 2</h3>
+<ul>
+<li>Section 2.11：Context Related Instructions</li>
+<li>Section 2.12.5：<code>RET/RFE</code></li>
+<li>Instruction
+definitions：<code>CALL</code>、<code>RET</code>、<code>RFE</code>、<code>BISR</code>、<code>SVLCX</code>、<code>RSLCX</code></li>
+</ul>
+<h3 id="arm-对照资料">Arm 对照资料</h3>
+<ul>
+<li>Armv7-M Architecture Reference Manual：Exception
+model、MSP/PSP、exception entry/return</li>
+<li>Arm Cortex-M7 Processor Technical Reference Manual：Cortex-M7
+programmers model</li>
+</ul>
+<hr />
+<h2 id="23-阅读后的下一步建议">23. 阅读后的下一步建议</h2>
+<p>按下面顺序实操最容易真正建立直觉：</p>
+<ol type="1">
+<li>先单步一个普通 <code>CALL/RET</code>，观察一个 Upper CSA
+的分配与回收；</li>
+<li>再观察从 <code>IS=0</code> 的任务进入第一层 IRQ，确认 A10 从 USTACK
+切到 ISP；</li>
+<li>在 ISR 中加入 <code>BISR/RSLCX</code>，观察 <code>PCXI.UL</code> 在
+<code>1 → 0 → 1</code> 间变化；</li>
+<li>最后做一次两级嵌套中断，确认内层 IRQ 没有重新加载 ISP。</li>
+</ol>
+<p>做完这四个实验后，再阅读 RTOS Task Context Switch，会比直接从 OS
+汇编入口读起清楚得多。</p></article>
+        <div class="footer">基于 Infineon TriCore TC1.6.2 Architecture Manual Vol.1/Vol.2 整理 · 单文件离线学习版</div>
+      </div>
+    </main>
+  </div>
+  <button class="top-btn" id="topBtn" title="回到顶部">↑</button>
+
+  <script>
+    const scenarios = {
+      call:[
+        {t:'CALL 前',d:'任务正在执行，FCX 指向第一个空闲 CSA。',u:[['PC','caller'],['A10','USTACK 当前 SP','green'],['A11','caller 的 RA'],['FCX','CSA3'],['PCXI.PCX','CSA2']]},
+        {t:'保存 Upper Context',d:'CPU 从 Free List 取 CSA3，把调用者 Upper Context 写入其中。',u:[['CSA3','PCXI / PSW / A10 / A11 / D8-D15','cyan'],['FCX','推进到 CSA4'],['PCXI.PCX','指向 CSA3'],['PCXI.UL','1 = Upper']]},
+        {t:'跳入被调用函数',d:'PC 跳到 target；A11 变为 CALL 后的返回地址；A10 仍是同一普通栈。',u:[['PC','callee'],['A11','return address','orange'],['A10','仍在 USTACK','green'],['CSA 链','CSA3 → CSA2']]},
+        {t:'RET',d:'先从当前 A11 取得返回目标，再从 CSA3 恢复调用者 Upper Context，CSA3 回到 Free List。',u:[['PC','返回 caller'],['A10','恢复调用者 SP','green'],['FCX','CSA3 → CSA4'],['PCXI.PCX','回到 CSA2']]}
+      ],
+      irq:[
+        {t:'任务执行',d:'当前使用 USTACK，PSW.IS=0；ISP 保存本核 ISTACK 的入口值。',u:[['A10','Task_SP / USTACK','green'],['PSW.IS','0'],['ISP','ISTACK_TOP','purple'],['ICR.IE','1']]},
+        {t:'IRQ 保存 Upper',d:'先保存任务的 A10、PSW、A11 等 Upper Context，避免切栈后丢失 Task_SP。',u:[['Upper CSA','A10=Task_SP, IS=0','cyan'],['PCXI.UL','1'],['A11','准备写入恢复地址']]},
+        {t:'首次切到 ISTACK',d:'因为旧 IS=0，硬件执行 A10←ISP，并设置 IS=1、IE=0。',u:[['A10','ISP / ISTACK_TOP','green'],['PSW.IS','1'],['ICR.IE','0','orange'],['A11','任务恢复地址']]},
+        {t:'ISR 执行',d:'ISR 的局部变量与普通函数栈帧使用 A10 指向的 ISTACK；Lower Context 可按需保存。',u:[['A10','ISTACK 当前 SP','green'],['Upper CSA','保存任务现场','cyan'],['Lower CSA','可选 BISR/SVLCX','orange']]},
+        {t:'RFE',d:'恢复任务 Upper Context，同时恢复 A10、PSW.IS、IE、CCPN，并回收 Upper CSA。',u:[['A10','Task_SP / USTACK','green'],['PSW.IS','0'],['ICR.IE','恢复旧值'],['CSA','回到 Free List']]}
+      ],
+      nested:[
+        {t:'外层 ISR 正在执行',d:'外层已经使用 ISTACK，A10 已从栈顶向下移动。',u:[['A10','0x7003_FE80','green'],['PSW.IS','1'],['ISP','0x7003_FF00','purple']]},
+        {t:'高优先级 IRQ 到达',d:'硬件保存外层 ISR 的 Upper Context，其中包含当前 A10 与 IS=1。',u:[['Upper CSA2','A10=0x7003_FE80, IS=1','cyan'],['PCXI.UL','1']]},
+        {t:'不重新加载 ISP',d:'旧 IS 已为 1，内层 IRQ 保留当前 A10，在外层 ISR 的栈下方继续使用。',u:[['A10','仍从 0x7003_FE80 开始','green'],['ISP','不参与本次入口','purple'],['结果','不会覆盖外层栈帧','orange']]},
+        {t:'内层 RFE',d:'恢复外层 ISR 的 A10=0x7003_FE80 和 IS=1，继续外层 ISR。',u:[['A10','0x7003_FE80','green'],['PSW.IS','1'],['控制流','回到 IRQ1']]},
+        {t:'外层 RFE',d:'再恢复最初任务的 A10 与 IS=0，回到 USTACK。',u:[['A10','Task_SP','green'],['PSW.IS','0'],['控制流','回到 Task']]}
+      ],
+      bisr:[
+        {t:'IRQ 入口完成',d:'任务 Upper Context 已保存到 U0，链头类型为 Upper。',u:[['Context 链','U0'],['PCXI.UL','1'],['ICR.IE','0']]},
+        {t:'BISR',d:'保存 Lower Context 到 L0，同时设置 CCPN 并重新开启中断。',u:[['Context 链','L0 → U0','orange'],['PCXI.UL','0'],['ICR.IE','1','green']]},
+        {t:'ISR 调用函数',d:'普通 CALL 再分配 U1，保存 ISR 调用者的 Upper Context。',u:[['Context 链','U1 → L0 → U0','cyan'],['PCXI.UL','1'],['A11','函数返回地址']]},
+        {t:'函数 RET',d:'U1 被恢复并回收，链头重新成为 Lower Context L0。',u:[['Context 链','L0 → U0','orange'],['PCXI.UL','0']]},
+        {t:'RSLCX',d:'恢复 Lower Context并回收 L0；此时链头再次是 Upper U0。',u:[['Context 链','U0','cyan'],['PCXI.UL','1'],['Lower','已恢复']]},
+        {t:'RFE',d:'恢复任务 Upper Context U0，回收 CSA，返回被中断任务。',u:[['Context 链','回到 IRQ 前'],['A10','Task_SP','green'],['PSW.IS','0']]}
+      ],
+      m7:[
+        {t:'任务阶段',d:'M7 可以让 Thread 使用 PSP，同时 MSP 独立保存 Handler 栈；AURIX 只有一个活动 A10。',u:[['M7 PSP','Task_SP','purple'],['M7 MSP','Handler_SP','purple'],['AURIX A10','Task_SP','green'],['AURIX ISP','ISTACK_TOP','green']]},
+        {t:'异常现场保存',d:'M7 把基本帧压入异常前活动栈；AURIX 把 Upper Context 保存到 CSA。',u:[['M7','R0-R3/R12/LR/PC/xPSR → PSP','purple'],['AURIX','Upper Context → CSA','cyan']]},
+        {t:'Handler 使用栈',d:'M7 Handler 固定使用 MSP；AURIX 在旧 IS=0 时把 ISP 装入 A10。',u:[['M7 Handler','活动 SP = MSP','purple'],['AURIX Handler','A10 = ISP, IS=1','green']]},
+        {t:'异常返回',d:'M7 依靠 EXC_RETURN 选择回到 Thread/Handler 和 MSP/PSP；AURIX 依靠 A11、PCXI 与 CSA。',u:[['M7','LR = EXC_RETURN','purple'],['AURIX','A11 + PCXI + CSA','cyan']]}
+      ]
+    };
+    let scenario='call', step=0;
+    const qs=s=>document.querySelector(s);
+    function renderStage(){
+      const arr=scenarios[scenario], s=arr[step];
+      qs('#stageNum').textContent=`步骤 ${step+1} / ${arr.length}`; qs('#stageTitle').textContent=s.t; qs('#stageDesc').textContent=s.d;
+      qs('#pips').innerHTML=arr.map((_,i)=>`<span class="pip ${i<=step?'on':''}"></span>`).join('');
+      qs('#stageView').innerHTML=`<div class="state-row">${s.u.map(x=>`<div class="state-unit ${x[2]||''}"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('')}</div><div class="stage-arrow">${step<arr.length-1?'↓':'✓'}</div>`;
+    }
+    qs('#scenario').addEventListener('change',e=>{scenario=e.target.value;step=0;renderStage()});
+    qs('#next').addEventListener('click',()=>{step=Math.min(step+1,scenarios[scenario].length-1);renderStage()});
+    qs('#prev').addEventListener('click',()=>{step=Math.max(step-1,0);renderStage()});
+    qs('#reset').addEventListener('click',()=>{step=0;renderStage()}); renderStage();
+
+    const vizDefs=[
+      {title:'事件发生后，CSA 与普通栈各管什么',boxes:[['程序正在执行','当前 A10 + 当前上下文',''],['CALL','Upper → CSA；A10 不切栈','cyan'],['IRQ / Trap','Upper → CSA；按 IS 决定 A10','orange'],['ISTACK','首次异常 A10←ISP','green']],note:'CSA 保存寄存器上下文；A10 指向的栈保存 C 语言栈数据。'},
+      {title:'A11 / PCXI 的两层返回链',boxes:[['任务状态','原 A11 / PCXI',''],['Upper CSA','保存任务返回链','cyan'],['ISR 新状态','新 A11 / PCXI',''],['Lower CSA','BISR 保存 ISR 返回链','orange'],['RFE','逐层恢复','green']],note:'同名寄存器出现在 Upper 和 Lower 中，是因为保存时刻和所属执行流不同。'},
+      {title:'普通 CALL 的并行动作',boxes:[['Caller','执行 CALL',''],['Upper CSA','保存调用者','cyan'],['A11','写入 return address','orange'],['Callee','PC 跳到 target','green']],note:'A10 仍使用当前任务普通栈；函数局部变量由编译器在该栈上分配。'},
+      {title:'第一层 IRQ 的入口序列',boxes:[['接受 IRQ','IE=1 且 PIPN>CCPN',''],['Upper CSA','先保存旧 A10 / PSW','cyan'],['栈判断','旧 IS=0？','orange'],['A10←ISP','进入 ISTACK','green'],['ISR','IS=1，IE=0','purple']],note:'必须先保存任务 A10，才能安全覆盖 A10。'},
+      {title:'典型 C ISR 的上下文配对',boxes:[['IRQ','自动 Upper','cyan'],['BISR','显式 Lower + IE=1','orange'],['C ISR','允许调用函数',''],['RSLCX','恢复 Lower','orange'],['RFE','恢复 Upper','green']],note:'如果执行过 BISR/SVLCX，RFE 前必须先 RSLCX。'},
+      {title:'嵌套 IRQ 共用当前 ISTACK',boxes:[['Task','A10=USTACK, IS=0',''],['IRQ1','A10=ISP, IS=1','green'],['IRQ2','保留 IRQ1 当前 A10','orange'],['IRQ2 RFE','恢复 IRQ1_SP','cyan'],['IRQ1 RFE','恢复 Task_SP','purple']],note:'第二层不能重新回到 ISTACK_TOP，否则会覆盖外层 ISR 栈帧。'}
+    ];
+    document.querySelectorAll('pre.mermaid').forEach((pre,i)=>{
+      const d=vizDefs[i]; if(!d)return;
+      const el=document.createElement('div');el.className='viz';
+      el.innerHTML=`<div class="viz-title">${d.title}</div><div class="viz-row">${d.boxes.map((b,j)=>`${j?'<div class="viz-arrow">→</div>':''}<div class="viz-box ${b[2]}"><b>${b[0]}</b>${b[1]}</div>`).join('')}</div><div class="viz-note">${d.note}</div>`;
+      pre.replaceWith(el);
+    });
+
+    const article=qs('#article'), toc=qs('#toc');
+    const headings=[...article.querySelectorAll('h2,h3')];
+    headings.forEach((h,i)=>{
+      if(!h.id)h.id='section-'+i;
+      const a=document.createElement('a');a.href='#'+h.id;a.textContent=h.textContent;a.className=h.tagName==='H3'?'sub':'';toc.appendChild(a);
+    });
+    const links=[...toc.querySelectorAll('a')];
+    const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id));}})},{rootMargin:'-18% 0px -72% 0px'});
+    headings.forEach(h=>obs.observe(h));
+
+    const original=article.innerHTML;
+    qs('#search').addEventListener('input',e=>{
+      const q=e.target.value.trim(); article.innerHTML=original;
+      if(!q){qs('#searchEmpty').style.display='none';return}
+      const walker=document.createTreeWalker(article,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentElement.closest('code,pre,script,style')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+      const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);let count=0;
+      nodes.forEach(n=>{const idx=n.nodeValue.toLowerCase().indexOf(q.toLowerCase());if(idx<0)return;count++;const span=document.createElement('span');span.append(n.nodeValue.slice(0,idx),Object.assign(document.createElement('mark'),{textContent:n.nodeValue.slice(idx,idx+q.length)}),n.nodeValue.slice(idx+q.length));n.replaceWith(span)});
+      qs('#searchEmpty').style.display=count?'none':'block'; const first=article.querySelector('mark');if(first)first.scrollIntoView({behavior:'smooth',block:'center'});
+    });
+    const topBtn=qs('#topBtn');
+    window.addEventListener('scroll',()=>{const max=document.documentElement.scrollHeight-innerHeight;qs('#progress').style.width=(max?scrollY/max*100:0)+'%';topBtn.classList.toggle('show',scrollY>700)});
+    topBtn.addEventListener('click',()=>scrollTo({top:0,behavior:'smooth'}));
+  </script>
+</body>
+</html>

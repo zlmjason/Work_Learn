@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TC397 启动流程：_START → core0_main（C / 汇编对照）</title>
+<style>
+:root{--bg:#0e1219;--panel:#151b24;--panel2:#1c2431;--border:#26303f;--text:#e6ebf2;
+--muted:#8b97a8;--accent:#4c8dff;--kw:#7aa2ff;--str:#7ec699;--cmt:#6b7789;--lbl:#e0b96a;--ins:#7fd1ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;line-height:1.55}
+.layout{display:grid;grid-template-columns:280px 1fr;max-width:1700px;margin:0 auto}
+nav{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 18px;border-right:1px solid var(--border);background:var(--panel)}
+nav h1{font-size:16px;margin:0 0 4px}
+nav .sub{color:var(--muted);font-size:11.5px;margin-bottom:16px}
+nav ol{list-style:none;padding:0;margin:0;font-size:13px}
+nav li a{display:flex;gap:8px;padding:7px 8px;border-radius:7px;color:var(--text);text-decoration:none}
+nav li a:hover{background:var(--panel2)}
+nav li a span{color:var(--accent);font-family:Consolas,monospace;min-width:18px}
+main{padding:34px 40px 80px;min-width:0}
+header h2{font-size:26px;margin:0 0 8px}
+header .sub{color:var(--muted);font-size:13px}
+.badges{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 8px}
+.badge{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--muted)}
+.tip{background:var(--panel);border-left:3px solid var(--accent);border-radius:6px;padding:12px 16px;color:var(--muted);font-size:13px;margin:18px 0}
+section{margin-top:46px;padding-top:10px;border-top:1px solid var(--border)}
+section h2{font-size:20px;margin:0 0 8px}
+section h2 .num{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;font-size:12px;padding:2px 8px;margin-right:10px;vertical-align:2px}
+.meta{display:flex;gap:22px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-bottom:8px}
+.meta b{color:var(--text)}
+.lead{color:var(--text);font-size:14px;margin:10px 0 16px}
+.mono{font-family:Consolas,"Cascadia Mono",monospace}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:1100px){.layout{grid-template-columns:1fr}nav{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}.two-col{grid-template-columns:1fr}main{padding:22px}}
+.pane{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;min-width:0}
+.pane-title{padding:8px 14px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);background:var(--panel2)}
+pre.code{margin:0;padding:14px 16px;overflow:auto;max-height:560px;font-family:Consolas,"Cascadia Mono",monospace;font-size:12.5px;line-height:1.55;tab-size:4}
+.asm-code{white-space:pre}
+.ins{color:var(--ins)}
+.lbl{color:var(--lbl)}
+.cmt{color:var(--cmt);font-style:italic}
+.kw{color:var(--kw)}
+.str{color:var(--str)}
+h3{font-size:14px;margin:22px 0 8px}
+table.annot{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+table.annot th{text-align:left;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);background:var(--panel2)}
+table.annot td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+table.annot tr:last-child td{border-bottom:none}
+table.annot td.c code{color:var(--text);background:var(--panel2);padding:1px 4px;border-radius:3px}
+table.annot td.a pre{margin:0;color:var(--ins);font-family:Consolas,monospace;font-size:11.5px;white-space:pre-wrap}
+ul.notes{margin:10px 0 0;padding-left:20px;color:var(--muted);font-size:12.5px}
+ul.notes li{margin:4px 0}
+.think{background:var(--panel);border:1px solid var(--border);border-left:3px solid #e0b96a;border-radius:8px;padding:12px 16px;margin:14px 0}
+.think-title{font-size:13px;font-weight:700;color:#e0b96a;margin-bottom:8px}
+details.q{border-top:1px dashed var(--border);padding:8px 0}
+details.q:first-of-type{border-top:none}
+details.q summary{cursor:pointer;font-size:13px;color:var(--text);outline:none}
+details.q summary .qn{display:inline-block;background:#3a2f1a;color:#e0b96a;border-radius:4px;font-size:11px;padding:1px 6px;margin-right:8px}
+details.q .qh{color:var(--muted);font-size:12px;margin:8px 0 0 28px}
+details.q .qa{color:var(--text);font-size:12.5px;margin:6px 0 0 28px;line-height:1.65}
+.think.cross{border-left-color:var(--accent)}
+.think.cross .think-title{color:var(--accent)}
+.think.fail{border-left-color:#e05c5c}
+.think.fail .think-title{color:#e05c5c}
+.think ul{margin:0;padding-left:20px;color:var(--muted);font-size:12.5px}
+.think ul li{margin:4px 0}
+.bg{background:var(--panel);border:1px solid var(--border);border-left:3px solid #7ec699;border-radius:8px;padding:12px 16px;margin:14px 0}
+.bg-title{font-size:13px;font-weight:700;color:#7ec699;margin-bottom:8px}
+.bg table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+.bg th,.bg td{padding:5px 8px;border-bottom:1px solid var(--border);text-align:left}
+.bg th{color:var(--muted);background:var(--panel2)}
+.bg .bg-note{color:var(--muted);font-size:12.5px;margin:8px 0 0;line-height:1.6}
+.bg code{color:var(--ins);background:var(--panel2);padding:1px 4px;border-radius:3px}
+.principles{background:var(--panel);border:1px solid var(--border);border-left:3px solid #e0b96a;border-radius:10px;padding:16px 22px;margin:18px 0}
+.principles h2{font-size:16px;margin:0 0 10px;border:none;padding:0}
+.principles ol{margin:0;padding-left:22px}
+.principles li{margin:7px 0;font-size:13px;color:var(--text)}
+.principles li b{color:#e0b96a}
+.cheat{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:1100px){.cheat{grid-template-columns:1fr}}
+.cheat table{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--panel);border:1px solid var(--border)}
+.cheat th,.cheat td{padding:7px 10px;border-bottom:1px solid var(--border);text-align:left}
+.cheat th{color:var(--muted);background:var(--panel2)}
+footer{margin-top:60px;padding-top:16px;border-top:1px solid var(--border);color:var(--muted);font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <h1>TC397 启动流程</h1>
+  <div class="sub">_START → core0_main<br>C / 汇编逐段对照</div>
+  <ol><li><a href="#start"><span>1</span>_START — 复位入口</a></li><li><a href="#ssw"><span>2</span>__StartUpSoftware — 建立最小运行环境</a></li><li><a href="#p2"><span>3</span>Phase2 — 电源/EVRC 初始化（仅上电路径）</a></li><li><a href="#p3"><span>4</span>Phase3 — 构建 CSA 空闲链表（核心）</a></li><li><a href="#p4"><span>5</span>Phase4 — 看门狗服务与 PLL 初始化（仅上电路径）</a></li><li><a href="#p56"><span>6</span>Phase5 / Phase6 — 启动从核，进入 __Core0_start</a></li><li><a href="#core0"><span>7</span>__Core0_start — 最后的 C 运行环境准备</a></li><li><a href="#main"><span>8</span>core0_main — 进入 C 世界</a></li></ol>
+</nav>
+<main>
+<header>
+  <h2>从复位向量到 FreeRTOS 的 main</h2>
+  <div class="sub">AURIX TC397 · TASKING VX-toolset 1.1r8 · -O0 · FreeRTOS V10.5.1</div>
+  <div class="badges">
+    <span class="badge">_START @ 0xA0000000</span>
+    <span class="badge">__Core0_start @ 0x80003B80</span>
+    <span class="badge">core0_main @ 0x80003F1C</span>
+    <span class="badge">CSA0 @ 0x70039C00（128 × 64B）</span>
+  </div>
+</header>
+
+<div class="tip">
+<b>读法（建议顺序）：</b>① 先读每节的“<b>先想一想</b>”，自己回答，再展开提示/答案；② 带着假设看左侧 C 与右侧汇编；③ 用“逐段对照”验证；④ 用“举一反三 / 如果写错会怎样”把结论迁移到别的场景。<br>
+左侧是 C 源码，右侧是 TASKING 编译器在 <span class="mono">-O0</span> 下生成的汇编（<span class="mono">.src</span>）。
+<span class="mono">.Lxxx</span> 是编译器内部标签，不是源码符号。函数入口地址来自 ELF 符号表（<span class="mono">readelf -sW</span>），大小来自符号的 size 字段。
+</div>
+
+<section class="principles">
+  <h2>先建立 5 条设计直觉（为什么启动代码长这样）</h2>
+  <ol>
+    <li><b>先有资源，再进 C</b>：CSA 空闲链表 → 向量表/ISP → C 运行时。在此之前不能安全地调用普通 C 函数——调用会写 A11、消费 CSA，而池子可能还没建好。</li>
+    <li><b>能不调用就不调用</b>：启动阶段大量使用 <span class="mono">IFX_SSW_INLINE</span>/宏/内联汇编；TASKING 的 <span class="mono">#pragma optimize R</span> 也是为减少不必要的栈使用。看懂这一点，就不会问“为什么这些函数都看不见”。</li>
+    <li><b>尾跳转用 ji，需要返回才用 jli/call</b>：阶段之间是单向的；用 call 会白占 CSA，返回地址也没有意义。</li>
+    <li><b>分阶段是因为“复位类型”不同</b>：上电需要 PMS/EVRC/时钟/自检；应用复位假设电源/时钟已稳定，跳过这些步骤。</li>
+    <li><b>每一步都在为下一步准备前提</b>：PSW 给已知状态 → CSA 给上下文池 → BTV/BIV/ISP 给异常/中断 → 最后才 enable 中断、进 <span class="mono">core0_main</span>。</li>
+  </ol>
+</section>
+
+
+<section id="start">
+  <h2><span class="num">1</span>_START — 复位入口</h2>
+  <div class="meta">
+    <span>入口地址 <b class="mono">0xA0000000</b></span>
+    <span>大小 <b>12 B</b></span>
+    <span>源码 <b class="mono">Ifx_Ssw_Tc0.c:358–361</b></span>
+  </div>
+  <p class="lead">CPU 复位后从 0xA0000000 取第一条指令。这里只做一件事：跳到 __StartUpSoftware。</p>
+  <div class='think'><div class='think-title'>先想一想 · 自己回答后再展开</div><details class='q'><summary><span class='qn'>Q1</span>_START 为什么用 ji，而不是 call / jli？</summary><div class='qh'>提示：先想：call 比 ji 多做了什么？_START 之后还需要回来吗？</div><div class='qa'>call/jli 会把返回地址写入 A11，并可能消费一个 CSA；_START 是复位入口，没有调用者，也永远不返回，所以用 ji（尾跳转）。工程里 Ifx_Ssw_jumpToFunction 展开就是 ji，而 Ifx_Ssw_jumpToFunctionWithLink 才是 jli——函数命名已经说明了区别。</div></details><details class='q'><summary><span class='qn'>Q2</span>既然 ji 不会返回，编译器为什么还生成 ret？</summary><div class='qh'>提示：看 C 函数签名：void _START(void)。编译器是否知道 ji 永不返回？</div><div class='qa'>编译器按普通 void 函数生成返回路径；ji 之后不可达，ret 是死代码。若想省掉，可把函数标注为 noreturn，但复位入口的 12 字节里多一条 ret 无伤大雅。</div></details><details class='q'><summary><span class='qn'>Q3</span>为什么 _START 位于 0xA0000000，而不是 0x80000000？</summary><div class='qh'>提示：看 map 的 Locate Result：reset 段放在 pfls0，但地址是 0xA0000000。</div><div class='qa'>0xA0000000 是 PFlash0 的非缓存别名。复位时缓存尚未配置，从非缓存别名取指可以避免缓存初始化/一致性问题；跳转后的代码再进入缓存别名区。具体定位由 LSL 的 start/reset 段决定。</div></details><details class='q'><summary><span class='qn'>Q4</span>为什么不让 _START 直接内联 __StartUpSoftware 的全部代码？</summary><div class='qh'>提示：复位入口段有多大？它受什么保护？</div><div class='qa'>复位入口只需要一条可靠的跳转；start/reset 段很小且受保护（#pragma protect on），把完整启动逻辑放在普通代码段更利于链接、调试和保护。</div></details></div>
+  
+  <div class="two-col">
+    <div class="pane">
+      <div class="pane-title">C 源码</div>
+      <pre class="code c-code"><span class="kw">void</span> _START(<span class="kw">void</span>)
+{
+    Ifx_Ssw_jumpToFunction(__StartUpSoftware);
+}</pre>
+    </div>
+    <div class="pane">
+      <div class="pane-title">编译器汇编（-O0）</div>
+      <pre class="code asm-code"><span class="lbl">.L51:</span>
+<span class="lbl">_START:	.type	func</span>
+<span class="ins">movh.a</span>	a15,#@his(__StartUpSoftware)
+<span class="ins">lea</span>	a15,[a15]@los(__StartUpSoftware)
+<span class="lbl">.L254:</span>
+<span class="ins">ji</span> a15
+<span class="lbl">.L255:</span>
+<span class="ins">ret</span>
+<span class="lbl">.L253:</span>
+<span class="lbl">___START_function_end:</span></pre>
+    </div>
+  </div>
+  <h3>逐段对照</h3>
+  <table class='annot'><thead><tr><th style='width:26%'>C</th><th style='width:30%'>汇编</th><th>说明</th></tr></thead><tbody><tr><td class='c'><code>void _START(void)</code></td><td class='a'><pre>_START:</pre></td><td>符号 _START 位于 0xA0000000（PFlash0 的非缓存别名）。整个函数只有 12 字节。</td></tr><tr><td class='c'><code>Ifx_Ssw_jumpToFunction(__StartUpSoftware);</code></td><td class='a'><pre>movh.a a15,#@his(__StartUpSoftware)
+lea a15,[a15]@los(__StartUpSoftware)
+ji a15</pre></td><td>TriCore 没有 32 位立即数寻址：movh.a 装入高 16 位，lea 补低 16 位，ji 间接跳转。这就是“取函数地址再跳”的标准写法。</td></tr><tr><td class='c'><code>（函数返回）</code></td><td class='a'><pre>ret</pre></td><td>void 函数仍会生成 ret；执行不到（ji 已经离开），仅占位。</td></tr></tbody></table>
+  <div class='think cross'><div class='think-title'>举一反三 · 跨架构 / 跨层对照</div><ul><li>Cortex-M：复位向量表项给出初始 MSP 和 Reset_Handler 地址，CPU 取向量后跳转；TriCore：固定地址 0xA0000000 放的是可执行指令，第一条指令自己完成跳转。</li><li>Cortex-M 的 BL 把返回地址放 LR；TriCore 的 call/jli 把返回地址放 A11，并可能消费 CSA。</li></ul></div>
+  <div class='think fail'><div class='think-title'>如果写错会怎样</div><ul><li>把 ji 改成 call：多消费一个 CSA，且 ret 会回到复位向量，形成无意义循环。</li><li>跳转目标写错：启动代码不执行，系统挂死或跑飞。</li></ul></div>
+  <ul class="notes"><li>0xA0000000 是 PFlash0 的非缓存别名；实际代码也在 0x8xxxxxxx 缓存别名下有同一份。</li><li>`#pragma section code "start"` + `#pragma protect on` 把复位入口放到受保护段。</li></ul>
+</section>
+
+<section id="ssw">
+  <h2><span class="num">2</span>__StartUpSoftware — 建立最小运行环境</h2>
+  <div class="meta">
+    <span>入口地址 <b class="mono">0x80003CDC</b></span>
+    <span>大小 <b>144 B</b></span>
+    <span>源码 <b class="mono">Ifx_Ssw_Tc0.c:132–149</b></span>
+  </div>
+  <p class="lead">设置小数据基址 A1、把 PSW 复位到已知值、判断本次复位类型，然后分流到上电复位路径或应用复位路径。</p>
+  <div class='think'><div class='think-title'>先想一想 · 自己回答后再展开</div><details class='q'><summary><span class='qn'>Q1</span>为什么先设置 PSW，再去判断复位类型？</summary><div class='qh'>提示：warm reset 后 PSW 可能残留哪些位？判断逻辑依赖这些位吗？</div><div class='qa'>为了保证后续代码在已知状态下运行（GW/IS/IO 等位），避免 warm reset 残留状态影响判断与栈行为。先把 PSW 归到默认值，再谈分支。</div></details><details class='q'><summary><span class='qn'>Q2</span>mtcr PSW 之后为什么必须 isync？</summary><div class='qh'>提示：CSFR 写入是否像普通寄存器一样立即对后续指令可见？</div><div class='qa'>CSFR 写入是流水线化的；isync 等待其生效，确保后续指令看到新的 PSW（尤其是 IS/IE 等控制位）。PSW 位域见下方“背景 1”。</div></details><details class='q'><summary><span class='qn'>Q3</span>为什么用 movh.a + lea 取地址，而不是从内存加载一个 32 位常量？</summary><div class='qh'>提示：TriCore 指令里有没有 32 位立即数？@his/@los 是谁分配的？</div><div class='qa'>TriCore 没有 32 位立即数寻址；movh.a 装高 16 位、lea 补低 16 位，链接器用 @his/@los 重定位。这样不需要额外数据访存，也不依赖文字池。</div></details><details class='q'><summary><span class='qn'>Q4</span>复位类型判断为什么要用 clz / extr.u，而不是直接比较 RSTSTAT？</summary><div class='qh'>提示：RSTSTAT 是“一个复位源”还是“一组复位源的位图”？RSTCON 的配置是几位？</div><div class='qa'>RSTSTAT 是位图，可能多个源同时置位。链条是：clz 数前导零 → 31-clz = 最高置位位的位号 → 左移 1 位得到 RSTCON 中该复位源的 2-bit 字段偏移 → extr.u 取这 2 bit；等于 2 表示应用复位。这就是 clz/rsub/sh/extr.u 四条指令的分工。</div></details><details class='q'><summary><span class='qn'>Q5</span>0x980 里 PSW.IS 是 0 还是 1？如果搞反了会怎样？</summary><div class='qh'>提示：PSW.IS 是 bit 9；0x980 = 0x800 + 0x100 + 0x80。</div><div class='qa'>IS=0（C 注释也写的是 clear PSW.IS）。0x980 的完整位域见下方“背景 1”。如果误以为 IS=1，会错误理解首次中断是否切栈——IS=0 表示当前不在中断栈上，下一次中断硬件会切到 ISP 并把 IS 置 1。</div></details><details class='q'><summary><span class='qn'>Q6</span>mtcr #65028,d15 里的 65028 是什么？</summary><div class='qh'>提示：把 65028 转成十六进制，再查 CSFR 地址表。</div><div class='qa'>65028₁₀ = 0xFE04 = CPU_PSW 的 CSFR 地址。mtcr 的第一个操作数是 CSFR 地址，汇编器在 .src 里用十进制打印；同类还有 65080=FCX、65084=LCX、65060=BTV 等（见背景 2 的换算表）。</div></details></div>
+  
+<div class="bg">
+  <div class="bg-title">背景 1：PSW 位域（0x980 到底是什么意思）</div>
+  <table>
+    <tr><th>位</th><th>字段</th><th>含义</th><th>0x980 中的值</th></tr>
+    <tr><td class='mono'>0–6</td><td class='mono'>CDC</td><td>调用深度计数（7 位）</td><td class='mono'>0000000</td></tr><tr><td class='mono'>7</td><td class='mono'>CDE</td><td>调用深度计数使能</td><td class='mono'>1</td></tr><tr><td class='mono'>8</td><td class='mono'>GW</td><td>A0/A1/A8/A9 全局寄存器写权限；1=允许</td><td class='mono'>1</td></tr><tr><td class='mono'>9</td><td class='mono'>IS</td><td>中断栈控制；0=当前不在中断栈，下一次中断切到 ISP 并置 1</td><td class='mono'>0</td></tr><tr><td class='mono'>10–11</td><td class='mono'>IO</td><td>I/O 特权模式；10=Supervisor（全部权限）</td><td class='mono'>10</td></tr><tr><td class='mono'>12–13</td><td class='mono'>PRS[1:0]</td><td>保护寄存器组</td><td class='mono'>00</td></tr><tr><td class='mono'>14</td><td class='mono'>S</td><td>PSW Safety 位；中断/陷阱入口从 SYSCON 取值</td><td class='mono'>0</td></tr><tr><td class='mono'>15</td><td class='mono'>PRS2</td><td>保护寄存器组扩展位</td><td class='mono'>0</td></tr><tr><td class='mono'>24–31</td><td class='mono'>USB</td><td>User Status Bits</td><td class='mono'>0</td></tr>
+  </table>
+  <p class="bg-note">0x980 = 0x800 + 0x100 + 0x80：CDE=1、GW=1、IO=10（Supervisor），其余为 0，特别是 <b>IS=0</b>。每一项都有用途：<br>
+  • <b>GW=1</b>：后面 __Core0_start 还要写 A0/A1/A8/A9；GW=0 时这些全局地址寄存器写入会被禁止。<br>
+  • <b>IO=10</b>：I/O 处于 Supervisor（全部权限），才能执行 mtcr、访问 CSFR 和外设。<br>
+  • <b>CDE=1 / CDC=0</b>：开启调用深度计数，上限 64，用于尽早发现失控的调用深度。<br>
+  • <b>IS=0</b>：当前不在中断栈；下一次中断硬件会切到 ISP 并把 IS 置 1——这正是 C 注释 “clear PSW.IS” 的含义。<br>
+  • <b>S=0</b>：这是 PSW Safety 位（来自 SYSCON），不是“Supervisor”位；别把 S 和 IO 搞混。</p>
+</div>
+<div class="bg">
+  <div class="bg-title">背景 2：mtcr #65028 的 65028 是什么</div>
+  <p class="bg-note"><code>mtcr #&lt;CSFR 地址&gt;, d15</code>：第一个操作数是 CSFR 地址（16 位立即数），汇编器在 <code>.src</code> 里用<b>十进制</b>打印。
+  65028₁₀ = <b>0xFE04</b> = <b>CPU_PSW</b>，所以这条指令就是“把 d15 写入 PSW”。读汇编时先转十六进制再查表，就不会被魔数卡住。</p>
+  <table>
+    <tr><th>汇编常量</th><th>十六进制</th><th>CSFR</th><th>用途</th></tr>
+    <tr><td class='mono'>65028</td><td class='mono'>0xFE04</td><td class='mono'>PSW</td><td>程序状态字</td></tr><tr><td class='mono'>65056</td><td class='mono'>0xFE20</td><td class='mono'>BIV</td><td>中断向量表基址</td></tr><tr><td class='mono'>65060</td><td class='mono'>0xFE24</td><td class='mono'>BTV</td><td>Trap 向量表基址</td></tr><tr><td class='mono'>65064</td><td class='mono'>0xFE28</td><td class='mono'>ISP</td><td>中断栈指针</td></tr><tr><td class='mono'>65080</td><td class='mono'>0xFE38</td><td class='mono'>FCX</td><td>空闲 CSA 链表头</td></tr><tr><td class='mono'>65084</td><td class='mono'>0xFE3C</td><td class='mono'>LCX</td><td>CSA 耗尽警戒线</td></tr><tr><td class='mono'>37388</td><td class='mono'>0x920C</td><td class='mono'>PCON0</td><td>程序缓存控制</td></tr><tr><td class='mono'>36928</td><td class='mono'>0x9040</td><td class='mono'>DCON0</td><td>数据缓存控制</td></tr>
+  </table>
+  <p class="bg-note">读方向是 <code>mfcr d15, #&lt;CSFR&gt;</code>（注意操作数顺序相反）。</p>
+</div>
+
+  <div class="two-col">
+    <div class="pane">
+      <div class="pane-title">C 源码</div>
+      <pre class="code c-code"><span class="kw">static</span> <span class="kw">void</span> __StartUpSoftware(<span class="kw">void</span>)
+{
+    /* Initialize A1 pointer to use the global constants with small data addressing */
+    Ifx_Ssw_setAddressReg(a1, __SDATA2(0));
+
+    /* Set the PSW to its reset value in case of a warm start, clear PSW.IS */
+    Ifx_Ssw_MTCR(CPU_PSW, IFX_CFG_SSW_PSW_DEFAULT);
+
+    /* This phase is executed only <span class="kw">if</span> last reset is not of type application reset */
+    <span class="kw">if</span> (Ifx_Ssw_isApplicationReset() != 1)
+    {
+        Ifx_Ssw_jumpToFunction(__StartUpSoftware_Phase2);
+    }
+    <span class="kw">else</span>
+    {
+        Ifx_Ssw_jumpToFunction(__StartUpSoftware_Phase3ApplicationResetPath);
+    }
+}</pre>
+    </div>
+    <div class="pane">
+      <div class="pane-title">编译器汇编（-O0）</div>
+      <pre class="code asm-code"><span class="lbl">.L35:</span>
+<span class="lbl">__StartUpSoftware:	.type	func</span>
+<span class="ins">movh.a</span>	 a1,#@his(_LITERAL_DATA_)
+<span class="ins">lea</span>	 a1,[a1]@los(_LITERAL_DATA_)
+<span class="lbl">.L301:</span>
+<span class="ins">mov</span>	d15,#2432
+<span class="ins">mtcr</span>	#65028,d15
+<span class="ins">isync</span>
+<span class="lbl">.L103:</span>
+<span class="ins">movh.a</span>	a15,#61443
+<span class="ins">ld.w</span>	d15,[a15]@los(0xf0036050)
+<span class="lbl">.L257:</span>
+<span class="ins">movh</span>	d0,#5005
+<span class="lbl">.L302:</span>
+<span class="ins">and</span>	d0,d15
+<span class="lbl">.L303:</span>
+<span class="ins">jlt.u</span>	d0,#1,.L2
+<span class="lbl">.L304:</span>
+<span class="ins">mov</span>	d15,#0
+<span class="lbl">.L258:</span>
+<span class="ins">j</span>	.L3
+<span class="lbl">.L2:</span>
+<span class="ins">mov</span>	d0,#2043
+<span class="lbl">.L305:</span>
+<span class="ins">and</span>	d0,d15
+<span class="lbl">.L306:</span>
+<span class="ins">jlt.u</span>	d0,#1,.L4
+<span class="lbl">.L307:</span>
+<span class="ins">mov</span>	d0,#2043
+<span class="lbl">.L308:</span>
+<span class="ins">and</span>	d15,d0
+<span class="lbl">.L309:</span>
+<span class="ins">movh.a</span>	a15,#61443
+<span class="ins">ld.w</span>	d0,[a15]@los(0xf0036058)
+<span class="lbl">.L310:</span>
+<span class="ins">clz</span>	d15,d15
+<span class="lbl">.L259:</span>
+<span class="ins">rsub</span>	d15,d15,#31
+<span class="lbl">.L311:</span>
+<span class="ins">sh</span>	d15,#1
+<span class="lbl">.L312:</span>
+<span class="ins">extr.u</span>	d15,d0,d15,#2
+<span class="lbl">.L260:</span>
+<span class="ins">jne</span>	d15,#2,.L5
+<span class="lbl">.L313:</span>
+<span class="ins">mov</span>	d15,#1
+<span class="lbl">.L261:</span>
+<span class="ins">j</span>	.L6
+<span class="lbl">.L5:</span>
+<span class="ins">mov</span>	d15,#0
+<span class="lbl">.L6:</span>
+<span class="ins">j</span>	.L7
+<span class="lbl">.L4:</span>
+<span class="ins">jz.t</span>	d15:20,.L8
+<span class="lbl">.L314:</span>
+<span class="ins">mov</span>	d15,#1
+<span class="lbl">.L262:</span>
+<span class="ins">j</span>	.L9
+<span class="lbl">.L8:</span>
+<span class="ins">movh.a</span>	a15,#63617
+<span class="ins">ld.w</span>	d15,[a15]@los(0xf880d000)
+<span class="lbl">.L263:</span>
+<span class="ins">extr.u</span>	d15,d15,#1,#2
+<span class="lbl">.L315:</span>
+<span class="ins">jeq</span>	d15,#0,.L10
+<span class="lbl">.L316:</span>
+<span class="ins">mov</span>	d15,#1
+<span class="lbl">.L264:</span>
+<span class="ins">j</span>	.L11
+<span class="lbl">.L10:</span>
+<span class="ins">mov</span>	d15,#0
+<span class="lbl">.L11:</span>
+<span class="lbl">.L9:</span>
+<span class="lbl">.L7:</span>
+<span class="lbl">.L3:</span>
+<span class="ins">j</span>	.L12
+<span class="lbl">.L12:</span>
+<span class="ins">jeq</span>	d15,#1,.L13
+<span class="lbl">.L104:</span>
+<span class="ins">movh.a</span>	a15,#@his(__StartUpSoftware_Phase2)
+<span class="ins">lea</span>	a15,[a15]@los(__StartUpSoftware_Phase2)
+<span class="lbl">.L111:</span>
+<span class="ins">ji</span> a15
+<span class="lbl">.L112:</span>
+<span class="ins">j</span>	.L14
+<span class="lbl">.L13:</span>
+<span class="ins">movh.a</span>	a15,#@his(__StartUpSoftware_Phase3ApplicationResetPath)
+<span class="ins">lea</span>	a15,[a15]@los(__StartUpSoftware_Phase3ApplicationResetPath)
+<span class="lbl">.L116:</span>
+<span class="ins">ji</span> a15
+<span class="lbl">.L14:</span>
+<span class="ins">ret</span>
+<span class="lbl">.L101:</span>
+<span class="lbl">____StartUpSoftware_function_end:</span></pre>
+    </div>
+  </div>
+  <h3>逐段对照</h3>
+  <table class='annot'><thead><tr><th style='width:26%'>C</th><th style='width:30%'>汇编</th><th>说明</th></tr></thead><tbody><tr><td class='c'><code>Ifx_Ssw_setAddressReg(a1, __SDATA2(0));</code></td><td class='a'><pre>movh.a a1,#@his(_LITERAL_DATA_)
+lea a1,[a1]@los(_LITERAL_DATA_)</pre></td><td>A1 指向文字池/小数据区，后面的常量访问可以用短偏移。</td></tr><tr><td class='c'><code>Ifx_Ssw_MTCR(CPU_PSW, IFX_CFG_SSW_PSW_DEFAULT);</code></td><td class='a'><pre>mov d15,#2432        ; 0x980
+mtcr #65028,d15      ; PSW = 0xFE04
+isync</pre></td><td>0x980 就是 IFX_CFG_SSW_PSW_DEFAULT：GW(bit8)=1、IS(bit9)=0（C 注释明确要求 clear PSW.IS）。isync 保证 CSFR 写入立即生效。</td></tr><tr><td class='c'><code>if (Ifx_Ssw_isApplicationReset() != 1)</code></td><td class='a'><pre>ld.w d15,[0xF0036050]   ; SCU_RSTSTAT
+mov d0,#5005            ; 0x138D = Power-On 复位掩码
+and d0,d15
+jlt.u d0,#1,.L2</pre></td><td>先看 RSTSTAT 里是否有上电复位位。有 → 走上电路径（Phase2）。</td></tr><tr><td class='c'><code>else 分支</code></td><td class='a'><pre>mov d0,#2043            ; 0x7FB = 应用复位掩码
+... clz / rsub #31 / sh #1 / extr.u #2
+ld.w d0,[0xF0036058]    ; SCU_RSTCON
+jne d15,#2,.L5</pre></td><td>没有上电复位位时，用 RSTSTAT 的置位位算出位号，再从 RSTCON 中取该复位源的 2 bit 配置；等于 2 表示应用复位。</td></tr><tr><td class='c'><code>Ifx_Ssw_jumpToFunction(__StartUpSoftware_Phase2 / Phase3ApplicationResetPath)</code></td><td class='a'><pre>movh.a/lea + ji a15</pre></td><td>两条路径最终都是“取函数地址 + 间接跳转”。</td></tr></tbody></table>
+  <div class='think cross'><div class='think-title'>举一反三 · 跨架构 / 跨层对照</div><ul><li>Cortex-M 的复位处理通常在汇编启动文件里设置 MSP/PSP、FPU、时钟；TriCore SSW 用 C 写、编译器生成汇编，可读性更好但需要看懂编译器输出。</li></ul></div>
+  <div class='think fail'><div class='think-title'>如果写错会怎样</div><ul><li>不设 PSW：warm reset 残留位可能导致中断/栈行为异常。</li><li>mtcr 后不加 isync：后续指令可能仍按旧 PSW 执行。</li><li>把 IS 的极性搞反：对首次中断是否切栈的判断会完全错误。</li></ul></div>
+  <ul class="notes"><li>SCU_RSTSTAT = 0xF0036050，SCU_RSTCON = 0xF0036058，CPU0_KRST0 = 0xF880D000（CB3 判断）。</li><li>PSW.IS 是 bit 9；复位值 0x980 中 IS=0（清 IS），GW=1。IS 的语义与首次中断切栈见 EM6。</li></ul>
+</section>
+
+<section id="p2">
+  <h2><span class="num">3</span>Phase2 — 电源/EVRC 初始化（仅上电路径）</h2>
+  <div class="meta">
+    <span>入口地址 <b class="mono">0x80003D6C</b></span>
+    <span>大小 <b>36 B</b></span>
+    <span>源码 <b class="mono">Ifx_Ssw_Tc0.c:152–164</b></span>
+  </div>
+  <p class="lead">上电复位才需要：初始化 PMSM/EVRC，跑 LBIST/MONBIST（本配置为空），然后进入 Phase3 的 CSA 初始化。</p>
+  <div class='think'><div class='think-title'>先想一想 · 自己回答后再展开</div><details class='q'><summary><span class='qn'>Q1</span>为什么 PMS 初始化用 jli（带链接），而阶段切换用 ji？</summary><div class='qh'>提示：PMS 初始化之后还要继续执行吗？阶段切换之后还要回来吗？</div><div class='qa'>PMS 初始化是普通调用，返回后继续跑 Phase2 的后续语句；阶段切换是尾跳转，永远不回来。jli 会写 A11/可能消费 CSA，ji 不会。</div></details><details class='q'><summary><span class='qn'>Q2</span>为什么 LBIST/MONBIST 在汇编里完全看不到？</summary><div class='qh'>提示：看 C 里的 IFX_CFG_SSW_CALLOUT_LBIST() 宏在本工程配置下展开成什么。</div><div class='qa'>callout 在本工程配置为空（开发构建跳过自检）；生产/安全构建应启用。读启动代码时必须同时看配置宏，否则会误以为“漏了”。</div></details><details class='q'><summary><span class='qn'>Q3</span>上电复位和应用复位为什么走不同的 Phase3 入口？</summary><div class='qh'>提示：上电时电源、时钟、PLL 一定已经稳定吗？应用复位时呢？</div><div class='qa'>上电路径需要 PMS/EVRC/LBIST 等完整初始化；应用复位通常假设电源与时钟已稳定，跳过这些步骤直接进入后续阶段。</div></details></div>
+  
+  <div class="two-col">
+    <div class="pane">
+      <div class="pane-title">C 源码</div>
+      <pre class="code c-code"><span class="kw">static</span> <span class="kw">void</span> __StartUpSoftware_Phase2(<span class="kw">void</span>)
+{
+    /* Power and EVRC configurations */
+    IFX_CFG_SSW_CALLOUT_PMS_INIT();
+
+    /* LBIST Tests and evaluation */
+    IFX_CFG_SSW_CALLOUT_LBIST();
+
+    /* MONBIST Tests and evaluation */
+    IFX_CFG_SSW_CALLOUT_MONBIST();
+
+    Ifx_Ssw_jumpToFunction(__StartUpSoftware_Phase3PowerOnResetPath);
+}</pre>
+    </div>
+    <div class="pane">
+      <div class="pane-title">编译器汇编（-O0）</div>
+      <pre class="code asm-code"><span class="lbl">.L37:</span>
+<span class="lbl">__StartUpSoftware_Phase2:	.type	func</span>
+<span class="ins">movh.a</span>	a15,#@his(Ifx_Ssw_Pms_Init)
+<span class="ins">lea</span>	a15,[a15]@los(Ifx_Ssw_Pms_Init)
+<span class="lbl">.L119:</span>
+<span class="ins">jli</span> a15
+<span class="lbl">.L120:</span>
+<span class="ins">movh.a</span>	a15,#@his(Ifx_Ssw_Pms_InitCheck)
+<span class="ins">lea</span>	a15,[a15]@los(Ifx_Ssw_Pms_InitCheck)
+<span class="lbl">.L124:</span>
+<span class="ins">jli</span> a15
+<span class="lbl">.L125:</span>
+<span class="ins">movh.a</span>	a15,#@his(__StartUpSoftware_Phase3PowerOnResetPath)
+<span class="ins">lea</span>	a15,[a15]@los(__StartUpSoftware_Phase3PowerOnResetPath)
+<span class="lbl">.L126:</span>
+<span class="ins">ji</span> a15
+<span class="lbl">.L127:</span>
+<span class="ins">ret</span>
+<span class="lbl">.L117:</span>
+<span class="lbl">____StartUpSoftware_Phase2_function_end:</span></pre>
+    </div>
+  </div>
+  <h3>逐段对照</h3>
+  <table class='annot'><thead><tr><th style='width:26%'>C</th><th style='width:30%'>汇编</th><th>说明</th></tr></thead><tbody><tr><td class='c'><code>IFX_CFG_SSW_CALLOUT_PMS_INIT();</code></td><td class='a'><pre>jli Ifx_Ssw_Pms_Init
+jli Ifx_Ssw_Pms_InitCheck</pre></td><td>jli = 间接调用（jump-and-link），返回地址在 A11；两个函数分别做 PMSM 初始化和自检。</td></tr><tr><td class='c'><code>IFX_CFG_SSW_CALLOUT_LBIST() / MONBIST()</code></td><td class='a'><pre>（未生成代码）</pre></td><td>本工程的配置把这些 callout 定义为空，所以汇编里没有对应调用。</td></tr><tr><td class='c'><code>Ifx_Ssw_jumpToFunction(__StartUpSoftware_Phase3PowerOnResetPath);</code></td><td class='a'><pre>movh.a/lea + ji</pre></td><td>上电路径固定进入 PowerOnReset 版本的 Phase3。</td></tr></tbody></table>
+  <div class='think cross'><div class='think-title'>举一反三 · 跨架构 / 跨层对照</div><ul><li>Cortex-M 的 SystemInit 往往只做时钟/FPU；安全自检与电源初始化由专门的 boot/SSW 完成。TriCore SSW 把 PMS/LBIST/MONBIST 分成独立阶段。</li></ul></div>
+  <div class='think fail'><div class='think-title'>如果写错会怎样</div><ul><li>跳过 PMS 初始化：电源/EVRC 配置错误，后续时钟与内核可能不稳定。</li><li>在应用复位路径重复做上电初始化：可能重复配置或与已运行的外设冲突。</li></ul></div>
+  <ul class="notes"><li>应用复位路径不会经过 Phase2，直接走 Phase3ApplicationResetPath。</li></ul>
+</section>
+
+<section id="p3">
+  <h2><span class="num">4</span>Phase3 — 构建 CSA 空闲链表（核心）</h2>
+  <div class="meta">
+    <span>入口地址 <b class="mono">0x80003E14 (POR) / 0x80003D90 (App)</b></span>
+    <span>大小 <b>132 B each</b></span>
+    <span>源码 <b class="mono">Ifx_Ssw_Tc0.c:167–180</b></span>
+  </div>
+  <p class="lead">IFX_SSW_INIT_CONTEXT() 被完全内联展开。它把 __CSA0..__CSA0_END 这 0x2000 字节（128 个 64B CSA）串成一条空闲链表，FCX 指向表头，LCX 指向接近表尾的位置。</p>
+  <div class='think'><div class='think-title'>先想一想 · 自己回答后再展开</div><details class='q'><summary><span class='qn'>Q1</span>CSA 空闲链表为什么必须由软件建立，硬件不能自己建？</summary><div class='qh'>提示：硬件在 CALL/中断时从 FCX 取 CSA，在 RET/RFE 时归还；上电时 FCX 里有什么？</div><div class='qa'>硬件只负责“取/还”，不负责“初始化池子”。首次上电时 FCX 没有有效链表，必须由软件把 CSA 区串成单链表一次；之后硬件才能正常 pop/push。</div></details><details class='q'><summary><span class='qn'>Q2</span>为什么每块 CSA 是 64 字节？</summary><div class='qh'>提示：Upper Context 和 Lower Context 各多少个字？每个字几字节？</div><div class='qa'>Upper 16 字 + Lower 16 字，每字 4 字节 = 64 字节；这是 TriCore 硬件固定的 CSA 格式。</div></details><details class='q'><summary><span class='qn'>Q3</span>为什么 LCX 指向倒数第 3 块，而不是最后一块？</summary><div class='qh'>提示：LCX 是“耗尽点”还是“预警点”？留余量有什么好处？</div><div class='qa'>LCX 是接近耗尽的警戒线；留几块余量，让硬件在真正耗尽前触发 FCD，软件还有机会处理。具体阈值由硬件/软件约定，本工程按 count-3 设置。</div></details><details class='q'><summary><span class='qn'>Q4</span>循环里为什么既要有 dsync 又要有 isync？</summary><div class='qh'>提示：dsync 管什么？isync 管什么？FCX/LCX 是内存还是 CSFR？</div><div class='qa'>dsync 保证 CSA 链表的普通内存写入对硬件可见；isync 保证 FCX/LCX 这些 CSFR 写入在后续取指前生效。两者管的层次不同。</div></details><details class='q'><summary><span class='qn'>Q5</span>如果 FCX 没初始化就调用 pxPortInitialiseStack，会发生什么？</summary><div class='qh'>提示：port.c 里领 CSA 的第一步是什么？拿到无效值会怎样？</div><div class='qa'>会从无效 FCX 取 CSA，可能触发 FCD/trap，或把任务上下文写到非法内存，导致任务创建失败/系统崩溃。</div></details><details class='q'><summary><span class='qn'>Q6</span>为什么在循环前就把 A10 设为 __USTACK0？</summary><div class='qh'>提示：此时中断可能还没开，但 trap 会不会发生？启动代码需不需要一个有效栈？</div><div class='qa'>给启动代码和潜在 trap 一个有效用户栈；即使中断关闭，trap（如访问错误）仍可能发生。</div></details></div>
+  
+  <div class="two-col">
+    <div class="pane">
+      <div class="pane-title">C 源码</div>
+      <pre class="code c-code"><span class="kw">static</span> <span class="kw">void</span> __StartUpSoftware_Phase3PowerOnResetPath(<span class="kw">void</span>)
+{
+    IFX_SSW_INIT_CONTEXT();
+
+    Ifx_Ssw_jumpToFunction(__StartUpSoftware_Phase4);
+}
+
+/* 应用复位路径只是末尾跳到 Phase5 */
+<span class="kw">static</span> <span class="kw">void</span> __StartUpSoftware_Phase3ApplicationResetPath(<span class="kw">void</span>)
+{
+    IFX_SSW_INIT_CONTEXT();
+
+    Ifx_Ssw_jumpToFunction(__StartUpSoftware_Phase5);
+}</pre>
+    </div>
+    <div class="pane">
+      <div class="pane-title">编译器汇编（-O0）</div>
+      <pre class="code asm-code"><span class="lbl">.L39:</span>
+<span class="lbl">__StartUpSoftware_Phase3PowerOnResetPath:	.type	func</span>
+<span class="ins">movh.a</span>	 a10,#@his(__USTACK0)
+<span class="ins">lea</span>	 a10,[a10]@los(__USTACK0)
+<span class="lbl">.L156:</span>
+<span class="ins">dsync</span>
+<span class="lbl">.L157:</span>
+<span class="ins">movh.a</span>	a15,#@his(__CSA0)
+<span class="lbl">.L265:</span>
+<span class="ins">lea</span>	a15,[a15]@los(__CSA0)
+<span class="ins">movh.a</span>	a2,#@his(__CSA0_END)
+<span class="ins">lea</span>	a2,[a2]@los(__CSA0_END)
+<span class="lbl">.L158:</span>
+<span class="ins">mov.a</span>	a4,#0
+<span class="lbl">.L267:</span>
+<span class="ins">mov.d</span>	d0,a2
+<span class="lbl">.L347:</span>
+<span class="ins">mov.d</span>	d15,a15
+<span class="lbl">.L348:</span>
+<span class="ins">sub</span>	d0,d15
+<span class="lbl">.L349:</span>
+<span class="ins">mov</span>	d15,#64
+<span class="lbl">.L350:</span>
+<span class="ins">div.u</span>	e4,d0,d15
+<span class="lbl">.L268:</span>
+<span class="ins">mov</span>	d0,#0
+<span class="lbl">.L269:</span>
+<span class="ins">j</span>	.L15
+<span class="lbl">.L16:</span>
+<span class="ins">mov.d</span>	d15,a15
+<span class="lbl">.L351:</span>
+<span class="ins">insert</span>	d15,d15,#0,#0,#28
+<span class="lbl">.L352:</span>
+<span class="ins">sh</span>	d1,d15,#-12
+<span class="lbl">.L353:</span>
+<span class="ins">mov.d</span>	d15,a15
+<span class="lbl">.L354:</span>
+<span class="ins">mov.u</span>	d2,#65535
+<span class="ins">sh</span>	d2,#6
+<span class="lbl">.L355:</span>
+<span class="ins">and</span>	d15,d2
+<span class="lbl">.L356:</span>
+<span class="ins">sh</span>	d15,#-6
+<span class="lbl">.L270:</span>
+<span class="ins">or</span>	d1,d15
+<span class="lbl">.L357:</span>
+<span class="ins">jne</span>	d0,#0,.L17
+<span class="lbl">.L358:</span>
+<span class="ins">mtcr</span>	#65080,d1
+<span class="ins">isync</span>
+<span class="ins">j</span>	.L18
+<span class="lbl">.L17:</span>
+<span class="ins">st.w</span>	[a4],d1
+<span class="lbl">.L18:</span>
+<span class="ins">add</span>	d15,d4,#-3
+<span class="lbl">.L359:</span>
+<span class="ins">jne</span>	d15,d0,.L19
+<span class="lbl">.L360:</span>
+<span class="ins">mtcr</span>	#65084,d1
+<span class="ins">isync</span>
+<span class="lbl">.L19:</span>
+<span class="ins">mov.aa</span>	a4,a15
+<span class="lbl">.L361:</span>
+<span class="ins">lea</span>	a15,[a15]64
+<span class="lbl">.L362:</span>
+<span class="ins">add</span>	d0,#1
+<span class="lbl">.L15:</span>
+<span class="ins">jlt.u</span>	d0,d4,.L16
+<span class="lbl">.L363:</span>
+<span class="ins">mov</span>	d15,#0
+<span class="lbl">.L364:</span>
+<span class="ins">st.w</span>	[a4],d15
+<span class="lbl">.L167:</span>
+<span class="ins">dsync</span>
+<span class="lbl">.L159:</span>
+<span class="ins">isync</span>
+<span class="lbl">.L168:</span>
+<span class="ins">movh.a</span>	a15,#@his(__StartUpSoftware_Phase4)
+<span class="lbl">.L266:</span>
+<span class="ins">lea</span>	a15,[a15]@los(__StartUpSoftware_Phase4)
+<span class="lbl">.L169:</span>
+<span class="ins">ji</span> a15
+<span class="lbl">.L170:</span>
+<span class="ins">ret</span>
+<span class="lbl">.L155:</span>
+<span class="lbl">____StartUpSoftware_Phase3PowerOnResetPath_function_end:</span></pre>
+    </div>
+  </div>
+  <h3>逐段对照</h3>
+  <table class='annot'><thead><tr><th style='width:26%'>C</th><th style='width:30%'>汇编</th><th>说明</th></tr></thead><tbody><tr><td class='c'><code>IFX_SSW_INIT_CONTEXT();</code></td><td class='a'><pre>movh.a a10,#@his(__USTACK0)
+lea a10,[a10]@los(__USTACK0)
+dsync</pre></td><td>先把 A10（用户栈指针）设到 __USTACK0；dsync 保证之前的写操作落地。</td></tr><tr><td class='c'>—</td><td class='a'><pre>movh.a a15,#@his(__CSA0)
+lea a15,[a15]@los(__CSA0)
+movh.a a2,#@his(__CSA0_END)
+lea a2,[a2]@los(__CSA0_END)</pre></td><td>A15 = CSA 区起始（0x70039C00），A2 = 结束（0x7003BC00）。</td></tr><tr><td class='c'>—</td><td class='a'><pre>mov.d d0,a2
+mov.d d15,a15
+sub d0,d15
+mov d15,#64
+div.u e4,d0,d15</pre></td><td>计算 CSA 数量：(END-START)/64 = 0x2000/64 = 128。TriCore 的 div.u 结果放在偶数 E 寄存器对（E4 = D4:D5），商在 D4；所以目标写成 e4，而不是任意 D 寄存器。</td></tr><tr><td class='c'><code>循环：把地址编码成 PCXI</code></td><td class='a'><pre>insert d15,d15,#0,#0,#28
+sh d1,d15,#-12
+... and d15,d2 (=0xFFFF&lt;&lt;6)
+sh d15,#-6
+or d1,d15</pre></td><td>一条 CSA 的 PCXI 值 = 段号 + 以 64 字节为单位的索引。这里是编译器对 PCXI 字段做的位拼接。</td></tr><tr><td class='c'><code>第一次循环</code></td><td class='a'><pre>jne d0,#0,.L17
+mtcr #65080,d1   ; FCX = 0xFE38
+isync</pre></td><td>第 0 个 CSA：写入 FCX（空闲链表头）。</td></tr><tr><td class='c'><code>后续循环</code></td><td class='a'><pre>st.w [a4],d1</pre></td><td>把“下一块”的 PCXI 写进上一块 CSA 的第 0 个字，形成单链表。</td></tr><tr><td class='c'><code>接近表尾</code></td><td class='a'><pre>add d15,d4,#-3
+jne d15,d0,.L19
+mtcr #65084,d1   ; LCX = 0xFE3C</pre></td><td>当处理到倒数第 3 块时写 LCX（CSA 耗尽警戒线）。</td></tr><tr><td class='c'><code>循环收尾</code></td><td class='a'><pre>st.w [a4],d15   ; d15=0
+dsync
+isync</pre></td><td>最后一块的 next 写 0，链表终止；dsync/isync 保证硬件看到完整链表。</td></tr></tbody></table>
+  <div class='think cross'><div class='think-title'>举一反三 · 跨架构 / 跨层对照</div><ul><li>Cortex-M 的 RTOS 只需管理任务栈；TriCore 除任务栈外还要维护 CSA 池。port.c 的 pxPortInitialiseStack 一次领 2 个 CSA，正是建立在这条链表上。</li><li>ARM 的 PSP/MSP 是栈指针切换；TriCore 是 CSA 链头（PCXI）切换 + 栈指针（A10）保存。</li></ul></div>
+  <div class='think fail'><div class='think-title'>如果写错会怎样</div><ul><li>链表断链/成环：CALL/中断取 CSA 失败或死循环。</li><li>LCX 未设或设错：耗尽时才发现，上下文可能已被破坏。</li><li>缺少 dsync：硬件可能看到不完整的链表。</li></ul></div>
+  <ul class="notes"><li>这段就是 FreeRTOS port 里 pxPortInitialiseStack 领 CSA 的前提：FCX 空闲链表必须先建好。</li><li>PowerOn 路径随后跳 Phase4；ApplicationReset 路径跳过 Phase4，直接跳 Phase5。两条路径的 CSA 初始化代码相同，只是末尾跳转目标不同。</li><li>CSA0 地址 0x70039C00，大小 0x2000 = 128 × 64B（与 map/ELF 一致）。</li></ul>
+</section>
+
+<section id="p4">
+  <h2><span class="num">5</span>Phase4 — 看门狗服务与 PLL 初始化（仅上电路径）</h2>
+  <div class="meta">
+    <span>入口地址 <b class="mono">0x80003E98</b></span>
+    <span>大小 <b>88 B</b></span>
+    <span>源码 <b class="mono">Ifx_Ssw_Tc0.c:183–207</b></span>
+  </div>
+  <p class="lead">读出 CPU/安全看门狗的密码，服务一次看门狗，然后初始化时钟树（PLL）。应用复位路径跳过本阶段。</p>
+  <div class='think'><div class='think-title'>先想一想 · 自己回答后再展开</div><details class='q'><summary><span class='qn'>Q1</span>读出的看门狗密码为什么要 xor #63？</summary><div class='qh'>提示：密码在 WDT 寄存器里是原码还是反码？写入时需要什么形式？</div><div class='qa'>WDT 寄存器中的密码以反码形式存储；取反低 6 位（xor #63）得到写入所需的密码。</div></details><details class='q'><summary><span class='qn'>Q2</span>为什么在 PLL 初始化之前要先服务看门狗？</summary><div class='qh'>提示：PLL 锁定/初始化需要时间吗？看门狗会等吗？</div><div class='qa'>PLL 初始化可能耗时；先喂狗，避免在时钟切换过程中被看门狗复位。</div></details><details class='q'><summary><span class='qn'>Q3</span>PLL 失败为什么执行 debug，而不是直接复位？</summary><div class='qh'>提示：开发阶段和量产阶段的故障策略有什么区别？</div><div class='qa'>开发阶段 fail-fast，进入调试器便于定位；量产应有复位、降级或安全状态策略。</div></details><details class='q'><summary><span class='qn'>Q4</span>应用复位路径为什么跳过 Phase4？</summary><div class='qh'>提示：应用复位时 PLL/时钟还可能保持原配置吗？</div><div class='qa'>应用复位通常不切断电源和 PLL；重复初始化可能不必要，甚至与已运行的外设冲突。</div></details></div>
+  
+  <div class="two-col">
+    <div class="pane">
+      <div class="pane-title">C 源码</div>
+      <pre class="code c-code"><span class="kw">static</span> <span class="kw">void</span> __StartUpSoftware_Phase4(<span class="kw">void</span>)
+{
+    /* This is <span class="kw">for</span> ADAS chip, where clock is provided by MMIC chip. */
+    IFX_CFG_SSW_CALLOUT_MMIC_CHECK();
+
+    {
+        /* Update safety and cpu watchdog reload value */
+        <span class="kw">unsigned</span> <span class="kw">short</span> cpuWdtPassword    = Ifx_Ssw_getCpuWatchdogPasswordInline(&amp;MODULE_SCU.WDTCPU[0]);
+        <span class="kw">unsigned</span> <span class="kw">short</span> safetyWdtPassword = Ifx_Ssw_getSafetyWatchdogPasswordInline();
+
+        /* servicing watchdog timers */
+        Ifx_Ssw_serviceCpuWatchdog(&amp;MODULE_SCU.WDTCPU[0], cpuWdtPassword);
+        Ifx_Ssw_serviceSafetyWatchdog(safetyWdtPassword);
+    }
+
+    /* Initialize the clock system */
+    IFX_CFG_SSW_CALLOUT_PLL_INIT();
+
+    /* MBIST Tests and evaluation */
+    IFX_CFG_SSW_CALLOUT_MBIST();
+
+    Ifx_Ssw_jumpToFunction(__StartUpSoftware_Phase5);
+}</pre>
+    </div>
+    <div class="pane">
+      <div class="pane-title">编译器汇编（-O0）</div>
+      <pre class="code asm-code"><span class="lbl">.L43:</span>
+<span class="lbl">__StartUpSoftware_Phase4:	.type	func</span>
+<span class="ins">movh.a</span>	a15,#61443
+<span class="ins">lea</span>	a15,[a15]@los(0xf003624c)
+<span class="lbl">.L178:</span>
+<span class="ins">ld.w</span>	d15,[a15]
+<span class="ins">extr.u</span>	d15,d15,#2,#14
+<span class="lbl">.L277:</span>
+<span class="ins">xor</span>	d4,d15,#63
+<span class="lbl">.L278:</span>
+<span class="ins">j</span>	.L25
+<span class="lbl">.L25:</span>
+<span class="ins">movh.a</span>	a15,#61443
+<span class="lbl">.L279:</span>
+<span class="ins">lea</span>	a15,[a15]@los(0xf00362a8)
+<span class="lbl">.L369:</span>
+<span class="ins">ld.w</span>	d15,[a15]
+<span class="ins">extr.u</span>	d15,d15,#2,#14
+<span class="lbl">.L281:</span>
+<span class="ins">xor</span>	d15,d15,#63
+<span class="lbl">.L370:</span>
+<span class="ins">j</span>	.L26
+<span class="lbl">.L26:</span>
+<span class="ins">movh.a</span>	a4,#61443
+<span class="ins">lea</span>	a4,[a4]@los(0xf003624c)
+<span class="lbl">.L183:</span>
+<span class="ins">call</span>	Ifx_Ssw_serviceCpuWatchdog
+<span class="lbl">.L184:</span>
+<span class="ins">mov</span>	d4,d15
+<span class="lbl">.L189:</span>
+<span class="ins">call</span>	Ifx_Ssw_serviceSafetyWatchdog
+<span class="lbl">.L173:</span>
+<span class="ins">movh.a</span>	a4,#@his(IfxScuCcu_defaultClockConfig)
+<span class="ins">lea</span>	a4,[a4]@los(IfxScuCcu_defaultClockConfig)
+<span class="ins">call</span>	IfxScuCcu_init
+<span class="ins">jne</span>	d2,#1,.L27
+<span class="ins">debug</span>
+<span class="lbl">.L27:</span>
+<span class="ins">movh.a</span>	a15,#@his(__StartUpSoftware_Phase5)
+<span class="lbl">.L280:</span>
+<span class="ins">lea</span>	a15,[a15]@los(__StartUpSoftware_Phase5)
+<span class="lbl">.L193:</span>
+<span class="ins">ji</span> a15
+<span class="lbl">.L194:</span>
+<span class="ins">ret</span>
+<span class="lbl">.L172:</span>
+<span class="lbl">____StartUpSoftware_Phase4_function_end:</span></pre>
+    </div>
+  </div>
+  <h3>逐段对照</h3>
+  <table class='annot'><thead><tr><th style='width:26%'>C</th><th style='width:30%'>汇编</th><th>说明</th></tr></thead><tbody><tr><td class='c'><code>Ifx_Ssw_getCpuWatchdogPasswordInline(&amp;MODULE_SCU.WDTCPU[0])</code></td><td class='a'><pre>ld.w d15,[0xF003624C]   ; SCU_WDTCPU0_CON0
+extr.u d15,d15,#2,#14
+xor d8,d15,#63</pre></td><td>密码在 WDTCPU0_CON0 的 bit15..2；取反低 6 位（xor #63）得到写入所需的密码。</td></tr><tr><td class='c'><code>Ifx_Ssw_getSafetyWatchdogPasswordInline()</code></td><td class='a'><pre>ld.w d15,[0xF00362A8]   ; SCU_WDTS_CON0
+extr.u d15,d15,#2,#14
+xor d9,d15,#63</pre></td><td>安全看门狗密码，存 D9。</td></tr><tr><td class='c'><code>Ifx_Ssw_serviceCpuWatchdog(...) / Ifx_Ssw_serviceSafetyWatchdog(...)</code></td><td class='a'><pre>call Ifx_Ssw_serviceCpuWatchdog
+call Ifx_Ssw_serviceSafetyWatchdog</pre></td><td>各服务一次，防止在后续耗时初始化中看门狗溢出。</td></tr><tr><td class='c'><code>IFX_CFG_SSW_CALLOUT_PLL_INIT();</code></td><td class='a'><pre>lea a4,[IfxScuCcu_defaultClockConfig]
+call IfxScuCcu_init
+jne d2,#1,.L27
+debug</pre></td><td>用默认时钟配置初始化 CCU/PLL；返回值不为 1 时执行 debug 指令（进入调试器）。</td></tr><tr><td class='c'><code>Ifx_Ssw_jumpToFunction(__StartUpSoftware_Phase5);</code></td><td class='a'><pre>ji a15</pre></td><td>跳到 Phase5。</td></tr></tbody></table>
+  <div class='think cross'><div class='think-title'>举一反三 · 跨架构 / 跨层对照</div><ul><li>Cortex-M 的 SystemInit 也配置 PLL；看门狗处理因芯片而异。TriCore 把看门狗服务与 PLL 初始化放在同一阶段，读代码时要把两者分开看。</li></ul></div>
+  <div class='think fail'><div class='think-title'>如果写错会怎样</div><ul><li>不喂狗：PLL 初始化期间看门狗复位。</li><li>密码错误：WDT 寄存器写入被忽略，后续无法正确配置/服务。</li></ul></div>
+  <ul class="notes"><li>SCU_WDTCPU0_CON0 = 0xF003624C；SCU_WDTS_CON0 = 0xF00362A8。</li><li>本配置没有 MMIC 检查、MBIST 的实体代码（callout 为空）。</li></ul>
+</section>
+
+<section id="p56">
+  <h2><span class="num">6</span>Phase5 / Phase6 — 启动从核，进入 __Core0_start</h2>
+  <div class="meta">
+    <span>入口地址 <b class="mono">0x80003EF0 / 0x80003EFC</b></span>
+    <span>大小 <b>12 B / 30 B</b></span>
+    <span>源码 <b class="mono">Ifx_Ssw_Tc0.c:210–247</b></span>
+  </div>
+  <p class="lead">Phase5 在本配置里只做一次跳转；Phase6 启动 CPU1（菊花链），然后把 CPU0 交给 __Core0_start。</p>
+  <div class='think'><div class='think-title'>先想一想 · 自己回答后再展开</div><details class='q'><summary><span class='qn'>Q1</span>为什么由 CPU0 启动 CPU1，而不是所有核各自同时启动？</summary><div class='qh'>提示：多核同时跑启动代码会竞争哪些共享资源？Infineon SSW 采用什么启动模型？</div><div class='qa'>菊花链启动：CPU0 启动 CPU1，CPU1 再启动 CPU2……每核有自己的 SSW 与入口 __STARTn。这样可以按顺序初始化、避免所有核同时争抢共享资源。</div></details><details class='q'><summary><span class='qn'>Q2</span>为什么 Phase5 的汇编只有 movh.a/lea/ji 三条有效指令？</summary><div class='qh'>提示：SMU callout 在本配置下展开成什么？编译器对尾调用做了什么优化？</div><div class='qa'>SMU callout 为空；Phase5 只是尾调用 Phase6，编译器把它优化成取地址 + ji。</div></details><details class='q'><summary><span class='qn'>Q3</span>__START1 是什么？和 _START 是什么关系？</summary><div class='qh'>提示：每个核的启动文件是同一份吗？Ifx_Ssw_Tc1.c 里的入口叫什么？</div><div class='qa'>__START1 是 CPU1 的复位入口（Ifx_Ssw_Tc1.c 中的 _START）；每个核都有自己的启动代码与入口，CPU0 的入口是 _START。</div></details><details class='q'><summary><span class='qn'>Q4</span>如果 CPU1 没启动，CPU0 的 IfxCpu_waitEvent 会怎样？</summary><div class='qh'>提示：看 core0_main：waitEvent 在等什么？有超时吗？</div><div class='qa'>可能一直等待（取决于同步逻辑/超时），启动卡住；所以 Phase6 必须先启动从核，CPU0 再进入 core0_main 的同步点。</div></details><details class='q'><summary><span class='qn'>Q5</span>startCore 为什么把入口地址右移 1 位？</summary><div class='qh'>提示：TriCore 的 PC 存的是字节地址还是半字地址？指令对齐是多少？</div><div class='qa'>TriCore PC 以半字（2 字节）为单位；指令至少 2 字节对齐，所以写入 PC 前要把字节地址 &gt;&gt;1。startCore 只做两件事：写目标核 PC 和清 SYSCON.BHALT。</div></details></div>
+  
+  <div class="two-col">
+    <div class="pane">
+      <div class="pane-title">C 源码</div>
+      <pre class="code c-code"><span class="kw">static</span> <span class="kw">void</span> __StartUpSoftware_Phase5(<span class="kw">void</span>)
+{
+    /* SMU alarm handling */
+    IFX_CFG_SSW_CALLOUT_SMU();
+
+    Ifx_Ssw_jumpToFunction(__StartUpSoftware_Phase6);
+}
+
+<span class="kw">static</span> <span class="kw">void</span> __StartUpSoftware_Phase6(<span class="kw">void</span>)
+{
+    /* Start remaining cores as a daisy-chain */
+#<span class="kw">if</span> (IFX_CFG_SSW_ENABLE_TRICORE1 != 0)
+    Ifx_Ssw_startCore(&amp;MODULE_CPU1, (<span class="kw">unsigned</span> <span class="kw">int</span>)__START(1));
+#endif
+    /* ... CPU2..CPU5 conditional ... */
+
+    Ifx_Ssw_jumpToFunction(__Core0_start);
+}</pre>
+    </div>
+    <div class="pane">
+      <div class="pane-title">编译器汇编（-O0）</div>
+      <pre class="code asm-code"><span class="lbl">.L45:</span>
+<span class="lbl">__StartUpSoftware_Phase5:	.type	func</span>
+<span class="ins">movh.a</span>	a15,#@his(__StartUpSoftware_Phase6)
+<span class="ins">lea</span>	a15,[a15]@los(__StartUpSoftware_Phase6)
+<span class="lbl">.L197:</span>
+<span class="ins">ji</span> a15
+<span class="lbl">.L198:</span>
+<span class="ins">ret</span>
+<span class="lbl">.L196:</span>
+<span class="lbl">____StartUpSoftware_Phase5_function_end:</span>
+<span class="lbl">.L47:</span>
+<span class="lbl">__StartUpSoftware_Phase6:	.type	func</span>
+<span class="ins">movh.a</span>	a4,#63618
+<span class="lbl">.L379:</span>
+<span class="ins">movh.a</span>	a15,#@his(__START1)
+<span class="ins">lea</span>	a15,[a15]@los(__START1)
+<span class="ins">mov.d</span>	d4,a15
+<span class="lbl">.L380:</span>
+<span class="ins">call</span>	Ifx_Ssw_startCore
+<span class="lbl">.L381:</span>
+<span class="ins">movh.a</span>	a15,#@his(__Core0_start)
+<span class="ins">lea</span>	a15,[a15]@los(__Core0_start)
+<span class="lbl">.L201:</span>
+<span class="ins">ji</span> a15
+<span class="lbl">.L202:</span>
+<span class="ins">ret</span>
+<span class="lbl">.L200:</span>
+<span class="lbl">____StartUpSoftware_Phase6_function_end:</span></pre>
+    </div>
+  </div>
+  <h3>逐段对照</h3>
+  <table class='annot'><thead><tr><th style='width:26%'>C</th><th style='width:30%'>汇编</th><th>说明</th></tr></thead><tbody><tr><td class='c'><code>IFX_CFG_SSW_CALLOUT_SMU();</code></td><td class='a'><pre>（未生成代码）</pre></td><td>SMU callout 为空。</td></tr><tr><td class='c'><code>Ifx_Ssw_startCore(&amp;MODULE_CPU1, (unsigned int)__START1);</code></td><td class='a'><pre>movh.a a4,#63618      ; 0xF882 = MODULE_CPU1
+movh.a/lea a15,__START1
+mov.d d4,a15
+call Ifx_Ssw_startCore</pre></td><td>A4 = CPU1 模块基址（0xF882），D4 = CPU1 的入口地址 __START1。startCore 内部只做两件事：把目标核 PC.B.PC 设为 programCounter &gt;&gt; 1（TriCore PC 以半字为单位），再清 SYSCON.BHALT 释放从核——没有魔法，就是写寄存器 + 解除 halt。</td></tr><tr><td class='c'><code>Ifx_Ssw_jumpToFunction(__Core0_start);</code></td><td class='a'><pre>movh.a/lea + ji</pre></td><td>CPU0 继续进入 __Core0_start。</td></tr></tbody></table>
+  <div class='think cross'><div class='think-title'>举一反三 · 跨架构 / 跨层对照</div><ul><li>Cortex-A 多核常用 spin-table/PSCI 由主核释放从核；TriCore SSW 用菊花链 + 每核 __STARTn。</li></ul></div>
+  <div class='think fail'><div class='think-title'>如果写错会怎样</div><ul><li>从核入口地址错误：从核跑飞，CPU0 等待超时/挂起。</li><li>未做同步：共享外设/内存初始化竞争。</li></ul></div>
+  <ul class="notes"><li>CPU2..CPU5 的启动代码是条件编译；本工程只启用了 CPU1，所以汇编里只看到 __START1。</li><li>Phase5 的完整汇编只有 movh.a/lea/ji 三条有效指令。</li></ul>
+</section>
+
+<section id="core0">
+  <h2><span class="num">7</span>__Core0_start — 最后的 C 运行环境准备</h2>
+  <div class="meta">
+    <span>入口地址 <b class="mono">0x80003B80</b></span>
+    <span>大小 <b>348 B</b></span>
+    <span>源码 <b class="mono">Ifx_Ssw_Tc0.c:250–337</b></span>
+  </div>
+  <p class="lead">清 ENDINIT、配置缓存、设置小数据指针、装 BTV/BIV/ISP、关看门狗、跑 hook 和 C++ 初始化，最后跳 core0_main。</p>
+  <div class='think'><div class='think-title'>先想一想 · 自己回答后再展开</div><details class='q'><summary><span class='qn'>Q1</span>为什么 BTV/BIV/ISP 要等到 __Core0_start 才设置，而不是在 Phase3？</summary><div class='qh'>提示：这些寄存器需要什么地址？这些地址什么时候由链接器确定？中断什么时候才允许打开？</div><div class='qa'>BTV/BIV/ISP 需要链接后的向量表/中断栈地址；必须在使能中断前设置，但不必早于 CSA 初始化。放在 __Core0_start 是“地址已定、中断未开”的安全窗口。</div></details><details class='q'><summary><span class='qn'>Q2</span>为什么写 WDT/PCON0 等寄存器前要先清 ENDINIT？</summary><div class='qh'>提示：ENDINIT 保护的是什么？不清会怎样？</div><div class='qa'>ENDINIT 是安全保护位，保护 WDT/时钟/缓存等关键寄存器；不清 ENDINIT，写入会被忽略。所以先用密码清 ENDINIT，改完再置回。</div></details><details class='q'><summary><span class='qn'>Q3</span>为什么 A0/A8/A9 要单独设置？A1 呢？</summary><div class='qh'>提示：看 Phase1：A1 在哪里设置？它们分别对应哪个小数据区？</div><div class='qa'>A0/A1/A8/A9 是小数据寻址的基址寄存器，编译器生成的短偏移访问依赖它们；A1 在 __StartUpSoftware 里已设为 _LITERAL_DATA_，A0/A8/A9 在这里设置。</div></details><details class='q'><summary><span class='qn'>Q4</span>为什么在跳 core0_main 前又使能看门狗？core0_main 里为什么又关掉？</summary><div class='qh'>提示：__Core0_start 的职责是什么？应用层为什么选择关闭？</div><div class='qa'>__Core0_start 把系统恢复到“安全默认”（看门狗使能）；core0_main 是应用选择，在开发阶段关闭看门狗以便调试。两层职责不同。</div></details><details class='q'><summary><span class='qn'>Q5</span>为什么跳 core0_main 用 ji 而不是 call？</summary><div class='qh'>提示：__Core0_start 之后还需要回来吗？core0_main 会返回吗？</div><div class='qa'>core0_main 是最终入口，不会返回；ji 是尾跳转，不消费 CSA。后面的 loopu 是兜底死循环。</div></details><details class='q'><summary><span class='qn'>Q6</span>如果 BTV/BIV/ISP 配错，第一次中断/trap 会怎样？</summary><div class='qh'>提示：BTV/BIV 是向量表基址；ISP 是中断栈。配错会跳到哪？</div><div class='qa'>trap/中断会跳到无效或错误向量，可能复位/跑飞；ISP 错会让中断使用错误栈，导致栈溢出或数据破坏。</div></details></div>
+  
+  <div class="two-col">
+    <div class="pane">
+      <div class="pane-title">C 源码</div>
+      <pre class="code c-code"><span class="kw">static</span> <span class="kw">void</span> __Core0_start(<span class="kw">void</span>)
+{
+    <span class="kw">unsigned</span> <span class="kw">short</span> cpuWdtPassword    = Ifx_Ssw_getCpuWatchdogPasswordInline(&amp;MODULE_SCU.WDTCPU[0]);
+    <span class="kw">unsigned</span> <span class="kw">short</span> safetyWdtPassword = Ifx_Ssw_getSafetyWatchdogPasswordInline();
+
+    Ifx_Ssw_clearCpuEndinitInline(&amp;MODULE_SCU.WDTCPU[0], cpuWdtPassword);
+
+    /* Enable/Disable the caches */
+    {
+        Ifx_CPU_PCON0 pcon0;
+        pcon0.U       = 0;
+        pcon0.B.PCBYP = IFX_CFG_SSW_ENABLE_TRICORE0_PCACHE ? 0 : 1;
+        Ifx_Ssw_MTCR(CPU_PCON0, pcon0.U);
+        Ifx_Ssw_ISYNC();
+    }
+    {
+        Ifx_CPU_DCON0 dcon0;
+        dcon0.U       = 0;
+        dcon0.B.DCBYP = IFX_CFG_SSW_ENABLE_TRICORE0_DCACHE ? 0 : 1;
+        Ifx_Ssw_MTCR(CPU_DCON0, dcon0.U);
+        Ifx_Ssw_ISYNC();
+    }
+
+    /* Small data pointers */
+    Ifx_Ssw_setAddressReg(a0, __SDATA1(0));
+    Ifx_Ssw_setAddressReg(a8, __SDATA3(0));
+    Ifx_Ssw_setAddressReg(a9, __SDATA4(0));
+
+    /* Trap / interrupt vector tables + interrupt stack */
+    Ifx_Ssw_MTCR(CPU_BTV, (<span class="kw">unsigned</span> <span class="kw">int</span>)__TRAPTAB(0));
+    Ifx_Ssw_MTCR(CPU_BIV, (<span class="kw">unsigned</span> <span class="kw">int</span>)__INTTAB(0));
+    Ifx_Ssw_MTCR(CPU_ISP, (<span class="kw">unsigned</span> <span class="kw">int</span>)__ISTACK(0));
+
+    IFX_CFG_SSW_CALLOUT_EMEM_INIT();
+
+    Ifx_Ssw_setCpuEndinitInline(&amp;MODULE_SCU.WDTCPU[0], cpuWdtPassword);
+
+    /* Watchdogs are disabled <span class="kw">for</span> C initialization */
+    Ifx_Ssw_disableCpuWatchdog(&amp;MODULE_SCU.WDTCPU[0], cpuWdtPassword);
+    Ifx_Ssw_disableSafetyWatchdog(safetyWdtPassword);
+
+    <span class="kw">if</span> (hardware_init_hook) { hardware_init_hook(); }
+    <span class="kw">if</span> (software_init_hook) { software_init_hook(); }
+
+    Ifx_Ssw_doCppInit();
+
+    Ifx_Ssw_enableSafetyWatchdog(safetyWdtPassword);
+    Ifx_Ssw_enableCpuWatchdog(&amp;MODULE_SCU.WDTCPU[0], cpuWdtPassword);
+
+    <span class="kw">extern</span> <span class="kw">void</span> core0_main(<span class="kw">void</span>);
+    Ifx_Ssw_jumpToFunction(core0_main);   /* never returns */
+    Ifx_Ssw_infiniteLoop();
+}</pre>
+    </div>
+    <div class="pane">
+      <div class="pane-title">编译器汇编（-O0）</div>
+      <pre class="code asm-code"><span class="lbl">.L49:</span>
+<span class="lbl">__Core0_start:	.type	func</span>
+<span class="ins">movh.a</span>	a15,#61443
+<span class="ins">lea</span>	a15,[a15]@los(0xf003624c)
+<span class="lbl">.L207:</span>
+<span class="ins">ld.w</span>	d15,[a15]
+<span class="ins">extr.u</span>	d15,d15,#2,#14
+<span class="lbl">.L282:</span>
+<span class="ins">xor</span>	d8,d15,#63
+<span class="lbl">.L283:</span>
+<span class="ins">j</span>	.L28
+<span class="lbl">.L28:</span>
+<span class="ins">movh.a</span>	a15,#61443
+<span class="lbl">.L284:</span>
+<span class="ins">lea</span>	a15,[a15]@los(0xf00362a8)
+<span class="lbl">.L386:</span>
+<span class="ins">ld.w</span>	d15,[a15]
+<span class="ins">extr.u</span>	d15,d15,#2,#14
+<span class="lbl">.L286:</span>
+<span class="ins">xor</span>	d9,d15,#63
+<span class="lbl">.L287:</span>
+<span class="ins">j</span>	.L29
+<span class="lbl">.L29:</span>
+<span class="ins">movh.a</span>	a15,#61443
+<span class="lbl">.L285:</span>
+<span class="ins">lea</span>	a15,[a15]@los(0xf003624c)
+<span class="lbl">.L223:</span>
+<span class="ins">ld.w</span>	d15,[a15]
+<span class="lbl">.L387:</span>
+<span class="ins">jz.t</span>	d15:1,.L30
+<span class="lbl">.L388:</span>
+<span class="ins">sh</span>	d15,d8,#2
+<span class="ins">or</span>	d15,#1
+<span class="lbl">.L389:</span>
+<span class="ins">ld.w</span>	d0,[a15]
+<span class="ins">extr.u</span>	d0,d0,#16,#16
+<span class="lbl">.L390:</span>
+<span class="ins">sh</span>	d0,d0,#16
+<span class="lbl">.L391:</span>
+<span class="ins">or</span>	d15,d0
+<span class="lbl">.L392:</span>
+<span class="ins">st.w</span>	[a15],d15
+<span class="lbl">.L30:</span>
+<span class="ins">sh</span>	d15,d8,#2
+<span class="ins">or</span>	d15,#2
+<span class="lbl">.L393:</span>
+<span class="ins">ld.w</span>	d0,[a15]
+<span class="ins">extr.u</span>	d0,d0,#16,#16
+<span class="lbl">.L394:</span>
+<span class="ins">sh</span>	d0,d0,#16
+<span class="lbl">.L395:</span>
+<span class="ins">or</span>	d15,d0
+<span class="lbl">.L396:</span>
+<span class="ins">st.w</span>	[a15],d15
+<span class="lbl">.L397:</span>
+<span class="ins">ld.w</span>	d15,[a15]
+<span class="lbl">.L224:</span>
+<span class="ins">mov</span>	d15,#0
+<span class="lbl">.L288:</span>
+<span class="ins">insert</span>	d15,d15,#0,#1,#1
+<span class="lbl">.L398:</span>
+<span class="ins">mtcr</span>	#37388,d15
+<span class="ins">isync</span>
+<span class="lbl">.L233:</span>
+<span class="ins">isync</span>
+<span class="lbl">.L230:</span>
+<span class="ins">mov</span>	d15,#0
+<span class="lbl">.L289:</span>
+<span class="ins">insert</span>	d15,d15,#0,#1,#1
+<span class="lbl">.L399:</span>
+<span class="ins">mtcr</span>	#36928,d15
+<span class="ins">isync</span>
+<span class="lbl">.L237:</span>
+<span class="ins">isync</span>
+<span class="lbl">.L234:</span>
+<span class="ins">movh.a</span>	 a0,#@his(_SMALL_DATA_)
+<span class="ins">lea</span>	 a0,[a0]@los(_SMALL_DATA_)
+<span class="lbl">.L400:</span>
+<span class="ins">movh.a</span>	 a8,#@his(_A8_DATA_)
+<span class="ins">lea</span>	 a8,[a8]@los(_A8_DATA_)
+<span class="lbl">.L401:</span>
+<span class="ins">movh.a</span>	 a9,#@his(_A9_DATA_)
+<span class="ins">lea</span>	 a9,[a9]@los(_A9_DATA_)
+<span class="lbl">.L402:</span>
+<span class="ins">movh.a</span>	a15,#@his(__TRAPTAB_CPU0)
+<span class="ins">lea</span>	a15,[a15]@los(__TRAPTAB_CPU0)
+<span class="ins">mov.d</span>	d15,a15
+<span class="lbl">.L290:</span>
+<span class="ins">mtcr</span>	#65060,d15
+<span class="ins">isync</span>
+<span class="lbl">.L403:</span>
+<span class="ins">movh.a</span>	a15,#@his(__INTTAB_CPU0)
+<span class="ins">lea</span>	a15,[a15]@los(__INTTAB_CPU0)
+<span class="ins">mov.d</span>	d15,a15
+<span class="ins">mtcr</span>	#65056,d15
+<span class="ins">isync</span>
+<span class="lbl">.L404:</span>
+<span class="ins">movh.a</span>	a15,#@his(__ISTACK0)
+<span class="ins">lea</span>	a15,[a15]@los(__ISTACK0)
+<span class="ins">mov.d</span>	d15,a15
+<span class="ins">mtcr</span>	#65064,d15
+<span class="ins">isync</span>
+<span class="lbl">.L405:</span>
+<span class="ins">movh.a</span>	a15,#61443
+<span class="ins">lea</span>	a15,[a15]@los(0xf003624c)
+<span class="lbl">.L239:</span>
+<span class="ins">ld.w</span>	d15,[a15]
+<span class="lbl">.L406:</span>
+<span class="ins">jz.t</span>	d15:1,.L31
+<span class="lbl">.L407:</span>
+<span class="ins">sh</span>	d15,d8,#2
+<span class="ins">or</span>	d15,#1
+<span class="lbl">.L408:</span>
+<span class="ins">ld.w</span>	d0,[a15]
+<span class="ins">extr.u</span>	d0,d0,#16,#16
+<span class="lbl">.L409:</span>
+<span class="ins">sh</span>	d0,d0,#16
+<span class="lbl">.L410:</span>
+<span class="ins">or</span>	d15,d0
+<span class="lbl">.L411:</span>
+<span class="ins">st.w</span>	[a15],d15
+<span class="lbl">.L31:</span>
+<span class="ins">sh</span>	d15,d8,#2
+<span class="ins">or</span>	d15,#3
+<span class="lbl">.L412:</span>
+<span class="ins">ld.w</span>	d0,[a15]
+<span class="ins">extr.u</span>	d0,d0,#16,#16
+<span class="lbl">.L413:</span>
+<span class="ins">sh</span>	d0,d0,#16
+<span class="lbl">.L414:</span>
+<span class="ins">or</span>	d15,d0
+<span class="lbl">.L415:</span>
+<span class="ins">st.w</span>	[a15],d15
+<span class="lbl">.L416:</span>
+<span class="ins">ld.w</span>	d15,[a15]
+<span class="lbl">.L240:</span>
+<span class="ins">movh.a</span>	a4,#61443
+<span class="ins">lea</span>	a4,[a4]@los(0xf003624c)
+<span class="lbl">.L210:</span>
+<span class="ins">mov</span>	d4,d8
+<span class="lbl">.L211:</span>
+<span class="ins">call</span>	Ifx_Ssw_disableCpuWatchdog
+<span class="lbl">.L216:</span>
+<span class="ins">mov</span>	d4,d9
+<span class="lbl">.L217:</span>
+<span class="ins">call</span>	Ifx_Ssw_disableSafetyWatchdog
+<span class="lbl">.L291:</span>
+<span class="ins">movh.a</span>	a15,#@his(hardware_init_hook)
+<span class="ins">lea</span>	a15,[a15]@los(hardware_init_hook)
+<span class="lbl">.L417:</span>
+<span class="ins">jz.a</span>	a15,.L32
+<span class="lbl">.L418:</span>
+<span class="ins">call</span>	hardware_init_hook
+<span class="lbl">.L32:</span>
+<span class="ins">movh.a</span>	a15,#@his(software_init_hook)
+<span class="ins">lea</span>	a15,[a15]@los(software_init_hook)
+<span class="lbl">.L419:</span>
+<span class="ins">jz.a</span>	a15,.L33
+<span class="lbl">.L420:</span>
+<span class="ins">call</span>	software_init_hook
+<span class="lbl">.L33:</span>
+<span class="ins">call</span>	Ifx_Ssw_doCppInit
+<span class="lbl">.L218:</span>
+<span class="ins">mov</span>	d4,d9
+<span class="lbl">.L219:</span>
+<span class="ins">call</span>	Ifx_Ssw_enableSafetyWatchdog
+<span class="lbl">.L292:</span>
+<span class="ins">movh.a</span>	a4,#61443
+<span class="ins">lea</span>	a4,[a4]@los(0xf003624c)
+<span class="lbl">.L212:</span>
+<span class="ins">mov</span>	d4,d8
+<span class="lbl">.L213:</span>
+<span class="ins">call</span>	Ifx_Ssw_enableCpuWatchdog
+<span class="lbl">.L246:</span>
+<span class="ins">movh.a</span>	a15,#@his(core0_main)
+<span class="ins">lea</span>	a15,[a15]@los(core0_main)
+<span class="lbl">.L247:</span>
+<span class="ins">ji</span> a15
+<span class="lbl">.L248:</span>
+<span class="lbl">x: loopu	 x</span>
+<span class="lbl">.L251:</span>
+<span class="ins">ret</span>
+<span class="lbl">.L204:</span>
+<span class="lbl">____Core0_start_function_end:</span></pre>
+    </div>
+  </div>
+  <h3>逐段对照</h3>
+  <table class='annot'><thead><tr><th style='width:26%'>C</th><th style='width:30%'>汇编</th><th>说明</th></tr></thead><tbody><tr><td class='c'><code>Ifx_Ssw_clearCpuEndinitInline(...)</code></td><td class='a'><pre>ld.w d15,[0xF003624C]
+... sh/or/st.w（密码 + bit0）</pre></td><td>用密码写 WDTCPU0_CON0，清 ENDINIT，才能修改受保护寄存器。</td></tr><tr><td class='c'><code>PCON0 / DCON0 缓存配置</code></td><td class='a'><pre>mtcr #37388,d15   ; PCON0 = 0x920C
+mtcr #36928,d15   ; DCON0 = 0x9040</pre></td><td>本工程 PCACHE/DCACHE 均启用，PCBYP/DCBYP = 0。</td></tr><tr><td class='c'><code>Ifx_Ssw_setAddressReg(a0/a8/a9, ...)</code></td><td class='a'><pre>movh.a/lea a0,_SMALL_DATA_
+movh.a/lea a8,_A8_DATA_
+movh.a/lea a9,_A9_DATA_</pre></td><td>A0/A1/A8/A9 是四个小数据基址：A0→__SDATA1、A1→__SDATA2（Phase1 已设）、A8→__SDATA3、A9→__SDATA4。编译器用它们生成短偏移访问；PSW.GW=1 才能写这些全局地址寄存器，所以 Phase1 先把 GW 置 1。</td></tr><tr><td class='c'><code>Ifx_Ssw_MTCR(CPU_BTV, __TRAPTAB(0))</code></td><td class='a'><pre>movh.a/lea a15,__TRAPTAB_CPU0
+mov.d d15,a15
+mtcr #65060,d15   ; BTV = 0xFE24</pre></td><td>Trap 向量表基址。</td></tr><tr><td class='c'><code>Ifx_Ssw_MTCR(CPU_BIV, __INTTAB(0))</code></td><td class='a'><pre>mtcr #65056,d15   ; BIV = 0xFE20</pre></td><td>中断向量表基址。</td></tr><tr><td class='c'><code>Ifx_Ssw_MTCR(CPU_ISP, __ISTACK(0))</code></td><td class='a'><pre>mtcr #65064,d15   ; ISP = 0xFE28</pre></td><td>中断栈指针。</td></tr><tr><td class='c'><code>IFX_CFG_SSW_CALLOUT_EMEM_INIT();</code></td><td class='a'><pre>（未生成代码）</pre></td><td>EMEM 初始化在本配置为空。</td></tr><tr><td class='c'><code>Ifx_Ssw_setCpuEndinitInline(...)</code></td><td class='a'><pre>st.w 序列（密码 + bit1）</pre></td><td>重新置 ENDINIT。</td></tr><tr><td class='c'><code>Ifx_Ssw_disableCpuWatchdog / disableSafetyWatchdog</code></td><td class='a'><pre>call Ifx_Ssw_disableCpuWatchdog
+call Ifx_Ssw_disableSafetyWatchdog</pre></td><td>C 初始化期间关闭看门狗。</td></tr><tr><td class='c'><code>hardware_init_hook / software_init_hook</code></td><td class='a'><pre>jz.a a15,.L32
+call hardware_init_hook
+... call software_init_hook</pre></td><td>弱符号 hook：为空则跳过。</td></tr><tr><td class='c'><code>Ifx_Ssw_doCppInit();</code></td><td class='a'><pre>call Ifx_Ssw_doCppInit</pre></td><td>C++ 静态构造/析构表初始化。</td></tr><tr><td class='c'><code>Ifx_Ssw_enableSafetyWatchdog / enableCpuWatchdog</code></td><td class='a'><pre>call Ifx_Ssw_enableSafetyWatchdog
+call Ifx_Ssw_enableCpuWatchdog</pre></td><td>重新使能看门狗。</td></tr><tr><td class='c'><code>Ifx_Ssw_jumpToFunction(core0_main);</code></td><td class='a'><pre>movh.a/lea a15,core0_main
+ji a15
+loopu x</pre></td><td>跳进 C 的 core0_main；若返回则死循环。</td></tr></tbody></table>
+  <div class='think cross'><div class='think-title'>举一反三 · 跨架构 / 跨层对照</div><ul><li>Cortex-M 用 VTOR 指定一张向量表，异常入口自动切换 MSP/PSP；TriCore 有 BTV/BIV 两张表 + ISP，切栈由 PSW.IS/A10 配合。</li><li>ARM 的启动文件通常设置向量表偏移；TriCore 用 mtcr 直接写 BTV/BIV。</li></ul></div>
+  <div class='think fail'><div class='think-title'>如果写错会怎样</div><ul><li>未清 ENDINIT：关键寄存器写入无效。</li><li>ISP 未设/设错：中断使用 USTACK，栈溢出或数据破坏。</li><li>BTV/BIV 未设：trap/中断跳转到默认/无效向量。</li></ul></div>
+  <ul class="notes"><li>BTV=0xFE24、BIV=0xFE20、ISP=0xFE28、PCON0=0x920C、DCON0=0x9040。</li><li>到这里为止没有使用 C 栈；core0_main 的栈是 __USTACK0（A10 在 Phase3 设置）。</li></ul>
+</section>
+
+<section id="main">
+  <h2><span class="num">8</span>core0_main — 进入 C 世界</h2>
+  <div class="meta">
+    <span>入口地址 <b class="mono">0x80003F1C</b></span>
+    <span>大小 <b>120 B</b></span>
+    <span>源码 <b class="mono">Cpu0_Main.c:37–63</b></span>
+  </div>
+  <p class="lead">使能中断、关看门狗、与其它核同步，然后创建两个 LED 任务并启动 FreeRTOS 调度器。</p>
+  <div class='think'><div class='think-title'>先想一想 · 自己回答后再展开</div><details class='q'><summary><span class='qn'>Q1</span>__Core0_start 已经使能看门狗，core0_main 为什么又关一次？</summary><div class='qh'>提示：两层代码的职责分别是什么？开发阶段和量产阶段的策略一样吗？</div><div class='qa'>__Core0_start 恢复安全默认；core0_main 是应用选择，开发阶段关闭看门狗便于调试。量产应保留并定期服务。</div></details><details class='q'><summary><span class='qn'>Q2</span>为什么 xTaskCreate 必须在 vTaskStartScheduler 之前？</summary><div class='qh'>提示：FreeRTOS 的 API 对“调度器是否运行”有什么约束？</div><div class='qa'>xTaskCreate 要求在调度器未运行时调用；调度器启动后，创建任务应在任务上下文或使用相应 API。先创建再启动是标准流程。</div></details><details class='q'><summary><span class='qn'>Q3</span>xTaskCreate 的 6 个参数分别落在哪些寄存器？为什么？</summary><div class='qh'>提示：看汇编：a4/a5/d4/a6/d5/a7。TriCore ABI 如何分配地址参数与数据参数？</div><div class='qa'>TriCore ABI：A4–A7 传地址类参数，D4–D7 传数据类参数。依次是任务函数(a4)、任务名(a5)、栈深(d4)、参数(a6)、优先级(d5)、句柄(a7)。</div></details><details class='q'><summary><span class='qn'>Q4</span>为什么 vTaskStartScheduler 不返回？</summary><div class='qh'>提示：调度器启动后，CPU 的上下文切到谁？main 的调用栈还在吗？</div><div class='qa'>它恢复第一个任务的上下文（CSA/PCXI），CPU 从此在任务里运行；main 的上下文被放弃，所以不会返回。</div></details><details class='q'><summary><span class='qn'>Q5</span>如果先启动调度器再创建任务，会怎样？</summary><div class='qh'>提示：FreeRTOS 的断言/文档对这种情况怎么说？</div><div class='qa'>违反 API 使用约束，行为未定义或触发断言；正确做法是在启动前创建，或在任务中动态创建。</div></details><details class='q'><summary><span class='qn'>Q6</span>configMINIMAL_STACK_SIZE = 256 words 够不够？</summary><div class='qh'>提示：1 word = 4 字节，256 words = 1 KB；怎么验证？</div><div class='qa'>对简单 LED 任务通常够；用 uxTaskGetStackHighWaterMark 实测水位，S4 内存阶段会做。</div></details><details class='q'><summary><span class='qn'>Q7</span>enable 这条指令改的是哪个寄存器？</summary><div class='qh'>提示：PSW 里并没有叫 IE 的位；全局中断使能在哪个 CSFR？</div><div class='qa'>enable 置 ICR.IE=1（ICR=0xFE2C，bit15），不是 PSW 的位。中断入口硬件清 ICR.IE，并把旧值存入 PCXI.PIE；RFE 时恢复。disable 反之。</div></details></div>
+  
+  <div class="two-col">
+    <div class="pane">
+      <div class="pane-title">C 源码</div>
+      <pre class="code c-code"><span class="kw">void</span> core0_main(<span class="kw">void</span>)
+{
+    IfxCpu_enableInterrupts();
+
+    IfxScuWdt_disableCpuWatchdog(IfxScuWdt_getCpuWatchdogPassword());
+    IfxScuWdt_disableSafetyWatchdog(IfxScuWdt_getSafetyWatchdogPassword());
+
+    /* Wait <span class="kw">for</span> CPU sync event */
+    IfxCpu_emitEvent(&amp;g_cpuSyncEvent);
+    IfxCpu_waitEvent(&amp;g_cpuSyncEvent, 1);
+
+    xTaskCreate(task_app_led1, "APP LED1", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+    xTaskCreate(task_app_led2, "APP LED2", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+
+    vTaskStartScheduler();
+
+    <span class="kw">while</span> (1) { }
+}</pre>
+    </div>
+    <div class="pane">
+      <div class="pane-title">编译器汇编（-O0）</div>
+      <pre class="code asm-code"><span class="lbl">.L14:</span>
+<span class="lbl">core0_main:	.type	func</span>
+<span class="ins">enable</span>
+<span class="lbl">.L65:</span>
+<span class="ins">call</span>	IfxScuWdt_getCpuWatchdogPassword
+<span class="ins">mov</span>	d4,d2
+<span class="ins">call</span>	IfxScuWdt_disableCpuWatchdog
+<span class="lbl">.L110:</span>
+<span class="ins">call</span>	IfxScuWdt_getSafetyWatchdogPassword
+<span class="ins">mov</span>	d4,d2
+<span class="ins">call</span>	IfxScuWdt_disableSafetyWatchdog
+<span class="lbl">.L111:</span>
+<span class="ins">movh.a</span>	a4,#@his(g_cpuSyncEvent)
+<span class="ins">lea</span>	a4,[a4]@los(g_cpuSyncEvent)
+<span class="ins">call</span>	IfxCpu_emitEvent
+<span class="lbl">.L112:</span>
+<span class="ins">movh.a</span>	a4,#@his(g_cpuSyncEvent)
+<span class="ins">lea</span>	a4,[a4]@los(g_cpuSyncEvent)
+<span class="lbl">.L113:</span>
+<span class="ins">mov</span>	d4,#1
+<span class="ins">call</span>	IfxCpu_waitEvent
+<span class="lbl">.L114:</span>
+<span class="ins">movh.a</span>	a4,#@his(task_app_led1)
+<span class="ins">lea</span>	a4,[a4]@los(task_app_led1)
+<span class="lbl">.L115:</span>
+<span class="ins">movh.a</span>	a5,#@his(.2.str)
+<span class="ins">lea</span>	a5,[a5]@los(.2.str)
+<span class="lbl">.L116:</span>
+<span class="ins">mov</span>	d4,#256
+<span class="lbl">.L117:</span>
+<span class="ins">mov.a</span>	a6,#0
+<span class="lbl">.L118:</span>
+<span class="ins">mov</span>	d5,#1
+<span class="lbl">.L119:</span>
+<span class="ins">mov.a</span>	a7,#0
+<span class="ins">call</span>	xTaskCreate
+<span class="lbl">.L120:</span>
+<span class="ins">movh.a</span>	a4,#@his(task_app_led2)
+<span class="ins">lea</span>	a4,[a4]@los(task_app_led2)
+<span class="lbl">.L121:</span>
+<span class="ins">movh.a</span>	a5,#@his(.3.str)
+<span class="ins">lea</span>	a5,[a5]@los(.3.str)
+<span class="lbl">.L122:</span>
+<span class="ins">mov</span>	d4,#256
+<span class="lbl">.L123:</span>
+<span class="ins">mov.a</span>	a6,#0
+<span class="lbl">.L124:</span>
+<span class="ins">mov</span>	d5,#1
+<span class="lbl">.L125:</span>
+<span class="ins">mov.a</span>	a7,#0
+<span class="ins">call</span>	xTaskCreate
+<span class="lbl">.L126:</span>
+<span class="ins">call</span>	vTaskStartScheduler
+<span class="lbl">.L127:</span>
+<span class="ins">j</span>	.L3
+<span class="lbl">.L4:</span>
+<span class="lbl">.L3:</span>
+<span class="ins">j</span>	.L4
+<span class="lbl">.L128:</span>
+<span class="ins">ret</span>
+<span class="lbl">.L63:</span>
+<span class="lbl">__core0_main_function_end:</span></pre>
+    </div>
+  </div>
+  <h3>逐段对照</h3>
+  <table class='annot'><thead><tr><th style='width:26%'>C</th><th style='width:30%'>汇编</th><th>说明</th></tr></thead><tbody><tr><td class='c'><code>IfxCpu_enableInterrupts();</code></td><td class='a'><pre>enable</pre></td><td>enable 指令置 ICR.IE=1（ICR=0xFE2C，bit15），打开全局中断——不是 PSW 的位。中断入口硬件清 ICR.IE 并把旧值存入 PCXI.PIE；RFE 时再从 PIE 恢复。</td></tr><tr><td class='c'><code>IfxScuWdt_disableCpuWatchdog(...) / Safety</code></td><td class='a'><pre>call ...getCpuWatchdogPassword
+call ...disableCpuWatchdog
+call ...getSafetyWatchdogPassword
+call ...disableSafetyWatchdog</pre></td><td>iLLD 版本的看门狗关闭；参数通过 D4 传递。</td></tr><tr><td class='c'><code>IfxCpu_emitEvent(&amp;g_cpuSyncEvent);</code></td><td class='a'><pre>lea a4,[g_cpuSyncEvent]
+call IfxCpu_emitEvent</pre></td><td>多核同步：发出事件。</td></tr><tr><td class='c'><code>IfxCpu_waitEvent(&amp;g_cpuSyncEvent, 1);</code></td><td class='a'><pre>lea a4,[g_cpuSyncEvent]
+mov d4,#1
+call IfxCpu_waitEvent</pre></td><td>等待其它核到达同步点。</td></tr><tr><td class='c'><code>xTaskCreate(task_app_led1, "APP LED1", configMINIMAL_STACK_SIZE, NULL, 1, NULL);</code></td><td class='a'><pre>a4=task_app_led1
+a5=".2.str"
+d4=256
+a6=0
+d5=1
+a7=0
+call xTaskCreate</pre></td><td>TriCore ABI：A4–A7 传地址类参数，D4–D7 传数据类参数。依次是任务函数、任务名、栈深 256 words（StackType_t=4B，即 1 KB）、参数 NULL、优先级 1、句柄 NULL。两个任务同优先级，靠时间片 + vTaskDelay 阻塞交替。</td></tr><tr><td class='c'><code>xTaskCreate(task_app_led2, "APP LED2", ...);</code></td><td class='a'><pre>同上，a4=task_app_led2，a5=".3.str"</pre></td><td>第二个任务，参数结构完全相同。</td></tr><tr><td class='c'><code>vTaskStartScheduler();</code></td><td class='a'><pre>call vTaskStartScheduler</pre></td><td>启动调度器；正常情况下永不返回。</td></tr><tr><td class='c'><code>while (1) { }</code></td><td class='a'><pre>j .L3 / j .L4</pre></td><td>调度器返回后的兜底死循环。</td></tr></tbody></table>
+  <div class='think cross'><div class='think-title'>举一反三 · 跨架构 / 跨层对照</div><ul><li>Cortex-M 的 main 也通常是“创建任务 → 启动调度器”；参数寄存器是 R0–R3，TriCore 是 A4–A7/D4–D7。</li><li>FreeRTOS port 的 pxPortInitialiseStack 为每个任务伪造 CSA；xTaskCreate 内部会调用它，这就是 EM/SP 与应用的连接点。</li></ul></div>
+  <div class='think fail'><div class='think-title'>如果写错会怎样</div><ul><li>栈太小：栈溢出，触发 vApplicationStackOverflowHook。</li><li>优先级/参数写错：任务不运行或行为异常。</li><li>调度器启动后继续使用 main 的栈/上下文：不允许，行为未定义。</li></ul></div>
+  <ul class="notes"><li>xTaskCreate 的 6 个参数正好对应 A4/A5/D4/A6/D5/A7；这是读 TriCore 调用约定最直观的例子。</li><li>configMINIMAL_STACK_SIZE = 256 words（1 KB）。</li><li>vTaskStartScheduler 之后不再回到 core0_main；控制权交给 FreeRTOS 调度器。</li></ul>
+</section>
+
+
+<section id="cheat">
+  <h2><span class="num">9</span>速查表</h2>
+  <div class="cheat">
+    <div>
+      <h3>指令</h3>
+      <table>
+        <tr><th>指令</th><th>作用</th></tr>
+        <tr><td class="mono">movh.a / lea</td><td>装入 32 位地址的高/低半部分</td></tr>
+        <tr><td class="mono">ji / jli</td><td>间接跳转 / 间接调用（返回地址 A11）</td></tr>
+        <tr><td class="mono">call</td><td>直接调用（PC 相对）</td></tr>
+        <tr><td class="mono">mtcr / mfcr</td><td>写 / 读核特殊功能寄存器（CSFR）</td></tr>
+        <tr><td class="mono">isync / dsync</td><td>指令同步 / 数据同步（保证 CSFR、内存写入生效）</td></tr>
+        <tr><td class="mono">ld.w / st.w</td><td>32 位加载 / 存储</td></tr>
+        <tr><td class="mono">insert / extr.u</td><td>位域插入 / 无符号位域提取</td></tr>
+        <tr><td class="mono">clz / rsub</td><td>前导零计数 / 反向减法</td></tr>
+        <tr><td class="mono">sh</td><td>移位（正数左移，负数右移）</td></tr>
+        <tr><td class="mono">jz.t / jne / jeq / jlt.u</td><td>条件分支</td></tr>
+        <tr><td class="mono">enable / disable</td><td>置 / 清 ICR.IE（ICR=0xFE2C bit15），开 / 关全局中断</td></tr>
+        <tr><td class="mono">debug</td><td>调试断点指令</td></tr>
+        <tr><td class="mono">loopu x</td><td>死循环（编译器用于不可达路径）</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>寄存器 / CSFR</h3>
+      <table>
+        <tr><th>名称</th><th>CSFR 地址</th><th>汇编常量</th><th>作用</th></tr>
+        <tr><td class="mono">PSW</td><td>0xFE04</td><td class="mono">65028</td><td>程序状态字；复位值 0x980</td></tr>
+        <tr><td class="mono">ICR</td><td>0xFE2C</td><td class="mono">65068</td><td>中断控制：IE / CCPN / PIPN</td></tr>
+        <tr><td class="mono">PCXI</td><td>0xFE00</td><td class="mono">65024</td><td>当前 CSA 链指针</td></tr>
+        <tr><td class="mono">FCX</td><td>0xFE38</td><td class="mono">65080</td><td>空闲 CSA 链表头</td></tr>
+        <tr><td class="mono">LCX</td><td>0xFE3C</td><td class="mono">65084</td><td>CSA 耗尽警戒线</td></tr>
+        <tr><td class="mono">BTV</td><td>0xFE24</td><td class="mono">65060</td><td>Trap 向量表基址</td></tr>
+        <tr><td class="mono">BIV</td><td>0xFE20</td><td class="mono">65056</td><td>中断向量表基址</td></tr>
+        <tr><td class="mono">ISP</td><td>0xFE28</td><td class="mono">65064</td><td>中断栈指针</td></tr>
+        <tr><td class="mono">PCON0</td><td>0x920C</td><td class="mono">37388</td><td>程序缓存控制</td></tr>
+        <tr><td class="mono">DCON0</td><td>0x9040</td><td class="mono">36928</td><td>数据缓存控制</td></tr>
+        <tr><td class="mono">SCU_RSTSTAT</td><td>0xF0036050</td><td>—</td><td>复位状态（内存映射）</td></tr>
+        <tr><td class="mono">SCU_RSTCON</td><td>0xF0036058</td><td>—</td><td>复位源配置（内存映射）</td></tr>
+        <tr><td class="mono">SCU_WDTCPU0_CON0</td><td>0xF003624C</td><td>—</td><td>CPU0 看门狗控制/密码（内存映射）</td></tr>
+        <tr><td class="mono">SCU_WDTS_CON0</td><td>0xF00362A8</td><td>—</td><td>安全看门狗控制/密码（内存映射）</td></tr>
+        <tr><td class="mono">CPU0_KRST0</td><td>0xF880D000</td><td>—</td><td>CPU0 内核复位状态（内存映射）</td></tr>
+      </table>
+      <p class="bg-note" style="padding:0 10px 10px"><code>mtcr #&lt;CSFR&gt;, dN</code> 写；<code>mfcr dN, #&lt;CSFR&gt;</code> 读。CSFR 地址在 <code>.src</code> 中以十进制打印；SCU 寄存器是内存映射，用 <code>ld.w/st.w</code> 访问，不走 mtcr。</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+汇编来源：TASKING 编译器在构建过程中生成的 <span class="mono">.src</span>（-O0），非链接后 ELF 的反汇编。
+地址来源：<span class="mono">readelf -sW FreeRTOS.elf</span> 与 <span class="mono">FreeRTOS.map</span>。
+部分 <span class="mono">IFX_CFG_SSW_CALLOUT_*</span> 在工程配置中为空，因此汇编里没有对应代码。
+</footer>
+</main>
+</div>
+</body>
+</html>
