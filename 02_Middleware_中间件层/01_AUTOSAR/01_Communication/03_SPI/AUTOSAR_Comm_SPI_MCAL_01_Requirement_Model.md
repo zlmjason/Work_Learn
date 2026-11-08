@@ -165,7 +165,7 @@ flowchart TD
 
 - 同系列后续篇：概念→硬件映射、Level 0 运行时、Level 1/2 运行时、EB 配置、调试
 - [AUTOSAR 多核数据一致性与多核间通信](../../07_System/AUTOSAR_Sys_Multicore_Data_Consistency_and_Communication.md)——SPI 的多核访问与 `Spi_lCheckCoreVar` 相关
-- QSPI 硬件侧：[AURIX_TC3xx_QSPI_Study_Atlas.html](../../../../AURIX_TC3xx_QSPI_Study_Atlas.html)
+- QSPI 硬件侧：[HW_Periph_Comm_QSPI_Study_Atlas.html](../../../../01_Hardware_硬件层/05_Peripherals/01_Communication/01_SPI/HW_Periph_Comm_QSPI_Study_Atlas.html)
 
 ## 待补充问题
 

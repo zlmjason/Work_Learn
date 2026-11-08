@@ -220,7 +220,7 @@ stateDiagram-v2
 
 - 上一篇：[概念到硬件映射](AUTOSAR_Comm_SPI_MCAL_02_Concept_To_Hardware_Mapping.md)
 - 下一篇：Level 1/2 运行时（队列、DMA、PT2）
-- QSPI FIFO 与背压：[AURIX_TC3xx_QSPI_Study_Atlas.html](../../../../AURIX_TC3xx_QSPI_Study_Atlas.html) 第 06/07 章
+- QSPI FIFO 与背压：[HW_Periph_Comm_QSPI_Study_Atlas.html](../../../../01_Hardware_硬件层/05_Peripherals/01_Communication/01_SPI/HW_Periph_Comm_QSPI_Study_Atlas.html) 第 06/07 章
 
 ## 待补充问题
 

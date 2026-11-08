@@ -39,15 +39,16 @@
     <button data-view="queue"><span class="n">05</span><span>队列与 entry：类型由地址决定</span></button>
     <button data-view="dual"><span class="n">06</span><span>双时钟域：FIFO 只吸收抖动</span></button>
     <button data-view="flow"><span class="n">07</span><span>背压与供数：三种中断模式</span></button>
-    <button data-view="chipsel"><span class="n">08</span><span>片选子系统：16 路 + 解复用</span></button>
-    <button data-view="slave"><span class="n">09</span><span>从机模式：被动方的契约</span></button>
-    <button data-view="evt"><span class="n">10</span><span>相位事件与九类错误桶</span></button>
-    <button data-view="observ"><span class="n">11</span><span>非侵入观测：RXEXITD 与 SI</span></button>
-    <button data-view="life"><span class="n">12</span><span>停机粒度：PAUSE / sleep / 复位</span></button>
+    <button data-view="fabric"><span class="n">08</span><span>总线足迹：SRI/SPB 上的 25 个 beat</span></button>
+    <button data-view="chipsel"><span class="n">09</span><span>片选子系统：16 路 + 解复用</span></button>
+    <button data-view="slave"><span class="n">10</span><span>从机模式：被动方的契约</span></button>
+    <button data-view="evt"><span class="n">11</span><span>相位事件与九类错误桶</span></button>
+    <button data-view="observ"><span class="n">12</span><span>非侵入观测：RXEXITD 与 SI</span></button>
+    <button data-view="life"><span class="n">13</span><span>停机粒度：PAUSE / sleep / 复位</span></button>
     <button data-view="closing"><span class="n">END</span><span>设计哲学与选型表</span></button>
     <button data-view="hsic"><span class="n">APP</span><span>附：HSIC 输入捕获</span></button>
   </nav>
-  <div class="side-note"><b>阅读建议</b><br>先看 00 建立总图，之后按 01 → 12 顺序读——编号已经就是因果顺序。每章第一块是主视觉，后面才是工程细节；END 是收束，APP 是与 SPI 无关的附录。</div>
+  <div class="side-note"><b>阅读建议</b><br>先看 00 建立总图，之后按 01 → 13 顺序读——编号已经就是因果顺序。每章第一块是主视觉，后面才是工程细节；END 是收束，APP 是与 SPI 无关的附录。</div>
 </aside>
 <main class="content">
 
@@ -432,8 +433,309 @@ qspi_start_move_counter(moves, ...);</code></pre><p>不要向上层暴露“随�
 
 
 
+<section id="fabric" class="view">
+  <div class="topbar"><div><div class="eyebrow">Chapter 08 · Bus fabric footprint</div><h2>总线足迹：25 个 beat、5 个周期等待、4 格余量</h2><p class="lead">同一次 8 × 32-bit 收发，在 SRI 与 SPB 上到底发生什么？不是一次突发，而是 8 次独立的单字传输；每次访问固定 4 + WS 个周期。总线从来不是瓶颈，但它的<b>最坏延迟</b>决定了 FIFO 会不会见底。</p></div><span class="stamp">§4.3 / §4.8 / §4.10 · §37.3.6 / §37.3.8</span></div>
+
+  <div class="thesis"><article class="why"><h3>WHY</h3><p>“DMA 完成”只说明最后一个字进了 FIFO。总线侧的排队延迟不会直接变成 SCLK 抖动，而是先吃掉 FIFO 余量——所以要看的是最坏延迟，不是带宽。</p></article><article class="what"><h3>WHAT</h3><p>1 次 C 写 + 8 次 DMA 单字写 + 8 次 CPU 读 = 25 个 beat；其中 17 次落在 SPB 上，8 次 DMA 读在 SRI 侧。</p></article><article class="how"><h3>HOW</h3><p>把每次访问的 <code>4 + Module_WS</code> 周期，除以 FIFO 余量格数 × 每格时间，得到可容忍的最大延迟。</p></article></div>
+
+  <div class="section"><div class="section-head"><h3>TC39x 总线拓扑：Domain 0 与 SPB</h3><span>TOPOLOGY</span></div><div class="board">
+    <div style="overflow-x:auto">
+    <svg viewBox="0 0 1180 706" width="100%" style="min-width:920px;display:block" role="img" aria-label="TC39x SRI Domain 0 与 SPB 总线拓扑">
+      <defs>
+        <marker id="fabAh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--amber)"/>
+        </marker>
+      </defs>
+
+      <!-- ===== SRI Domain 0 ===== -->
+      <rect x="20" y="10" width="1140" height="290" rx="18" fill="var(--paper2)" stroke="var(--line)"/>
+      <text x="44" y="40" font-size="15" font-weight="700" fill="var(--ink)" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">SRI Domain 0 · 64-bit 交叉开关</text>
+      <text x="44" y="60" font-size="11" fill="var(--muted)" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">MCI 0–12 · SCI 0–15 · Domain 0 只含 CPU0–3，CPU4/5 在 Domain 1 经 S2S 访问 · 每个从设备独立仲裁</text>
+
+      <!-- masters -->
+      <g font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif" text-anchor="middle">
+        <rect x="44" y="76" width="124" height="46" rx="10" fill="var(--violetSoft)" stroke="var(--violet)" stroke-width="2"/>
+        <text x="106" y="96" font-size="12" font-weight="700" fill="var(--violet)">DMA MIF0</text>
+        <text x="106" y="112" font-size="10" fill="var(--muted)">MCI 0</text>
+
+        <rect x="180" y="76" width="124" height="46" rx="10" fill="var(--amberSoft)" stroke="var(--amber)"/>
+        <text x="242" y="96" font-size="12" font-weight="700" fill="var(--amber)">SFI_F2S</text>
+        <text x="242" y="112" font-size="10" fill="var(--muted)">MCI 1</text>
+
+        <rect x="316" y="76" width="124" height="46" rx="10" fill="var(--blueSoft)" stroke="var(--blue)" stroke-width="2"/>
+        <text x="378" y="96" font-size="12" font-weight="700" fill="var(--blue)">CPU0</text>
+        <text x="378" y="112" font-size="10" fill="var(--muted)">MCI 2</text>
+
+        <rect x="452" y="76" width="124" height="46" rx="10" fill="var(--blueSoft)" stroke="var(--blue)"/>
+        <text x="514" y="96" font-size="12" font-weight="700" fill="var(--blue)">CPU1</text>
+        <text x="514" y="112" font-size="10" fill="var(--muted)">MCI 3</text>
+
+        <rect x="588" y="76" width="124" height="46" rx="10" fill="var(--blueSoft)" stroke="var(--blue)"/>
+        <text x="650" y="96" font-size="12" font-weight="700" fill="var(--blue)">CPU2</text>
+        <text x="650" y="112" font-size="10" fill="var(--muted)">MCI 4</text>
+
+        <rect x="724" y="76" width="124" height="46" rx="10" fill="var(--blueSoft)" stroke="var(--blue)"/>
+        <text x="786" y="96" font-size="12" font-weight="700" fill="var(--blue)">CPU3</text>
+        <text x="786" y="112" font-size="10" fill="var(--muted)">MCI 5</text>
+
+        <rect x="860" y="76" width="124" height="46" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="922" y="96" font-size="12" font-weight="700" fill="var(--ink)">S2S0 (D1→D0)</text>
+        <text x="922" y="112" font-size="10" fill="var(--muted)">MCI 6</text>
+
+        <rect x="996" y="76" width="124" height="46" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="1058" y="96" font-size="12" font-weight="700" fill="var(--ink)">HSSL0</text>
+        <text x="1058" y="112" font-size="10" fill="var(--muted)">MCI 8</text>
+      </g>
+
+      <!-- crossbar -->
+      <rect x="44" y="142" width="1076" height="34" rx="8" fill="var(--blueSoft)" stroke="var(--blue)"/>
+      <text x="582" y="164" font-size="11" text-anchor="middle" fill="var(--blue)" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">交叉开关 · MCI → SCI</text>
+
+      <!-- slaves -->
+      <g font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif" text-anchor="middle">
+        <rect x="44" y="196" width="100" height="52" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="94" y="217" font-size="11" font-weight="700" fill="var(--ink)">CPU0P</text>
+        <text x="94" y="233" font-size="9" fill="var(--muted)">SCI 3 · PFlash</text>
+
+        <rect x="152" y="196" width="100" height="52" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="202" y="217" font-size="11" font-weight="700" fill="var(--ink)">CPU0S</text>
+        <text x="202" y="233" font-size="9" fill="var(--muted)">SCI 4 · SRAM</text>
+
+        <rect x="260" y="196" width="100" height="52" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="310" y="217" font-size="11" font-weight="700" fill="var(--ink)">CPU1P·S</text>
+        <text x="310" y="233" font-size="9" fill="var(--muted)">SCI 5·6</text>
+
+        <rect x="368" y="196" width="100" height="52" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="418" y="217" font-size="11" font-weight="700" fill="var(--ink)">CPU2P·S</text>
+        <text x="418" y="233" font-size="9" fill="var(--muted)">SCI 7·8</text>
+
+        <rect x="476" y="196" width="100" height="52" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="526" y="217" font-size="11" font-weight="700" fill="var(--ink)">CPU3P·S</text>
+        <text x="526" y="233" font-size="9" fill="var(--muted)">SCI 9·10</text>
+
+        <rect x="584" y="196" width="100" height="52" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="634" y="217" font-size="11" font-weight="700" fill="var(--ink)">LMU0</text>
+        <text x="634" y="233" font-size="9" fill="var(--muted)">SCI 11</text>
+
+        <rect x="692" y="196" width="100" height="52" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="742" y="217" font-size="11" font-weight="700" fill="var(--ink)">DAM0</text>
+        <text x="742" y="233" font-size="9" fill="var(--muted)">SCI 2</text>
+
+        <rect x="800" y="196" width="100" height="52" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="850" y="217" font-size="11" font-weight="700" fill="var(--ink)">DMU</text>
+        <text x="850" y="233" font-size="9" fill="var(--muted)">SCI 1</text>
+
+        <rect x="908" y="196" width="100" height="52" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="958" y="217" font-size="11" font-weight="700" fill="var(--ink)">S2S3</text>
+        <text x="958" y="233" font-size="9" fill="var(--muted)">SCI 0 · D0→D1</text>
+
+        <rect x="1016" y="196" width="100" height="52" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="1066" y="217" font-size="11" font-weight="700" fill="var(--ink)">S2S1·2</text>
+        <text x="1066" y="233" font-size="9" fill="var(--muted)">SCI 12·13 · D0→D2</text>
+      </g>
+
+      <!-- ===== bridge strip ===== -->
+      <line x1="590" y1="390" x2="590" y2="376" stroke="var(--amber)" stroke-width="2" marker-end="url(#fabAh)"/>
+      <line x1="590" y1="320" x2="590" y2="304" stroke="var(--amber)" stroke-width="2" marker-end="url(#fabAh)"/>
+      <rect x="392" y="320" width="396" height="52" rx="10" fill="var(--amberSoft)" stroke="var(--amber)"/>
+      <text x="590" y="341" font-size="12" font-weight="700" text-anchor="middle" fill="var(--amber)" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">SFI_F2S · FPI → SRI</text>
+      <text x="590" y="358" font-size="10" text-anchor="middle" fill="var(--muted)" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">在 SRI 侧作为 MCI 1 出现</text>
+      <text x="820" y="345" font-size="10" fill="var(--muted)" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">S2S0–S3：跨 SRI 域的单向桥</text>
+      <text x="820" y="361" font-size="10" fill="var(--muted)" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">在源域是从设备，在目标域是主设备</text>
+
+      <!-- ===== SPB ===== -->
+      <rect x="20" y="392" width="1140" height="298" rx="18" fill="var(--paper2)" stroke="var(--line)"/>
+      <text x="44" y="422" font-size="15" font-weight="700" fill="var(--ink)" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">SPB · 32-bit FPI 总线</text>
+      <text x="44" y="442" font-size="11" fill="var(--muted)" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">SBCU 仲裁：优先级 0 最高 · Priority 8 = 轮转组 · 饥饿保护常开</text>
+
+      <g font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif" text-anchor="middle">
+        <rect x="44" y="458" width="140" height="46" rx="10" fill="var(--violetSoft)" stroke="var(--violet)" stroke-width="2"/>
+        <text x="114" y="478" font-size="12" font-weight="700" fill="var(--violet)">DMA / Cerberus</text>
+        <text x="114" y="494" font-size="10" fill="var(--muted)">Index 0 · prio 0</text>
+
+        <rect x="196" y="458" width="140" height="46" rx="10" fill="var(--blueSoft)" stroke="var(--blue)" stroke-width="2"/>
+        <text x="266" y="478" font-size="12" font-weight="700" fill="var(--blue)">CPU0</text>
+        <text x="266" y="494" font-size="10" fill="var(--muted)">Index 6 · prio 8</text>
+
+        <rect x="348" y="458" width="140" height="46" rx="10" fill="var(--blueSoft)" stroke="var(--blue)"/>
+        <text x="418" y="478" font-size="12" font-weight="700" fill="var(--blue)">CPU1</text>
+        <text x="418" y="494" font-size="10" fill="var(--muted)">Index 7 · prio 8</text>
+
+        <rect x="500" y="458" width="140" height="46" rx="10" fill="var(--blueSoft)" stroke="var(--blue)"/>
+        <text x="570" y="478" font-size="12" font-weight="700" fill="var(--blue)">CPU2–CPU5</text>
+        <text x="570" y="494" font-size="10" fill="var(--muted)">Index 8–11 · prio 8</text>
+
+        <rect x="652" y="458" width="140" height="46" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="722" y="478" font-size="12" font-weight="700" fill="var(--ink)">SDMMC</text>
+        <text x="722" y="494" font-size="10" fill="var(--muted)">Index 2 · prio 2</text>
+
+        <rect x="804" y="458" width="140" height="46" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="874" y="478" font-size="12" font-weight="700" fill="var(--ink)">HSSL0 / HSSL1</text>
+        <text x="874" y="494" font-size="10" fill="var(--muted)">Index 3 / 4</text>
+
+        <rect x="956" y="458" width="164" height="46" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="1038" y="478" font-size="12" font-weight="700" fill="var(--ink)">HSM RMI / CMI</text>
+        <text x="1038" y="494" font-size="10" fill="var(--muted)">Index 12 / 13</text>
+      </g>
+
+      <rect x="44" y="524" width="1076" height="32" rx="8" fill="var(--amberSoft)" stroke="var(--amber)"/>
+      <text x="582" y="545" font-size="11" text-anchor="middle" fill="var(--amber)" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">SBCU · 单事务串行，一次只过一笔</text>
+
+      <g font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif" text-anchor="middle">
+        <rect x="44" y="576" width="150" height="52" rx="10" fill="var(--greenSoft)" stroke="var(--green)" stroke-width="2"/>
+        <text x="119" y="597" font-size="12" font-weight="700" fill="var(--green)">QSPI0–QSPI5</text>
+        <text x="119" y="613" font-size="9" fill="var(--muted)">本场景目标 · WS = 1</text>
+
+        <rect x="206" y="576" width="150" height="52" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="281" y="597" font-size="12" font-weight="700" fill="var(--ink)">ASCLIN</text>
+        <text x="281" y="613" font-size="9" fill="var(--muted)">WS = 1</text>
+
+        <rect x="368" y="576" width="150" height="52" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="443" y="597" font-size="12" font-weight="700" fill="var(--ink)">EVADC / DSADC</text>
+        <text x="443" y="613" font-size="9" fill="var(--muted)">结果寄存器 WS = 1</text>
+
+        <rect x="530" y="576" width="150" height="52" rx="10" fill="var(--paper)" stroke="var(--line)"/>
+        <text x="605" y="597" font-size="12" font-weight="700" fill="var(--ink)">其余外设</text>
+        <text x="605" y="613" font-size="9" fill="var(--muted)">略</text>
+      </g>
+
+      <text x="712" y="600" font-size="11" fill="var(--muted)" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">本场景只用到两个主设备接口：</text>
+      <text x="712" y="618" font-size="11" fill="var(--muted)" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">Index 0（DMA 写 DATAENTRY）</text>
+      <text x="712" y="636" font-size="11" fill="var(--muted)" font-family="-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">Index 6（CPU0 读 RXEXIT）</text>
+    </svg>
+    </div>
+    <div class="grid3" style="margin-top:14px">
+      <div class="tile"><h4>同一主机，两个端口</h4><p>CPU0 在 SRI 是 <b>MCI 2</b>，在 SPB 是 <b>Index 6</b>；DMA 在 SRI 是 <b>MCI 0</b>，在 SPB 是 <b>Index 0</b>。走哪条由访问的目标地址决定。</p></div>
+      <div class="tile"><h4>跨域桥是单向的</h4><p>S2S 在源域是<b>从设备</b>（SCI），在目标域是<b>主设备</b>（MCI）；SFI_F2S 把 FPI 事务送进 SRI，因此它以 <b>MCI 1</b> 的身份出现。</p></div>
+      <div class="tile"><h4>本场景不经过任何桥</h4><p>CPU0 与 DMA 都有直接的 FPI 口，访问 QSPI 是本地 SPB 事务；DMA 的源读取走自己的 SRI 口。桥只服务"只有一条腿"的主机。</p></div>
+    </div>
+    <div class="callout" style="margin-top:12px"><b>读图口径：</b>图示为 <b>TC39xB Domain 0</b>。MCI/SCI 编号取自 4.3.4.1/4.3.4.2 的映射表，SPB Index 与复位优先级取自 SBCU_PRIOH/PRIOL。家族内其他型号的 CPU 数、HSSL/SDMMC 是否存在不同，索引会变——换芯片时以对应型号的 BCU 章节为准。</div>
+  </div></div>
+  <div class="section"><div class="section-head"><h3>通路：CPU 与 DMA 都是 SPB 的直接主设备</h3><span>ROUTE</span></div><div class="board">
+    <div class="lane"><div class="lane-label"><b>主设备侧</b><small>各自两个端口</small></div><div class="rail">
+      <div class="node blue"><b>CPU0</b><small>SRI 口：DSPR / LMU / Flash<br>FPI 口（Index 6）：SPB</small></div>
+      <div class="node violet"><b>DMA</b><small>SRI 口：读源数据<br>FPI 口（Index 0）：SPB</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>SBCU 仲裁</b><small>优先级 0 最高<br>Priority 8 = 轮转组</small></div>
+    </div></div>
+    <div class="lane"><div class="lane-label"><b>外设侧</b><small>FPI 域</small></div><div class="rail">
+      <div class="node amber"><b>SPB</b><small>32-bit，单事务串行</small></div>
+      <div class="arrow">→</div>
+      <div class="node green"><b>QSPI0</b><small>寄存器接口<br>1 Wait State</small></div>
+    </div></div>
+    <div class="grid3" style="margin-top:14px">
+      <div class="tile"><h4>SPB 主设备清单</h4><p><code>SBCU_PRIOH/PRIOL</code> 按索引逐一列出：<b>Index 0 = DMA / Cerberus</b>，2 = SDMMC，3/4 = HSSL0/1，<b>6–11 = CPU0–CPU5</b>，12/13 = HSM。CPU 不经过 SRI→SPB 桥。</p></div>
+      <div class="tile"><h4>复位优先级</h4><p><b>DMA = 0（最高）</b>；SDMMC = 2，HSSL0 = 3，HSSL1 = 4；<b>CPU0–CPU5 全部 = 8</b>（即 Priority 8 轮转组）；HSM = 12/13。架构把“供数”排在“收数”之前。</p></div>
+      <div class="tile"><h4>SRI 与 SPB 的分工</h4><p>SRI 是 64-bit 交叉开关，负责 DSPR/LMU/Flash 等高带宽；SPB 是 32-bit FPI，负责外设。SFI 桥负责两者之间的跨域流量（成对出现、各管一个方向，并做 64/32-bit 事务映射）——本场景的 CPU/DMA 访问 QSPI 不经过它。</p></div>
+    </div>
+    <div class="callout good" style="margin-top:13px"><b>竞争的准确含义：</b>不是“撞车”，是“排队”。DMA 写 <code>DATAENTRY</code> 与 CPU 读 <code>RXEXIT</code> 是两个不同寄存器，在 QSPI 内部也是两条独立通路（一个压 TXFIFO、一个弹 RXFIFO）。它们在 SBCU 上按优先级仲裁，只会错开，不会互相破坏。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>事务粒度：为什么这里没有突发</h3><span>TRANSACTION TYPE</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>SRI 事务（64-bit 数据总线）</th><th>映射到 FPI（32-bit 数据总线）</th><th>能否落到 QSPI</th></tr></thead><tbody>
+      <tr><td>Single Data Transfer Word（32 bit）</td><td>Single Word Transfer（32 bit）</td><td><b>是</b>，这是本例的唯一形态</td></tr>
+      <tr><td>Single Data Transfer Double-Word（64 bit）</td><td>2-Word Block Transfer（对齐）</td><td>否</td></tr>
+      <tr><td>Block Transfer Request（2 / 4 transfers）</td><td>4-Word / 8-Word Block Transfer</td><td>否</td></tr>
+    </tbody></table>
+    <div class="callout warning" style="margin-top:12px"><b>手册原文：</b>“In general, block transfers (2 word, 4 word, or 8 word) cannot be executed in the AURIX™ TC3xx Platform with peripheral units that operate as FPI Bus slaves during an FPI Bus transaction.”<br>→ 对 QSPI 这种 FPI 从设备，<b>块传输根本不成立</b>。DMA 的每一次 move 都是一次独立的单字传输，固定目的地址也没有任何合并空间。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>一次访问的代价：4 + Module Wait State</h3><span>ACCESS LATENCY</span></div><div class="board">
+    <div class="formula">t_SPB = (4 + Module_WS) × T_SPB　；　QSPI 的 Module_WS = 1　→　5 × T_SPB</div>
+    <div class="grid3" style="margin-top:14px">
+      <div class="tile"><h4>@ fSPB = 100 MHz</h4><p>一次访问 <b>5 个 SPB 周期 = 50 ns</b>。这是下限，不含任何等待态与仲裁。</p></div>
+      <div class="tile"><h4>CPU 侧换算</h4><p>表 70 按 <code>fCPU / fSPB</code> 比例放大；比值为 3 时，一次读 = <b>15 个 CPU 周期</b>。</p></div>
+      <div class="tile"><h4>读写不对称</h4><p>读必须等数据返回；写有写缓冲，<b>单独一次或短序列可能 0 stall</b>。有冲突时两者都追加。</p></div>
+    </div>
+    <div class="callout" style="margin-top:13px"><b>为什么 QSPI 被点名：</b>手册把 QSPI 与 ASCLIN、EVADC/DSADC 结果寄存器、DMA 一起列为“critical module registers”，实现为 1 个等待态。这个 1 不是可调的，它是模块寄存器的固定开销。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>服务请求：不是专用 DMA 线，是事件链</h3><span>SERVICE REQUEST</span></div><div class="board">
+    <div class="flow">
+      <div class="node amber"><b>TXFIFO 写事件</b><small>写后仍非满<br>→ 请求下一次</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>QSPIxTX 节点</b><small>IR 里的 6 个 SRC 之一</small></div>
+      <div class="arrow">→</div>
+      <div class="node violet"><b>DMA 通道</b><small>单次 move</small></div>
+      <div class="arrow">→</div>
+      <div class="node blue"><b>写 DATAENTRY</b><small>再次产生请求</small></div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="tile"><h4>硬事实</h4><p>“There are no dedicated DMA request lines.” QSPI 只有 6 个服务请求节点：<code>TX / RX / ERR / PT / HC / U</code>，经中断路由器分派给 DMA 或某个 CPU。</p></div>
+      <div class="tile"><h4>触发条件</h4><p>TX：每次写 FIFO 后若仍有余量就再请求；写满则不请求（防溢出）。RX：读后仍非空则再请求；读空则不请求，等下一次写入。</p></div>
+    </div>
+    <div class="callout good" style="margin-top:13px"><b>由此得到一条重要结论：</b>手册以“复位后首次”为例——请求链必须由一次软件写 TXFIFO 或手动置中断标志启动，此后才自维持。据此，每笔新事务的首写（C）就是这次启动；所以<b>先 arm DMA、再写 C 是安全的</b>——没有那次写，就没有请求，DMA 不会先搬 D0。</div>
+    <div class="callout warning" style="margin-top:10px"><b>反过来也成立：</b>Single Move 模式下一次请求只搬一个元素。用块 DMA 或连续多次写，会产生多次中断和虚假的 transaction lost 事件——这不是“更高效”，是配置错误。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>25 个 beat 的账本</h3><span>BEAT BUDGET</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>执行者</th><th>访问</th><th>次数</th><th>落在哪条总线</th><th>单次代价</th></tr></thead><tbody>
+      <tr><td>CPU</td><td>32-bit 写 <code>BACONENTRY</code></td><td>1</td><td>SRI → 桥 → SPB</td><td>5 SPB 周期</td></tr>
+      <tr><td>DMA</td><td>32-bit 读 <code>Tx[i]</code></td><td>8</td><td>内存侧，不走 SPB</td><td>取决于源位置</td></tr>
+      <tr><td>DMA</td><td>32-bit 写 <code>DATAENTRY</code></td><td>8</td><td>SPB</td><td>5 SPB 周期</td></tr>
+      <tr><td>CPU ISR</td><td>32-bit 读 <code>RXEXIT</code></td><td>8</td><td>SPB</td><td>5 SPB 周期</td></tr>
+      <tr><td>QSPI 内部</td><td>FIFO ↔ 移位寄存器</td><td>—</td><td>不属于总线</td><td>fSPB / fPER 异步边界</td></tr>
+    </tbody></table>
+    <div class="callout" style="margin-top:12px"><b>合计：</b>主数据路径 <code>1 + 8 + 8 + 8 = 25</code> beat；其中<b>只有 17 次</b>真正经过 SPB（1 + 8 + 8）。不含 DMA 取 TCS、中断入栈出栈、<code>Rx[i]</code> 存回内存、总线等待态与仲裁。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>时间轴：初始灌注 7 拍，之后退化成涓流</h3><span>TIMELINE</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>时刻</th><th>SPB 上的动作</th><th>TXFIFO（4 格）</th><th>串行侧</th></tr></thead><tbody>
+      <tr><td>t0</td><td>CPU 写 C</td><td><code>C · · ·</code></td><td>SLSO 尚未有效</td></tr>
+      <tr><td>t1</td><td>DMA 写 D0</td><td><code>C D0 · ·</code></td><td>—</td></tr>
+      <tr><td>t2</td><td>DMA 写 D1</td><td><code>C D0 D1 ·</code></td><td>D0 开始移位</td></tr>
+      <tr><td>t3</td><td>DMA 写 D2</td><td><code>C D0 D1 D2</code> 满</td><td>D0 / D1 排队</td></tr>
+      <tr><td>t4…</td><td><b>停</b>，直到移走一格</td><td>维持 3～4 格</td><td>每 32 SCLK 消耗一格</td></tr>
+      <tr><td>稳态</td><td>每格一次 DMA 单字写 + 一次 CPU 读</td><td>在 3/4 格间摆动</td><td>连续 32 SCLK / block</td></tr>
+      <tr><td>结束</td><td>无</td><td>排空</td><td>MC 归零 → 最终 TRAIL → SLSO 释放</td></tr>
+    </tbody></table>
+    <div class="callout good" style="margin-top:12px"><b>唯一的总线突发窗口是 t0–t3</b>：4 次写、约 200 ns。此后总线负载由 FIFO 空位“牵着走”，不再有连续访问。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>竞争预算：占用率 6%，但要看最坏延迟</h3><span>CONTENTION BUDGET</span></div><div class="board">
+    <div class="grid2">
+      <div class="tile"><h4>稳态占用率</h4><p>每个 block：DMA 写 1 次 + CPU 读 1 次 = <b>2 × 50 ns = 100 ns</b>。<br>block 时间 = 32 / fSCLK。<br>20 MHz 时 1.6 µs → 占用率约 <b>6.25%</b>。</p></div>
+      <div class="tile"><h4>FIFO 余量换算成时间</h4><p>TX：4 格缓冲，等于 <b>4 个 block</b>。<br>RX：4 格，同样 4 个 block。<br>20 MHz 时各约 <b>6.4 µs</b>——这就是可容忍的最坏单次访问延迟量级。</p></div>
+    </div>
+    <div class="callout good" style="margin-top:13px"><b>默认优先级已经替你做了一半设计：</b>复位值 <code>SBCU_PRIOL = 8854_3210H</code>、<code>SBCU_PRIOH = FEDC_8888H</code> 解出来是 <b>DMA/Cerberus = 0</b>（最高）、SDMMC = 2、HSSL0/1 = 3/4、<b>CPU0–CPU5 = 8</b>（轮转组）、HSM = 12/13。所以 TX 供数路径天然压过 CPU 的 RX 读——这正是“先保证 FIFO 被喂饱”的硬件表达。</div>
+    <div class="callout warning" style="margin-top:10px"><b>真正会咬人的是延迟，不是带宽：</b>FPI 从设备忙时可以推迟事务，主设备释放总线一个周期后重试；这个序列会一直重复到从设备就绪。几次重试就是几百 ns 到几 µs——它们不消耗带宽，但会推迟 FIFO 的那次补充。</div>
+    <div class="callout" style="margin-top:10px"><b>设计口径：</b>不要问“总线带宽够不够”，要问“从请求到写入完成的最坏延迟，是否小于 FIFO 余量对应的时间”。TX 断了会进 EXPECT、SCLK 出现 gap；RX 满了会触发 SRF 停钟（主机）或溢出。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>三个“完成”在总线上是三个不同的 beat</h3><span>COMPLETION</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>完成信号</th><th>总线侧发生了什么</th><th>还不能说明什么</th></tr></thead><tbody>
+      <tr><td>DMA Transfer Complete</td><td>第 8 次写 <code>DATAENTRY</code> 被接受</td><td>D4–D7 可能仍在 FIFO 与移位链中</td></tr>
+      <tr><td>RxIndex == 8</td><td>第 8 次读 <code>RXEXIT</code> 返回</td><td>最终 TRAIL 与 SLSO 释放可能还没发生</td></tr>
+      <tr><td>MC.CURRENT == 0 / IALF</td><td><b>与总线无关</b>，是 fPER 域的事件</td><td>软件可能还没读完 RXFIFO</td></tr>
+    </tbody></table>
+    <div class="callout warning" style="margin-top:12px"><b>因此：</b>不能用 DMA TC 通知上层“SPI 完成”。至少要把“RX 计数”和“MC/IALF”合并，才是线端真正结束。</div>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>证据表</h3><span>SOURCES</span></div><div class="board table-wrap">
+    <table class="table"><thead><tr><th>结论</th><th>出处</th></tr></thead><tbody>
+      <tr><td>SRI round-robin、无饥饿、两级优先级；桥与 DMA 复位后通常为高优先级</td><td>TC3xx UM part1 Ch4.3.2.1（p162–163）</td></tr>
+      <tr><td>QSPI 等关键模块寄存器为 1 Wait State；SPB 访问 = (4 + WS) × 周期；写缓冲可降低 stall</td><td>TC3xx UM part1 Ch4.8、Table 69/70（p185–186）</td></tr>
+      <tr><td><b>SPB 主设备清单：Index 0 = DMA/Cerberus，2 = SDMMC，3/4 = HSSL，6–11 = CPU0–CPU5，12/13 = HSM</b>；复位优先级 DMA = 0、CPU = 8</td><td>TC39x-B UM Ch4.7.2.1 SBCU_PRIOH/PRIOL（p44–45）</td></tr>
+      <tr><td>SRI 64-bit → FPI 32-bit 映射；块传输不能用于 FPI 从设备；SFI 桥亦作为 SPB 的一个 master</td><td>TC3xx UM part1 Ch4.10.2.1（p190–191）</td></tr>
+      <tr><td>从设备忙时推迟事务，主设备释放总线一周期后重试</td><td>TC3xx UM part1 Ch4.10.2.2（p191）</td></tr>
+      <tr><td>SPB 优先级 0 最高、Priority 8 为轮转组、饥饿保护常开</td><td>TC3xx UM part1 Ch4.10.3.1.1 / .3（p193–194）</td></tr>
+      <tr><td>QSPI 状态机在 fPER 域，与 fSPB 完全异步</td><td>TC3xx UM part2 Ch37.3.1（p1701）</td></tr>
+      <tr><td>TXFIFO 请求由写事件产生；首次链需一次写或置标志；单次模式只搬一个</td><td>TC3xx UM part2 Ch37.3.6.3（p1748–1750）</td></tr>
+      <tr><td>RXFIFO 请求由读后非空 / 写入空 FIFO 产生；末次读不产生请求</td><td>TC3xx UM part2 Ch37.3.6.4（p1752–1754）</td></tr>
+      <tr><td>无专用 DMA 请求线；6 个服务请求节点经中断路由器分派</td><td>TC3xx UM part2 Ch37.3.8.2（p1756）</td></tr>
+    </tbody></table>
+  </div></div>
+
+  <div class="section"><div class="section-head"><h3>三个常见误解</h3><span>MISCONCEPTIONS</span></div>
+    <div class="chapter-tools"><button data-expand>展开全部</button><button data-collapse>折叠全部</button></div><div class="deep">
+      <details open><summary>“DMA transfer count = 8，就是一次搬 8 个”</summary><div class="detail-body"><p>不是。Single Move 模式下是 8 次请求、8 次单字搬运。手册明确：块 DMA 或连续多次写会产生多次中断和虚假的 transaction lost 事件。</p></div></details>
+      <details><summary>“先 arm DMA 会让 D0 抢在 C 前面”</summary><div class="detail-body"><p>不会。首次请求链必须由一次软件写 TXFIFO 或手动置中断标志启动；只 arm 不写，DMA 没有请求可响应。真正需要注意的是跨 master 的<b>同寄存器</b>争用与顺序假设，而不是这条。</p></div></details>
+      <details><summary>“两个 master 同时访问 QSPI 会冲突”</summary><div class="detail-body"><p>会排队，不会冲突。写 DATAENTRY 与读 RXEXIT 是两个寄存器、两条硬件通路。会出问题的是：两个 master 写同一个寄存器、或软件假设“CPU 的写一定先于 DMA 的写”。</p></div></details>
+    </div></div>
+</section>
+
 <section id="chipsel" class="view">
-  <div class="topbar"><div><div class="eyebrow">Chapter 08 · Slave select subsystem</div><h2>片选子系统：极性、使能、延时三组控制</h2><p class="lead">16 根 SLSO 只是起点。真正的问题有三个：从机要低有效还是高有效？16 根不够怎么办？某个从机要求片选比时钟晚一点又怎么办。QSPI 把这三件事都做成了寄存器——而且做成了<b>与帧相位对齐</b>的硬件行为，不是软件延时。</p></div><span class="stamp">SSOC · DEL0 · STROBE</span></div>
+  <div class="topbar"><div><div class="eyebrow">Chapter 09 · Slave select subsystem</div><h2>片选子系统：极性、使能、延时三组控制</h2><p class="lead">16 根 SLSO 只是起点。真正的问题有三个：从机要低有效还是高有效？16 根不够怎么办？某个从机要求片选比时钟晚一点又怎么办。QSPI 把这三件事都做成了寄存器——而且做成了<b>与帧相位对齐</b>的硬件行为，不是软件延时。</p></div><span class="stamp">SSOC · DEL0 · STROBE</span></div>
   <div class="thesis"><article class="why"><h3>WHY</h3><p>片选必须与帧相位严格对齐；软件打拍子有抖动、占 CPU，而且一旦和 DMA 竞争就会错位。</p></article><article class="what"><h3>WHAT</h3><p>三件事可编程：每路的<b>有效电平</b>、每路的<b>使能</b>、以及 SLSO0 的<b>延时选通</b>（外部解复用用）。</p></article><article class="how"><h3>HOW</h3><p><code>SSOC.AOL/OEN</code> 定电平与使能；<code>GLOBALCON.DEL0 + STROBE</code> 定 strobe；<code>BACON.CS</code> 的 4 bit 原样出脚做外部译码。</p></article></div>
 
   <div class="section"><div class="section-head"><h3>SSOC：电平与使能</h3><span>SSOC · 048H</span></div><div class="board">
@@ -562,7 +864,7 @@ QSPI0->GLOBALCON1.B.TXFM     = 2;  /* 10B = Batch Move          */
 </section>
 
 <section id="evt" class="view">
-  <div class="topbar"><div><div class="eyebrow">Chapter 10 · Phase events &amp; error model</div><h2>相位事件 PT1/PT2 与九类错误标志</h2><p class="lead">普通 SPI 只在"传完一帧"给你一个中断，故障只有一个 overrun 位。队列化之后这两件事都不够用：软件要的动作发生在帧中间，而一次偶发错误无法定位就没有诊断价值。</p></div><span class="stamp">PT1 / PT2 / ERRORFLAGS</span></div>
+  <div class="topbar"><div><div class="eyebrow">Chapter 11 · Phase events &amp; error model</div><h2>相位事件 PT1/PT2 与九类错误标志</h2><p class="lead">普通 SPI 只在"传完一帧"给你一个中断，故障只有一个 overrun 位。队列化之后这两件事都不够用：软件要的动作发生在帧中间，而一次偶发错误无法定位就没有诊断价值。</p></div><span class="stamp">PT1 / PT2 / ERRORFLAGS</span></div>
   <div class="thesis"><article class="why"><h3>WHY</h3><p>TBE 时补队列、RBF 时搬数、EOF 时放片选、进 EXPECT 时计超时——这些时刻都在帧中间。而错误若不能分类，ISR 只能"有错就整模块复位"。</p></article><article class="what"><h3>WHAT</h3><p>PT1/PT2 是<b>事件多路选择器</b>（8 选 1）；错误侧是 9 个粘滞位，各自可单独使能、单独清除。</p></article><article class="how"><h3>HOW</h3><p><code>GLOBALCON1.PT1/PT2</code> 选事件，<code>BACON.UINT</code> 逐帧门控；错误侧 <code>ERRORENS / ERRORFLAGS / ERRORCLEARS</code> 三者同布局。</p></article></div>
 
   <div class="section"><div class="section-head"><h3>PT1/PT2 事件编码（主机/从机）</h3><span>PT1 / PT2 编码</span></div><div class="board table-wrap">
@@ -638,7 +940,7 @@ QSPI0->FLAGSCLEAR.B.ERRORCLEARS = e;   /* 写 1 清除 */</code></pre>
 </section>
 
 <section id="observ" class="view">
-  <div class="topbar"><div><div class="eyebrow">Chapter 11 · Observability</div><h2>非侵入观测：RX_EXITD 与状态注入</h2><p class="lead">读 RXFIFO 会推进读指针，调试读取将改变被测状态。部分状态字段跨时钟域同步，读数存在固定延迟。本章给出各观测量的精度边界。</p></div><span class="stamp">RXEXITD · PHASE · BITCOUNT</span></div>
+  <div class="topbar"><div><div class="eyebrow">Chapter 12 · Observability</div><h2>非侵入观测：RX_EXITD 与状态注入</h2><p class="lead">读 RXFIFO 会推进读指针，调试读取将改变被测状态。部分状态字段跨时钟域同步，读数存在固定延迟。本章给出各观测量的精度边界。</p></div><span class="stamp">RXEXITD · PHASE · BITCOUNT</span></div>
   <div class="thesis"><article class="why"><h3>WHY</h3><p>在线调试时，读一次 FIFO 就等于替软件消费了一个数据；诊断超时时，看"传了多少字节"往往答不到点子上。</p></article><article class="what"><h3>WHAT</h3><p>两条读路径（破坏性 / 只读镜像）、三组进度量（PHASE / BITCOUNT / MC.CURRENT）、一个注入机制（SI）。</p></article><article class="how"><h3>HOW</h3><p><code>RX_EXIT</code> vs <code>RX_EXITD</code>；Cerberus 按总线 master tag 识别"旁观者"；<code>GLOBALCON.SI</code> 把状态写进 RXFIFO。</p></article></div>
 
   <div class="section"><div class="section-head"><h3>RX_EXIT 与 RX_EXITD</h3><span>090H vs 094H</span></div><div class="board table-wrap">
@@ -676,7 +978,7 @@ QSPI0->FLAGSCLEAR.B.ERRORCLEARS = e;   /* 写 1 清除 */</code></pre>
 </section>
 
 <section id="life" class="view">
-  <div class="topbar"><div><div class="eyebrow">Chapter 12 · Lifecycle</div><h2>暂停、睡眠与复位的粒度</h2><p class="lead">队列外设没有天然静止点——软件要改配置时，无法预测"现在改会不会踩到正在发的帧"。硬件给的答案是几种<u>粒度不同</u>的停下来：有的等帧尾，有的立刻冻结，有的顺手把配置也清了。</p></div><span class="stamp">EN · RESETS · OCDS</span></div>
+  <div class="topbar"><div><div class="eyebrow">Chapter 13 · Lifecycle</div><h2>暂停、睡眠与复位的粒度</h2><p class="lead">队列外设没有天然静止点——软件要改配置时，无法预测"现在改会不会踩到正在发的帧"。硬件给的答案是几种<u>粒度不同</u>的停下来：有的等帧尾，有的立刻冻结，有的顺手把配置也清了。</p></div><span class="stamp">EN · RESETS · OCDS</span></div>
   <div class="thesis"><article class="why"><h3>WHY</h3><p>在半个 bit 上停止，外部从机会把半帧当成完整帧；而全模块复位又会把辛苦排好的队列和 ECON 一起清掉。</p></article><article class="what"><h3>WHAT</h3><p>PAUSE（等 TRAIL）／sleep（关双时钟）／OCDS 软挂起／硬挂起／两级软件复位／AREN 自动刹车。</p></article><article class="how"><h3>HOW</h3><p><code>GLOBALCON.EN</code> 请求、<code>STATUS.PHASE=0</code> 确认、<code>RESETS[31:30]</code> 两位编码、<code>OCS.SUS</code>、<code>KRST0/1</code>。</p></article></div>
 
   <div class="section"><div class="section-head"><h3>PAUSE：请求与完成的判定</h3><span>EN / PHASE</span></div><div class="board">
@@ -798,7 +1100,7 @@ QSPI0->FLAGSCLEAR.B.ERRORCLEARS = e;   /* 写 1 清除 */</code></pre>
 </section>
 
 <section id="slave" class="view">
-  <div class="topbar"><div><div class="eyebrow">Chapter 09 · Slave mode</div><h2>从机模式：固定时序与重定义的帧边界</h2><p class="lead">前八章为主机视角。从机不掌握 SCLK 与 SLSI，帧边界、时序参数与超时判据因此另行定义；BACON/DATA 队列接口保持不变。</p></div><span class="stamp">PASSIVE CONTRACT · §37.3.3</span></div>
+  <div class="topbar"><div><div class="eyebrow">Chapter 10 · Slave mode</div><h2>从机模式：固定时序与重定义的帧边界</h2><p class="lead">前八章为主机视角。从机不掌握 SCLK 与 SLSI，帧边界、时序参数与超时判据因此另行定义；BACON/DATA 队列接口保持不变。</p></div><span class="stamp">PASSIVE CONTRACT · §37.3.3</span></div>
   <div class="thesis"><article class="why"><h3>WHY · 为什么车规要做从机</h3><p>域控、SBC、安全芯片常把 MCU 当外设来读。主控随时可能开始或停止时钟，MCU 既不能拉低 SCLK 也不能插等待，只能"立即响应"。</p></article><article class="what"><h3>WHAT · 被动语义</h3><p>CPOL/CPH 固定 0/1、A/B/C 与所有延时失效、SLSI 定帧、DL 限 2…32 bit、SRF 被忽略、波特率字段改当看门狗。</p></article><article class="how"><h3>HOW · 入口</h3><p>GLOBALCON.MS=1x；PISEL 选输入引脚与电平；SLSI 撤销即复位移位状态机；PT2 绑 SLSI 上升沿（<b>事件编码表见第 10 章</b>）。</p></article></div>
 
   <div class="section"><div class="section-head"><h3>主从资源归属对照</h3><span>WHO OWNS WHAT</span></div><div class="board table-wrap">
@@ -1123,9 +1425,9 @@ bacon:{fields:[
 {n:'MSB',hi:21,lo:21,g:'green',role:'移位方向：先出最高位还是最低位。',enc:'0=LSB first，1=MSB first；块 &gt;32 bit 时末尾残余字的有效字节在低位（见第 04 章打包示例）',risk:'与从机约定相反 → 位序颠倒，读回的数据看起来像“随机值”'},
 {n:'UINT',hi:20,lo:20,g:'green',role:'把 PT1 事件路由到 User Interrupt 的使能；在“后续帧”中持续有效，直到被下一个 BACON 关掉。',enc:'0=关，1=开',risk:'一般不影响帧本身；误开会在无关帧边界触发用户中断，ISR 误判成数据事件'},
 {n:'PARTYP',hi:19,lo:19,g:'green',role:'奇偶校验类型（PAREN=1 时才起作用）。',enc:'0=偶校验，1=奇校验',risk:'与从机约定相反 → 每帧都报奇偶错，而数据本身看起来是对的'},
-{n:'TRAIL',hi:18,lo:16,g:'amber',role:'帧尾延时：最后一条 SCLK 边沿到 SLSO 释放之间的等待。',enc:'1…8 个单位（×4^TPRE）',risk:'太小 → 从机没锁完最后一位 CS 就抬起；太大 → 帧间吞吐下降'},
+{n:'TRAIL',hi:18,lo:16,g:'amber',role:'尾随延时：最后一个位周期结束到 SLSO 释放之间的等待（CPH=1 时还含 B+C）。',enc:'1…8 个单位（×4^TPRE）',risk:'太小 → 从机没锁完最后一位 CS 就抬起；太大 → 帧间吞吐下降'},
 {n:'TPRE',hi:15,lo:13,g:'amber',role:'TRAIL 的预分频，每档 ×4。',enc:'n=0…7 → 1, 4, 16, …, 16384',risk:'与 TRAIL 组合算错 → 实际延时差 4 倍（示波器上最容易发现的错）'},
-{n:'LEAD',hi:12,lo:10,g:'amber',role:'帧头延时：SLSO 有效到第一条 SCLK 边沿。',enc:'1…8 个单位（×4^LPRE）',risk:'小于从机 tCSS → 第一条边沿被忽略，整帧错一位'},
+{n:'LEAD',hi:12,lo:10,g:'amber',role:'前导延时：SLSO 有效到数据相位起点（实际到首边沿还要看 CPH，见下文对照）。',enc:'1…8 个单位（×4^LPRE）',risk:'小于从机 tCSS → 第一条边沿被忽略，整帧错一位'},
 {n:'LPRE',hi:9,lo:7,g:'amber',role:'LEAD 的预分频，每档 ×4。',enc:'n=0…7 → 1…16384',risk:'同上，4 倍量级的偏差'},
 {n:'IDLE',hi:6,lo:4,g:'amber',role:'帧前空闲长度：同时定义 IDLEA 与 IDLEB 两个等长子相位，二者交界处切换 SCLK 极性。',enc:'1…8 个单位（×4^IPRE）',risk:'多从机共用 SCLK 且 CPOL 不同时太小 → 极性切换未稳，下一帧首个边沿出毛刺'},
 {n:'IPRE',hi:3,lo:1,g:'amber',role:'IDLE 的预分频，每档 ×4。',enc:'n=0…7 → 1…16384',risk:'同上'},

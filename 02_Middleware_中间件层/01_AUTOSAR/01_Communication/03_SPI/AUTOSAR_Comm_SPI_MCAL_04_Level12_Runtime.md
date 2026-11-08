@@ -266,7 +266,7 @@ SPI_RUNTIME_WRITESAFETYENDINITPROTREG(&GLOBALCON, GlobalConReg.U);
 - 上一篇：[Level 0 运行时](AUTOSAR_Comm_SPI_MCAL_03_Level0_Runtime.md)
 - 下一篇：EB 配置与代码生成
 - DMA 与总线：[HW_Sys_Bus 多主访问与写保护](../../../../01_Hardware_硬件层/03_System/04_Bus/HW_Sys_Bus_MultiMaster_Access_Protection.md)
-- QSPI 移动计数器与 PT2：[AURIX_TC3xx_QSPI_Study_Atlas.html](../../../../AURIX_TC3xx_QSPI_Study_Atlas.html) 第 05/10 章
+- QSPI 移动计数器与 PT2：[HW_Periph_Comm_QSPI_Study_Atlas.html](../../../../01_Hardware_硬件层/05_Peripherals/01_Communication/01_SPI/HW_Periph_Comm_QSPI_Study_Atlas.html) 第 05/10 章
 
 ## 待补充问题
 

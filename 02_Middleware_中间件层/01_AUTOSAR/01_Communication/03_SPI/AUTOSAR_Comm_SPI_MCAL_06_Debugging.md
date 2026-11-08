@@ -225,7 +225,7 @@ sequenceDiagram
 
 - 上一篇：[EB 配置](AUTOSAR_Comm_SPI_MCAL_05_EB_Configuration.md)
 - 需求侧：[需求模型](AUTOSAR_Comm_SPI_MCAL_01_Requirement_Model.md)
-- 硬件侧：[AURIX_TC3xx_QSPI_Study_Atlas.html](../../../../AURIX_TC3xx_QSPI_Study_Atlas.html) 第 02（采样点）/ 08（片选）/ 10（错误桶）章
+- 硬件侧：[HW_Periph_Comm_QSPI_Study_Atlas.html](../../../../01_Hardware_硬件层/05_Peripherals/01_Communication/01_SPI/HW_Periph_Comm_QSPI_Study_Atlas.html) 第 02（采样点）/ 08（片选）/ 10（错误桶）章
 - 多核一致性：[AUTOSAR 多核数据一致性与多核间通信](../../07_System/AUTOSAR_Sys_Multicore_Data_Consistency_and_Communication.md)
 
 ## 待补充问题

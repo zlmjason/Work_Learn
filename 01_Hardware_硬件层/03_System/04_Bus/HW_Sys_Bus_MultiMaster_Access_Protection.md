@@ -36,7 +36,7 @@
 
 ## 关联笔记
 
-- 模块侧的“改配置必须落在静止点”：`AURIX_TC3xx_QSPI_Study_Atlas.html` 第 14 章（生命周期：PAUSE / 复位粒度）。
+- 模块侧的“改配置必须落在静止点”：`HW_Periph_Comm_QSPI_Study_Atlas.html` 第 14 章（生命周期：PAUSE / 复位粒度）。
 - 同目录：[AURIX_TC3xx_Sys_Bus_Overview.md](AURIX_TC3xx_Sys_Bus_Overview.md)
 - 待写：中断系统的“事件标志 vs 中断请求”两级分离（`03_System/06_Interrupt/`）
 - 待写：CLC 时钟门控与时钟源切换的强制间隔（`03_System/01_Clock/`）
