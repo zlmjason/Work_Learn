@@ -19,3 +19,6 @@ __pycache__/
 
 # 转换中间产物
 _parts/
+
+# DSH 项目级技能根（junction → .claude/skills，不入库）
+.agents/

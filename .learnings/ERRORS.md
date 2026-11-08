@@ -1,4 +1,4 @@
-﻿# Errors
+# Errors
 
 Command failures and integration errors.
 
@@ -566,6 +566,7 @@ Git Bash (MSYS2) 中 `python` / `python3` 解析到 WindowsApps 的 App Executio
 - `summarize.py --print-content`：requests+bs4 拿到的是微信反爬验证/引导页碎片，无正文
 - `~/.agent-reach/tools/wechat-article-for-ai/`：不存在（Camoufox 方案需额外安装浏览器）
 - WebFetch：`Unable to verify if domain mp.weixin.qq.com is safe to fetch`
+- 2026-11-08：DSH `web_fetch` 访问 mp.weixin.qq.com 文章被重定向到 `wappoc_appmsgcaptcha` 验证页（「环境异常，完成验证后即可继续访问」），同样拿不到正文
 
 ### Suggested Fix
 
@@ -578,8 +579,9 @@ Git Bash (MSYS2) 中 `python` / `python3` 解析到 WindowsApps 的 App Executio
 - Reproducible: yes
 - Related Files: `.claude/skills/agent-reach/references/web.md`, `.claude/skills/summarize/summarize.py`
 - Pattern-Key: integration.wechat_antibot
-- Recurrence-Count: 1
+- Recurrence-Count: 2
 - First-Seen: 2026-08-30
+- Last-Seen: 2026-11-08
 
 ---
 
@@ -693,3 +695,150 @@ httpx.HTTPStatusError: Client error '401 Unauthorized' for url 'https://mineru.n
 
 - Related Files: 6 篇 SPI MCAL 笔记 + Config_Explorer.html
 - Pattern-Key: agent.api.balance_exhausted
+
+---
+
+## [ERR-20261102-002] tools/ude_workspace_overwritten_by_com
+
+**Logged**: 2026-11-02T23:20:00+08:00
+**Priority**: high
+**Status**: open
+**Area**: tools / UDE COM 自动化
+
+### Summary
+
+用 UDE COM 做自动化探测时，调用 `StartAndCreateWorkspace("UDEVisualPlatform.exe", <已存在的 TC397 workspace>, <cfg>, 1)`，把用户已有的 `TC397_PlatForm_Debug.wsx`（2021 格式，最后修改 2026-10-20）覆盖成了一个新的 UDE 4.8 空工作区（104,808 字节，创建时间 2026-11-02 23:13）。
+
+### Error
+
+- 覆盖前：`ProdInfoString=2021`，`CreationDate=21.12.2025 12:39:07`，`LastWriteDate=20.10.2026 21:29:58`
+- 覆盖后：`ProdInfoString=4.8`，`CreationDate=02.11.2026 23:13:02`
+- COM 实际启动的是 `F:\UDE4.8\UDEVisualPlatform.exe`，不是 `C:\Program Files\pls\UDE Starterkit 2021`；`UDELauncher` 的 COM 注册指向 UDE 4.8
+
+### Details
+
+- `StartAndOpenWorkspace("UDEVisualPlatform.exe", wsp, $null)` 可以正常打开已有 workspace（3 参数）
+- `StartAndCreateWorkspace(..., wsp, cfg, 1)` 的语义是“创建新 workspace 到该路径”，路径已存在时会直接覆盖，不是“打开或创建”
+- 发现后已保留覆盖后的文件为 `TC397_PlatForm_Debug.wsx.ude48_20261102`
+- 已把同目录的 `TC397_PlatForm_Debug_122125123907.wsx`（2021 格式，最后修改 2026-08-30）复制回 `TC397_PlatForm_Debug.wsx`，恢复到最后可用备份；2026-08-30 至 2026-10-20 之间的窗口布局/断点等改动可能丢失
+- 连接失败报告 `__connection_failed_report__Controller0_Core0_2026_11_02.txt` 为本次无板连接测试产生
+
+### Suggested Action
+
+- 打开已有 workspace 一律用 `StartAndOpenWorkspace(exe, wsp, None)`；只有目标路径不存在时才用 `StartAndCreateWorkspace`
+- 做任何 UDE COM 写操作前，先 `Copy-Item` 备份 `.wsx`
+- 明确 COM 解析到的 exe（`Get-CimInstance Win32_Process` 看 CommandLine），不要假设是 Starterkit 2021
+- 无头自动化先设 `UDEApplication.EnableUserInterface = False` / 合适的 `GUIMode`，并先做只读 `Connected` / `State` 探测
+
+### Metadata
+
+- Reproducible: yes
+- Related Files: `C:\Users\Public\Documents\pls\UDESTK 2021\Workspaces\TC397_PlatForm_Debug.wsx`, `F:\UDE4.8\UDEVisualPlatform.exe`
+- Pattern-Key: tools.ude.com_create_overwrites_workspace
+- Recurrence-Count: 1
+- First-Seen: 2026-11-02
+
+## [ERR-20261108-001] integration/github_raw_and_plugin_index_fetch_flaky
+
+**Logged**: 2026-11-08T16:45:00+08:00
+**Priority**: low
+**Status**: open
+**Area**: 网络抓取（调研任务）
+
+### Summary
+
+调研 DSH 插件生态时，`raw.githubusercontent.com` 等静态内容源偶发 30s 超时 / `fetch failed`；GitHub 仓库 HTML 页、npmjs.com、dshbase.com、dshplugin.online 也各出现一次不可达。同一 URL 稍后重试可成功，判断为网络抖动而非域名级封锁。
+
+### Details
+
+- `raw.githubusercontent.com` 读取 dshfind、dsh-superagent-prototype 的 README 成功，随后对 `omdsh-dev/dsh-mnemon`、`bowenliang123/dsh-context`、`shanliuling/dsh-image-gen` 连续超时
+- `cdn.jsdelivr.net` 对 GitHub 文件返回 302 到 raw.githubusercontent.com，`web_fetch` 不跟随跨域重定向 → 该 CDN 通道不可用
+- GitHub HTML 页、npmjs.com、dshbase.com、dshplugin.online 均有失败记录；无固定域名规律
+- 微信文章属已知硬阻塞（见 ERR-20260830-001），本次同样被 CAPTCHA 拦截
+
+### Suggested Action
+
+- GitHub 内容优先用 `raw.githubusercontent.com`，失败后间隔重试；不要用 jsDelivr 作为替代（会被 302 挡住）
+- 拿不到原文时用搜索结果摘要交叉验证，并在结论中明确标注"未读原文/待验证"
+- 需要稳定的第三方检索能力时，再评估配置 Exa 等检索 MCP（需用户决策）
+
+### Metadata
+
+- Reproducible: no（网络抖动，非稳定复现）
+- Pattern-Key: tools.web.fetch_flaky
+- Recurrence-Count: 1
+- First-Seen: 2026-11-08
+
+## [ERR-20261108-002] integration/dsh-restart-port-conflict-invisible
+
+**Logged**: 2026-11-08T17:45:00+08:00
+**Priority**: medium
+**Status**: open
+**Area**: DSH Web 服务运维
+
+### Summary
+
+用户"重启 DSH"后技能配置未生效：旧的 `dsh web` 进程（PID 151188，14:17 启动）仍占用 `127.0.0.1:3080`，新启动的实例因 `EADDRINUSE` 失败退出，但留下了新的 startup 日志，容易误判为"已重启"。
+
+### Error
+
+```
+error: Error: listen EADDRINUSE: address already in use 127.0.0.1:3080
+```
+
+### Details
+
+- 端口占用核实：`Get-NetTCPConnection -LocalPort 3080 -State Listen` 返回 OwningProcess=151188，且该进程 CreationDate=14:17:18（未变化）
+- 新 startup 日志 `startup-2026-11-08T09-39-51.921Z-*.log` 存在 ≠ 重启成功；该日志尾部即 EADDRINUSE 错误
+- 父进程 cmd.exe 114064 同样存活（`/d /s /c "dsh web ..."`），新旧实例共用同一命令行
+- 判据缺失导致"用户说重启了/日志有新文件"被当成生效，实际配置（cordis.patch.yml 的 customSkillDirs）未加载，`skill` 工具仍报 unknown
+
+### Suggested Action
+
+- 重启 DSH 前必须先终止旧进程树：`taskkill /PID <dsh web node PID> /T /F`（或关闭启动它的终端/快捷方式），确认 `Get-NetTCPConnection -LocalPort 3080` 无监听后再启动
+- 重启是否生效的硬判据：进程 CreationDate 变新 + 端口 OwningProcess 换成新 PID + `skill` 能加载项目技能；不要只看日志文件有无新增
+- 重启会中断当前会话，但会话已持久化，重开后可从历史继续
+
+### Metadata
+
+- Reproducible: yes
+- Related Files: `C:\Users\11064\.dsh\profiles\web\cordis.patch.yml`
+- Pattern-Key: tools.dsh.restart_port_conflict
+- Recurrence-Count: 1
+- First-Seen: 2026-11-08
+
+---
+
+## [ERR-20261108-003] tools/ude_messageview_raw_win32_crash
+
+**Logged**: 2026-11-08T18:15:00+08:00
+**Priority**: high
+**Status**: open
+**Area**: UDE 自动化 / Win32 消息读取
+
+### Summary
+
+为读取 UDE Starterkit 2021 的 Message View，向内部 `SysListView32` 发送手工构造的 `LVM_GETITEMTEXTW`（`LVITEM` 结构用 C# 自定义布局），触发 UDE 内部错误/访问违例，UDE 弹出 “UDEVisualPlatform is closed due to an internal error !” 并退出。
+
+### Details
+
+- Message View 的内部结构：`UDE:Messages` 自定义 Pane → `SysListView32`（HWND 986008，ID 59648）
+- 直接用 `SendMessage(LVM_GETITEMTEXTW)` + 手工 `LVITEM` 可能因 64 位结构布局/跨进程指针不匹配导致崩溃
+- UDE 工作区文件未被修改（`TC397_PlatForm_Debug.wsx` mtime 仍为 2026-11-02 23:38）
+- UDE 日志目录生成/已有 `__UDENETPlatform_problem_report__.txt`
+- 崩溃前 “Multicore / multi program loader” 对话框仍在：`OK` / `Cancel` / `Help`，`= Binary`、`= Symbols`、`Additional download`
+
+### Suggested Action
+
+- 不要对 UDE 的 Message View 使用原始 Win32 `LVM_GETITEMTEXT`/跨进程指针
+- 优先使用 UDE 自带 `MessageLog.SaveToFile(path, append)`，或界面右键 Save to file / 复制到剪贴板
+- 只读监控用 UI Automation 的 `TextPattern`/`ValuePattern`，不要 SendMessage 写指针
+- 自动化下载时优先走 UDE 宏脚本（`-s` + `CreateObject("UDESTK.ApplicationRoot.2021")`），并用 UIA 安全点击 “Multicore / multi program loader” 的 OK
+
+### Metadata
+
+- Reproducible: yes（勿重复）
+- Related Files: `C:\Program Files\pls\UDE Starterkit 2021\UDEVisualPlatform.exe`, `C:\Users\Public\Documents\pls\UDESTK 2021\Log\__UDENETPlatform_problem_report__.txt`
+- Pattern-Key: tools.ude.messageview_raw_win32_crash
+- Recurrence-Count: 1
+- First-Seen: 2026-11-08

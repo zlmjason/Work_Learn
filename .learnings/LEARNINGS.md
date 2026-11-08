@@ -1,4 +1,4 @@
-﻿# Learnings
+# Learnings
 
 Corrections, insights, and knowledge gaps captured during development.
 
@@ -841,3 +841,65 @@ TriCore PSW 的 IS 位是 **bit 9**；复位默认值 `0x980` 中 **IS=0**（清
 - Related Files: `02_Middleware_中间件层/01_AUTOSAR/01_Communication/03_SPI/AUTOSAR_Comm_SPI_MCAL_01_Requirement_Model.md`、`.../AUTOSAR_Comm_SPI_MCAL_Config_Explorer.html`
 - Evidence: `D:\AUTOSAR_MCAL\docs\AUTOSAR_SWS_SPIHandlerDriver_R4.2.2.pdf` p.86, ECUC_Spi_00227
 - Pattern-Key: autosar.ecuc.enum_semantics
+
+## [LRN-20261108-001] knowledge_gap/dsh-ecosystem-official-vs-community
+
+**Logged**: 2026-11-08
+**Priority**: medium
+**Status**: pending
+**Area**: DSH 插件生态 / AI 工具链
+
+### Summary
+
+DSH 生态里"官方"与"社区"的边界必须核验：中文推荐文常把第三方社区插件写成"官方/社区官方团队"。判断规则：只有 `@deepseek-ai/dsh-*` 包与官方 bundle 属官方；`hikariming/dshfind` 是社区索引站（既非插件、也非官方商店）；`omdsh-dev/*` 与个人仓库（shanliuling、bowenliang123、laoqiu 等）均为第三方。`DeepSeek-ai/dsh-superagent-prototype` 是官方 GitHub 组织发布的 **research prototype**，README 明确标注 "not an official DeepSeek product"。
+
+### Details
+
+- dshfind README 自述 "learning & sharing community"，插件市场由 GitHub topic `dsh-plugin` 自动聚合 → 不是官方应用商店
+- Super-agent 真实存在：Router（主 Session）+ Worker（Executor Session）双层、GitHub/Feishu Source、PR 流程、Web 面板均可在仓库 docs 中核实；但"三步部署"不实（SETUP.md 由 agent 逐步代做），"三道安全围栏"未在 README/docs 中逐条证实，属转述夸大
+- 本地 DSH 0.2.2-rc.1 已内置 token-meter、compaction、skill、sidebar files/terminal 等，社区插件多为增强或重复造轮子
+- 部分插件同名多实现（dsh-skills-manager：`laoqiu`、`BAIKAI23333` 各一份），引用时必须带 owner
+- 大模型推荐类长文可先用一手来源反查：GitHub 仓库 README、官方 bundle 列表（`plugin_manager list_bundles`），再判断其"官方"表述
+
+### Suggested Action
+
+- 引用 DSH 插件时一律带 `owner/repo` 全名，并核对 README 自述定位；不把"官方"当卖点转述
+- 后续做 DSH 生态笔记时，先把本结论作为"真假核验"基线
+- 涉及插件安装的建议一律先确认再执行（LRN-20260717-001）
+
+### Metadata
+
+- Related Files: `.learnings/ERRORS.md`（ERR-20261108-001 抓取失败）
+- Evidence: https://github.com/hikariming/dshfind 、https://github.com/DeepSeek-ai/dsh-superagent-prototype （README: "Research prototype for reference only, not an official DeepSeek product"）
+- Pattern-Key: dsh.ecosystem.official_vs_community
+
+## [LRN-20261108-002] knowledge_gap/dsh-web-profile-skill-layering
+
+**Logged**: 2026-11-08
+**Priority**: medium
+**Status**: pending
+**Area**: DSH 技能加载机制
+
+### Summary
+
+DSH **web profile** 里 host 层的 `skill-filesystem` 行是**禁用**状态，本地技能发现由 agent preset 层的同名行承担；因此给 `cordis.patch.yml` 写 `- id: skill-filesystem` 的配置**无效**（打到了被禁用的 host 行）。正确做法：项目根建 `.agents/skills` junction 指向 `.claude/skills`，命中 DSH 原生 project-agents 扫描根（rank 200），provider 会实时发现，**连重启都不需要**。
+
+### Details
+
+- `dsh-web-app/cordis.patch.yml` 原文注释："the base host `skill-filesystem` row is disabled here (presets own local discovery)"，紧随其后 `- id: skill-filesystem` + `disabled: true`
+- `dsh-web-app/presets/cordis.patch.yml` 里 preset 的 `skill-filesystem` 用 `customSkillDirs: [<agent-preset 包>/skills]`（内置技能来源，如 `diagnose-windows-sandbox-acl`）；默认根（项目 `.agents/skills`、`~/.agents/skills` 等）仍由 `includeDefaultRoots: true` 生效
+- 实测：junction 创建后技能目录从 6 个即时变为 **20 个**（15 项目技能 + 4 全局独有 + 1 内置；同名 obsidian-vault/skillify 由项目版覆盖全局版），无需重启 DSH
+- 技能工具返回的 base directory 显示为 `.agents/skills/<name>`（junction 路径），脚本相对路径仍指向仓库内同一份文件
+- 该 junction 已加入 `.gitignore`（`.agents/`），不入库
+
+### Suggested Action
+
+- 项目级技能共享统一用 `.agents/skills` junction，不要改 profile patch 的 host 行
+- 若确实要改 preset 层配置，需 patch preset 行（`preset-cordis` 的 `config.plugins` 按 id 覆盖），风险与影响面更大
+- 验证判据：技能目录出现项目技能、`skill` 工具能返回 `.agents/skills/...` base directory
+
+### Metadata
+
+- Related Files: `.agents/skills`（junction）、`.gitignore`、`C:\Users\11064\.dsh\profiles\web\cordis.patch.yml`
+- Evidence: `dsh-web-app/cordis.patch.yml` 注释与 `presets/cordis.patch.yml`
+- Pattern-Key: dsh.skills.project_root_junction
