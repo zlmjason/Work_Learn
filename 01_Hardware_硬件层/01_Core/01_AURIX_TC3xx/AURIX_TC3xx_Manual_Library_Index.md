@@ -49,6 +49,8 @@
 | EVADC（S7 温度采集） | TC3xx UM part2 | **Ch32 Enhanced Versatile Analog-to-Digital Converter (EVADC)** |
 | GTM（PWM/定时） | TC3xx UM part2 | **Ch28 GTM** |
 | QSPI | TC3xx UM part2 | **Ch37 QSPI** |
+| 总线架构（SRI 仲裁 / 资源访问时间 / SPB） | TC3xx UM part1 | **Ch4 On-Chip System Connectivity**：4.3.2 仲裁（p162）、4.8 访问延迟 Table 70（p185）、4.10 FPI/SPB（p189） |
+| DMA（通道 / 请求 / move） | TC3xx UM part1 | **Ch18 DMA**：18.3.3 DMA 通道与请求（p1439）、18.3.4.4 Move Operation（p1454） |
 | 板级 LED/按键/TFT/接插件 | Application Kit TC3X7 Manual | 全文（33 页，附件区可开） |
 | 引脚/封装/电气 | TC39xB Data Sheet | 按需 |
 | TC397 专属寄存器差异 | TC39x-B User Manual | 附录部分（配合家族手册查） |
