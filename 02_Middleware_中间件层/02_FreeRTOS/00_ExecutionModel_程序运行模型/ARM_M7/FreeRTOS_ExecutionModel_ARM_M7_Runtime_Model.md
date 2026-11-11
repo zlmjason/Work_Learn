@@ -100,6 +100,7 @@
   - `99_Attachments_附件/FreeRTOS_ARM_CM7_Port_V10.5.1/portable/GCC/ARM_CM7/r0p1/port.c`
   - `.../portmacro.h`
   - `.../README.md`（来源、SHA256、TriCore 对照表）
+- 交互实验台：[ARM_M7_Exception_Stack_Interactive.html](./ARM_M7_Exception_Stack_Interactive.html)（12 节：总图、寄存器、双栈、栈帧、FPU、EXC_RETURN、NVIC、SVC、PendSV、SysTick、Fault、对比）
 - 本地 TriCore port：
   - `C:\Users\11064\Desktop\TC397_Platform_Jason\ADS\FreeRTOS\OS\FreeRTOS\portable\Tasking\TC3\port.c`
 - ARMv7-M Architecture Reference Manual（DDI0403E）：

@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARM Cortex-M7 程序运行模型 · 交互实验台</title>
+<style>
+:root{
+  --bg:#080d19; --bg2:#0d1424; --panel:#111a2e; --panel2:#16213a; --panel3:#1b2946;
+  --line:#263453; --line2:#33456b; --text:#e8eefb; --muted:#93a4c4; --dim:#64779c;
+  --accent:#5eead4; --accent2:#fbbf24; --accent3:#93c5fd; --danger:#fb7185; --ok:#34d399;
+  --mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+  --sans:"Segoe UI","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  --shadow:0 18px 50px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{
+  margin:0; color:var(--text); font-family:var(--sans); font-size:15px; line-height:1.7;
+  background:
+    radial-gradient(1100px 600px at 12% -10%, rgba(94,234,212,.09), transparent 60%),
+    radial-gradient(900px 600px at 100% 0%, rgba(147,197,253,.08), transparent 55%),
+    var(--bg);
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code,kbd,.mono{font-family:var(--mono)}
+kbd{background:var(--panel3);border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:.86em;color:var(--text)}
+.app{display:grid;grid-template-columns:310px minmax(0,1fr);min-height:100vh}
+.sidebar{
+  position:sticky;top:0;height:100vh;overflow:auto;padding:26px 20px 18px;
+  background:linear-gradient(180deg,rgba(17,26,46,.96),rgba(9,14,26,.98));
+  border-right:1px solid var(--line);backdrop-filter:blur(8px);
+}
+.brand .kicker{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+.brand h1{font-size:22px;line-height:1.3;margin:8px 0 6px;font-weight:700;letter-spacing:.01em}
+.brand h1 em{font-style:normal;color:var(--accent)}
+.brand p{margin:0 0 18px;color:var(--muted);font-size:12.5px}
+nav#nav{display:flex;flex-direction:column;gap:4px;margin:10px 0 16px}
+nav#nav button{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid transparent;
+  background:transparent;color:var(--muted);padding:9px 10px;border-radius:10px;cursor:pointer;
+  font:inherit;font-size:13.5px;transition:.15s;
+}
+nav#nav button .n{font-family:var(--mono);font-size:11px;color:var(--dim);min-width:20px}
+nav#nav button:hover{background:var(--panel);color:var(--text)}
+nav#nav button.active{background:linear-gradient(90deg,rgba(94,234,212,.14),rgba(94,234,212,.04));border-color:rgba(94,234,212,.35);color:var(--text)}
+nav#nav button.active .n{color:var(--accent)}
+.progress{height:3px;background:var(--panel3);border-radius:99px;overflow:hidden;margin-top:6px}
+.progress #bar{height:100%;width:8%;background:linear-gradient(90deg,var(--accent),var(--accent3));transition:width .25s}
+.sidefoot{color:var(--dim);font-size:11px;margin-top:16px;line-height:1.6}
+.main{min-width:0}
+.topbar{
+  position:sticky;top:0;z-index:6;display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:14px 34px;background:rgba(8,13,25,.82);border-bottom:1px solid var(--line);backdrop-filter:blur(10px);
+}
+.crumb{font-family:var(--mono);font-size:12px;color:var(--accent2);letter-spacing:.06em}
+.topnote{color:var(--dim);font-size:11.5px;margin-left:12px}
+.navbtns{display:flex;gap:8px}
+.stage{max-width:1120px;margin:0 auto;padding:30px 38px 90px}
+.section{display:none;scroll-margin-top:84px}
+.section.active{display:block;animation:fade .28s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section h2{font-size:27px;line-height:1.35;margin:6px 0 10px;letter-spacing:.01em}
+.section h2 .num{font-family:var(--mono);color:var(--accent);font-size:16px;margin-right:10px;vertical-align:2px}
+.lead{color:var(--muted);max-width:850px;margin:0 0 18px;font-size:15px}
+h3{font-size:17px;margin:26px 0 10px;color:var(--text)}
+h4{font-size:14px;margin:18px 0 8px;color:var(--accent3);letter-spacing:.02em}
+p{margin:8px 0}
+.small{font-size:12.5px;color:var(--muted)}
+.dim{color:var(--dim)}
+.mono{font-family:var(--mono)}
+.card{
+  background:linear-gradient(180deg,rgba(22,33,58,.82),rgba(14,21,38,.84));
+  border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:14px 0;box-shadow:var(--shadow);
+}
+.card.tight{padding:14px 16px}
+.card h3,.card h4{margin-top:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.btn{
+  appearance:none;border:1px solid rgba(94,234,212,.45);background:rgba(94,234,212,.12);color:var(--text);
+  padding:8px 13px;border-radius:9px;cursor:pointer;font:inherit;font-size:13px;transition:.15s;
+}
+.btn:hover{background:rgba(94,234,212,.2);border-color:var(--accent)}
+.btn.ghost{background:transparent;border-color:var(--line2);color:var(--muted)}
+.btn.ghost:hover{color:var(--text);border-color:var(--muted)}
+.btn.active{background:var(--accent);color:#06251f;border-color:var(--accent);font-weight:700}
+.btn.warn{border-color:rgba(251,191,36,.45);background:rgba(251,191,36,.1)}
+.btn.danger{border-color:rgba(251,113,133,.45);background:rgba(251,113,133,.1)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);border-radius:999px;padding:2px 9px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.pill.ok{border-color:rgba(52,211,153,.45);color:var(--ok)}
+.pill.warn{border-color:rgba(251,191,36,.45);color:var(--accent2)}
+.pill.bad{border-color:rgba(251,113,133,.45);color:var(--danger)}
+.tag{display:inline-block;padding:0 6px;border-radius:4px;background:var(--panel3);color:var(--accent3);font-family:var(--mono);font-size:11px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{color:var(--accent3);font-weight:600;background:rgba(147,197,253,.05)}
+tr:last-child td{border-bottom:0}
+td.mono,th.mono{font-family:var(--mono);font-size:12.5px}
+.think,.cross,.fail{border-radius:12px;padding:13px 15px;margin:12px 0;border:1px solid}
+.think{background:rgba(251,191,36,.06);border-color:rgba(251,191,36,.28)}
+.cross{background:rgba(94,234,212,.05);border-color:rgba(94,234,212,.25)}
+.fail{background:rgba(251,113,133,.06);border-color:rgba(251,113,133,.28)}
+.think .label,.cross .label,.fail .label{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:5px}
+.think .label{color:var(--accent2)} .cross .label{color:var(--accent)} .fail .label{color:var(--danger)}
+.think p,.cross p,.fail p{margin:5px 0}
+details{margin:8px 0;border:1px solid var(--line);border-radius:9px;padding:6px 10px;background:rgba(8,13,25,.35)}
+details summary{cursor:pointer;color:var(--accent3);font-size:12.5px}
+details p,details ul{margin:6px 0 2px;font-size:12.5px;color:var(--muted)}
+ul,ol{margin:8px 0;padding-left:22px}
+li{margin:4px 0}
+code{background:rgba(147,197,253,.08);border:1px solid rgba(147,197,253,.12);border-radius:4px;padding:1px 5px;font-size:.9em;color:#d7e7ff}
+pre.code{
+  background:#070c17;border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow:auto;
+  font-family:var(--mono);font-size:12.5px;line-height:1.75;color:#c9d7f0;margin:10px 0;white-space:pre;
+}
+pre.code .cm{color:#6f86ad}
+pre.code .hl{display:block;background:rgba(94,234,212,.12);border-left:2px solid var(--accent);margin:0 -16px;padding:0 14px}
+pre.code .reg{color:var(--accent2)}
+pre.code .op{color:var(--accent)}
+.flow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.flow .arrow{color:var(--dim);font-family:var(--mono)}
+.node{
+  border:1px solid var(--line2);background:linear-gradient(180deg,var(--panel2),var(--panel));border-radius:12px;
+  padding:12px 14px;cursor:pointer;min-width:150px;transition:.15s;
+}
+.node:hover{border-color:var(--accent);transform:translateY(-1px)}
+.node.active{border-color:var(--accent);box-shadow:0 0 0 1px rgba(94,234,212,.25),0 0 26px rgba(94,234,212,.08)}
+.node .t{font-weight:700;font-size:13.5px}
+.node .s{color:var(--muted);font-size:11.5px;font-family:var(--mono);margin-top:2px}
+.detail{
+  border:1px dashed var(--line2);border-radius:12px;padding:14px 16px;margin-top:12px;
+  background:rgba(8,13,25,.35);min-height:74px;color:var(--muted);font-size:13px;
+}
+.detail strong{color:var(--text)}
+.reg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;margin:10px 0}
+.reg-grid button{
+  border:1px solid var(--line2);background:var(--panel);color:var(--text);border-radius:9px;padding:9px 8px;
+  cursor:pointer;font-family:var(--mono);font-size:12.5px;text-align:left;transition:.15s;
+}
+.reg-grid button:hover{border-color:var(--accent)}
+.reg-grid button.active{border-color:var(--accent);background:rgba(94,234,212,.1)}
+.reg-grid button small{display:block;color:var(--dim);font-size:10px;font-family:var(--sans);margin-top:2px}
+.stackwrap{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.stackcol{border:1px solid var(--line);border-radius:12px;padding:14px;background:rgba(8,13,25,.35);transition:.2s}
+.stackcol.active{border-color:var(--accent);box-shadow:0 0 0 1px rgba(94,234,212,.2)}
+.stackcol h4{margin:0 0 4px;color:var(--text)}
+.stackcol .sp{font-family:var(--mono);font-size:12px;color:var(--accent2)}
+.stackcol p{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+.mem{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:12px 0;background:#070c17}
+.mem .row{display:grid;grid-template-columns:96px 74px minmax(84px,1fr) 128px;gap:6px;padding:7px 10px;border-bottom:1px solid rgba(38,52,83,.65);font-family:var(--mono);font-size:11.5px}
+.mem .row:last-child{border-bottom:0}
+.mem .row.head{color:var(--accent3);background:rgba(147,197,253,.05);font-size:11px}
+.mem .row .addr{color:var(--dim)}
+.mem .row .name{color:var(--accent2)}
+.mem .row .val{color:#cfe0ff}
+.mem .row .note{color:var(--muted);font-family:var(--sans);font-size:11.5px}
+.mem .row.pending{opacity:.35}
+.mem .row.hl{background:rgba(94,234,212,.1)}
+.mem .row.reserved{color:var(--dim);font-style:italic}
+.mem .spmark{color:var(--accent);font-family:var(--mono)}
+.bits{display:flex;gap:2px;flex-wrap:wrap;margin:8px 0}
+.bits span{font-family:var(--mono);font-size:11px;padding:3px 5px;border:1px solid var(--line2);border-radius:4px;background:var(--panel)}
+.bits span.on{border-color:var(--accent);background:rgba(94,234,212,.12);color:var(--accent)}
+.bits span.off{color:var(--dim)}
+.kv{display:grid;grid-template-columns:160px minmax(0,1fr);gap:6px 12px;font-size:13px;margin:8px 0}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-family:var(--mono);font-size:12.5px}
+.timeline{display:flex;flex-direction:column;gap:0;margin:12px 0}
+.tl{display:grid;grid-template-columns:120px 1fr;gap:10px;padding:8px 0;border-left:2px solid var(--line2);padding-left:14px;margin-left:6px;color:var(--muted);font-size:12.5px}
+.tl.on{border-left-color:var(--accent);color:var(--text)}
+.tl .t{font-family:var(--mono);color:var(--accent2);font-size:11.5px}
+.bar{height:8px;background:var(--panel3);border-radius:99px;overflow:hidden}
+.bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));transition:width .25s}
+.note{color:var(--dim);font-size:12px;border-left:2px solid var(--line2);padding-left:10px;margin:10px 0}
+.footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);color:var(--dim);font-size:11.5px}
+.footer a{color:var(--muted)}
+.linkgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.linkgrid a{display:block;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel);color:var(--text);font-size:12.5px}
+.linkgrid a span{display:block;color:var(--dim);font-size:11px;margin-top:3px}
+.linkgrid a:hover{border-color:var(--accent);text-decoration:none}
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:relative;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:18px}
+  nav#nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+  .sidefoot{display:none}
+  .topbar{padding:10px 18px}
+  .topnote{display:none}
+  .stage{padding:20px 18px 70px}
+  .grid2,.grid3,.grid4,.stackwrap{grid-template-columns:1fr}
+  .section h2{font-size:23px}
+}
+@media (max-width:560px){
+  nav#nav{grid-template-columns:1fr}
+  .navbtns .btn{font-size:12px;padding:7px 9px}
+  .mem .row{grid-template-columns:90px 76px 1fr;font-size:11px}
+  .mem .row .note{display:none}
+  .kv{grid-template-columns:110px 1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <span class="kicker">FreeRTOS Port 前置</span>
+    <h1>ARM Cortex-M7<br><em>程序运行模型</em></h1>
+    <p>异常栈帧 · EXC_RETURN · PendSV · Fault</p>
+  </div>
+  <nav id="nav"></nav>
+  <div class="progress"><div id="bar"></div></div>
+  <div class="sidefoot">基于 ARMv7-M ARM DDI0403E、Cortex-M7 TRM DDI0489F、FreeRTOS V10.5.1 ARM_CM7 port。示意图为教学简化，寄存器值以实际工程为准。</div>
+</aside>
+<main class="main">
+  <header class="topbar">
+    <div><span class="crumb" id="crumb">01 / 总图</span><span class="topnote">点击左侧章节或使用 ← →</span></div>
+    <div class="navbtns">
+      <button class="btn ghost" id="prev">← 上一节</button>
+      <button class="btn" id="next">下一节 →</button>
+    </div>
+  </header>
+  <div class="stage">
+<section class="section" id="s1" data-title="总图">
+  <h2><span class="num">01</span>M7 运行模型总图</h2>
+  <p class="lead">Cortex-M7 的程序运行模型可以压成一句话：<strong>硬件自动压栈 + EXC_RETURN 返回 + 双栈 + NVIC</strong>。先建立总图，后面每一节只拆其中一块。</p>
+
+  <div class="card">
+    <h3>一次异常/中断的完整路径</h3>
+    <div class="flow">
+      <div class="node ov-node active" data-key="thread"><div class="t">Thread Mode</div><div class="s">PSP（任务栈）</div></div>
+      <span class="arrow">→</span>
+      <div class="node ov-node" data-key="entry"><div class="t">异常入口</div><div class="s">硬件压 8 字帧</div></div>
+      <span class="arrow">→</span>
+      <div class="node ov-node" data-key="handler"><div class="t">Handler Mode</div><div class="s">MSP（内核栈）</div></div>
+      <span class="arrow">→</span>
+      <div class="node ov-node" data-key="return"><div class="t">异常返回</div><div class="s">EXC_RETURN</div></div>
+      <span class="arrow">→</span>
+      <div class="node ov-node" data-key="thread2"><div class="t">Thread Mode</div><div class="s">PSP 恢复</div></div>
+    </div>
+    <div class="detail" id="ovDetail"><strong>Thread Mode（PSP）：</strong>任务代码运行在这里。FreeRTOS 让每个任务使用自己的 PSP；异常入口把现场压到任务栈上，Handler 改用 MSP。</div>
+  </div>
+
+  <div class="grid3">
+    <div class="card tight"><h4>硬件保存什么？</h4><p class="small">R0–R3、R12、LR、PC、xPSR 由硬件自动压栈；R4–R11 由软件（PendSV）保存。</p></div>
+    <div class="card tight"><h4>返回靠什么？</h4><p class="small">不是普通函数返回，而是 <code>BX LR</code>，LR 里是 <code>EXC_RETURN</code>，告诉硬件回 Thread/Handler、用 MSP/PSP、是否带 FPU。</p></div>
+    <div class="card tight"><h4>和 TriCore 的一句话区别</h4><p class="small">TriCore 把上下文挂在 <strong>CSA 链</strong>上；M7 把异常现场<strong>压在执行栈</strong>上。一个是链表，一个是栈帧。</p></div>
+  </div>
+
+  <div class="think">
+    <span class="label">先想一想</span>
+    <p>为什么 M7 的异常入口只自动保存 8 个寄存器，而不是把 R0–R15 全部保存？</p>
+    <details><summary>提示</summary><p>因为 AAPCS 已经规定 R0–R3、R12 是调用者保存寄存器；异常入口相当于一次“硬件发起的函数调用”，只保存调用者可能还需要的现场。R4–R11 是 callee-saved，由被调用的上下文（FreeRTOS 的 PendSV）负责。</p></details>
+  </div>
+
+  <div class="cross">
+    <span class="label">举一反三</span>
+    <p>看到“硬件自动压栈”时，顺手问三个问题：压到哪条栈？压几个字？返回时谁把 SP 加回去？这三个问题会贯穿第 3、4、6 节。</p>
+  </div>
+</section>
+
+<section class="section" id="s2" data-title="寄存器与模式">
+  <h2><span class="num">02</span>寄存器与模式</h2>
+  <p class="lead">M7 的寄存器不多，但要分清三类：通用寄存器、特殊寄存器、以及只影响中断屏蔽的 mask 寄存器。点击任意寄存器查看它在异常/上下文切换中的角色。</p>
+
+  <div class="card">
+    <h3>程序员可见寄存器</h3>
+    <div class="reg-grid" id="regGrid"></div>
+    <div class="detail" id="regDetail"><strong>点击一个寄存器。</strong>说明会显示：它是什么、谁保存、在 FreeRTOS 切换时是否重要。</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>xPSR 的三个部分</h3>
+      <table>
+        <tr><th>部分</th><th>位</th><th>作用</th></tr>
+        <tr><td>APSR</td><td>31–27</td><td>N/Z/C/V/Q 条件标志</td></tr>
+        <tr><td>IPSR</td><td>8–0</td><td>当前异常号；0 = Thread Mode</td></tr>
+        <tr><td>EPSR</td><td>24 / 9</td><td>T 位（Thumb）、栈对齐位 bit9</td></tr>
+      </table>
+      <p class="note">异常栈帧里的 xPSR 包含 IPSR 与对齐位；调试器里看到的 xPSR 可能是 0x01000000（只有 T 位）。</p>
+    </div>
+    <div class="card">
+      <h3>CONTROL：三颗开关</h3>
+      <div class="btnrow">
+        <label class="pill"><input type="checkbox" id="cNpriv"> nPRIV（1=非特权）</label>
+        <label class="pill"><input type="checkbox" id="cSpsel"> SPSEL（1=Thread 用 PSP）</label>
+        <label class="pill"><input type="checkbox" id="cFpca"> FPCA（1=FPU 活跃）</label>
+      </div>
+      <div class="bits" id="controlBits"></div>
+      <p class="small" id="controlNote">CONTROL 只有在特权级才能写；非特权任务想改，必须先通过 SVC 陷入内核。</p>
+    </div>
+  </div>
+
+  <div class="think">
+    <span class="label">先想一想</span>
+    <p>为什么 FreeRTOS 不把任务栈指针放在 R13，而是让任务使用 PSP？</p>
+    <details><summary>提示</summary><p>因为 Handler Mode 永远用 MSP。如果任务也用 MSP，异常一进入就会覆盖任务栈；双栈把“任务栈”和“异常/内核栈”物理分开，嵌套中断也不会踩到任务栈。</p></details>
+  </div>
+</section>
+
+<section class="section" id="s3" data-title="双栈与权限">
+  <h2><span class="num">03</span>双栈与权限</h2>
+  <p class="lead">M7 有两条栈指针：MSP 和 PSP。Handler Mode 永远用 MSP；Thread Mode 用哪条，由 CONTROL.SPSEL 决定。把这三个开关拨一遍，观察当前栈和可执行动作。</p>
+
+  <div class="card">
+    <div class="btnrow">
+      <span class="small">模式</span>
+      <button class="btn active" id="stThread">Thread</button>
+      <button class="btn ghost" id="stHandler">Handler</button>
+      <span class="small" style="margin-left:12px">权限</span>
+      <button class="btn active" id="stPriv">Privileged</button>
+      <button class="btn ghost" id="stUnpriv">Unprivileged</button>
+      <span class="small" style="margin-left:12px">Thread 栈选择</span>
+      <button class="btn active" id="stMspSel">MSP</button>
+      <button class="btn ghost" id="stPspSel">PSP</button>
+    </div>
+    <div class="stackwrap">
+      <div class="stackcol active" id="mspCard"><h4>MSP</h4><div class="sp">Main Stack Pointer</div><p>复位后默认栈；Handler Mode 强制使用。</p></div>
+      <div class="stackcol" id="pspCard"><h4>PSP</h4><div class="sp">Process Stack Pointer</div><p>Thread Mode 可选；FreeRTOS 任务栈使用它。</p></div>
+    </div>
+    <div class="detail" id="stackSummary"><strong>当前：</strong>Thread / Privileged / MSP。任务如果用 MSP，异常入口会压到同一栈上。</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card tight"><h4>FreeRTOS 的用法</h4><ul class="small"><li>任务：Thread Mode + PSP，每个任务一条栈。</li><li>异常/内核：Handler Mode + MSP。</li><li>首次启动：SVC 从任务栈恢复 PSP，然后返回 Thread/PSP。</li></ul></div>
+    <div class="card tight"><h4>权限边界</h4><ul class="small"><li>非特权不能写 CONTROL、NVIC、SCB 等系统寄存器。</li><li>非特权可以执行 <code>SVC</code>，主动请求内核服务。</li><li>MPU 可以把任务栈/外设划成非特权不可写。</li></ul></div>
+  </div>
+
+  <div class="think">
+    <span class="label">先想一想</span>
+    <p>Handler Mode 下把 CONTROL.SPSEL 置 1，Thread 返回时会用哪条栈？</p>
+    <details><summary>提示</summary><p>SPSEL 只影响 Thread Mode；Handler Mode 仍用 MSP。异常返回时，EXC_RETURN 的 bit2 决定回 Thread 用 MSP 还是 PSP，和 Handler 期间 SPSEL 的值不是一回事。</p></details>
+  </div>
+</section>
+
+<section class="section" id="s4" data-title="异常栈帧">
+  <h2><span class="num">04</span>异常入口与硬件栈帧</h2>
+  <p class="lead">异常入口是 M7 运行模型的核心：硬件自动把 8 个字压到当前栈上。点“触发异常”，一步一步看 SP 怎么下降、帧怎么长出来；再打开 FPU，看扩展帧和 lazy stacking。</p>
+
+  <div class="card">
+    <div class="btnrow">
+      <button class="btn" id="frameStep">触发异常 / 下一步</button>
+      <button class="btn ghost" id="frameReset">复位</button>
+      <label class="pill"><input type="checkbox" id="fpuToggle"> FPU 扩展帧</label>
+      <label class="pill"><input type="checkbox" id="lazyToggle" checked> lazy stacking</label>
+      <button class="btn ghost" id="fpuInstr" disabled>执行 FPU 指令</button>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="mem" id="frameTable"></div>
+        <div class="small" id="frameSp">SP = 0x20008000（异常前）</div>
+      </div>
+      <div>
+        <div class="detail" id="frameInfo"><strong>异常前：</strong>Thread Mode，PSP 指向任务栈顶。点“触发异常”开始压栈。</div>
+        <table>
+          <tr><th>谁保存</th><th>寄存器</th></tr>
+          <tr><td>硬件</td><td>R0–R3、R12、LR、PC、xPSR</td></tr>
+          <tr><td>软件（PendSV）</td><td>R4–R11；FPU 时另有 S16–S31</td></tr>
+          <tr><td>硬件（FPU 扩展帧）</td><td>S0–S15、FPSCR、保留字</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card tight"><h4>为什么是 8 个字？</h4><p class="small">AAPCS 把 R0–R3、R12 定为调用者保存；LR/PC/xPSR 是返回现场。R4–R11 是 callee-saved，留给软件保存。这样硬件帧最小，异常延迟低。</p></div>
+    <div class="card tight"><h4>8 字节对齐</h4><p class="small">异常入口要求栈帧 8 字节对齐；如果 SP 不满足，硬件插入填充字，并在 xPSR bit9 标记。返回时按这个位恢复。</p></div>
+  </div>
+
+  <div class="cross">
+    <span class="label">举一反三</span>
+    <p>FreeRTOS 的 <code>pxPortInitialiseStack</code> 构造的不是 8 字硬件帧，而是 <strong>17 字</strong>：8 字硬件帧 + 1 字 EXC_RETURN + 8 字 R4–R11。为什么多一个 EXC_RETURN？因为 PendSV 用 <code>ldmia r0!, {r4-r11, r14}</code> 把返回信息也放在任务栈上。第 8 节会逐行走。</p>
+  </div>
+
+  <div class="think">
+    <span class="label">先想一想</span>
+    <p>如果任务正在用 FPU，异常入口压的是 8 字还是 26 字？什么时候压 26 字？</p>
+    <details><summary>提示</summary><p>FPU 活跃时是 26 字（8 字基本帧 + 18 字扩展帧）。如果开了 lazy stacking，异常入口先只保留空间，等第一次 FPU 指令再写入 S0–S15/FPSCR；这就是第 5 节。</p></details>
+  </div>
+</section>
+<section class="section" id="s5" data-title="FPU 扩展帧">
+  <h2><span class="num">05</span>FPU 扩展帧与 lazy stacking</h2>
+  <p class="lead">M7 的 FPU 让异常帧从 8 字变成 26 字。lazy stacking 的目的不是“省寄存器”，而是“没用到 FPU 的任务不为它付栈空间和写入成本”。</p>
+
+  <div class="card">
+    <div class="btnrow">
+      <label class="pill"><input type="checkbox" id="fpuUse"> 任务使用 FPU（CONTROL.FPCA=1）</label>
+      <button class="btn ghost" id="fpuLazyRun" disabled>执行第一条 FPU 指令</button>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="mem" id="fpuFrame"></div>
+      </div>
+      <div>
+        <div class="detail" id="fpuInfo"><strong>FPU 未使用：</strong>异常帧 8 字（32 B），栈里没有 S0–S15/FPSCR。</div>
+        <table>
+          <tr><th>场景</th><th>帧大小</th></tr>
+          <tr><td>基本帧</td><td>8 字 = 32 B</td></tr>
+          <tr><td>FPU 扩展帧</td><td>26 字 = 104 B</td></tr>
+          <tr><td>扩展部分</td><td>S0–S15 + FPSCR + 保留字 = 18 字</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card tight"><h4>三个关键位</h4><ul class="small"><li><code>CONTROL.FPCA</code>：任务是否使用过 FPU。</li><li><code>FPCCR.ASPEN</code>：异常入口是否自动保留 FPU 空间。</li><li><code>FPCCR.LSPEN</code>：是否启用 lazy stacking。</li></ul></div>
+    <div class="card tight"><h4>和 FreeRTOS 的关系</h4><p class="small">V10.5.1 的 <code>pxPortInitialiseStack</code> 不会预填 S16–S31；初始 <code>EXC_RETURN=0xFFFFFFFD</code>（无 FPU）。第一次 FPU 指令后，硬件才把 FPU 上下文纳入异常帧。任务栈预算要按 104 B 的扩展帧留余量。</p></div>
+  </div>
+
+  <div class="fail">
+    <span class="label">写错会怎样</span>
+    <p>把任务栈按 32 B 帧估算，但任务实际用了 FPU：中断嵌套几层后栈溢出，表现可能是 HardFault、任务数据被踩、或“随机”复位。栈预算必须按最坏路径算。</p>
+  </div>
+
+  <div class="think">
+    <span class="label">先想一想</span>
+    <p>lazy stacking 开启后，异常入口还会写 S0–S15 吗？什么时候写？</p>
+    <details><summary>提示</summary><p>入口只保留空间，不立即写；第一次 FPU 指令触发写回。若任务一直不用 FPU，这部分空间就一直是保留状态。</p></details>
+  </div>
+</section>
+
+<section class="section" id="s6" data-title="EXC_RETURN">
+  <h2><span class="num">06</span>EXC_RETURN 与异常返回</h2>
+  <p class="lead">异常返回不是普通 <code>BX LR</code>：LR 里装的是 <code>EXC_RETURN</code>，低 4 位告诉硬件“回哪个模式、用哪条栈、有没有 FPU 帧”。点不同值看解码。</p>
+
+  <div class="card">
+    <div class="btnrow" id="excBtns">
+      <button class="btn" data-val="FFFFFFF1">0xFFFFFFF1</button>
+      <button class="btn ghost" data-val="FFFFFFF9">0xFFFFFFF9</button>
+      <button class="btn ghost" data-val="FFFFFFFD">0xFFFFFFFD</button>
+      <button class="btn ghost" data-val="FFFFFFE1">0xFFFFFFE1</button>
+      <button class="btn ghost" data-val="FFFFFFE9">0xFFFFFFE9</button>
+      <button class="btn ghost" data-val="FFFFFFED">0xFFFFFFED</button>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="bits" id="excBinary"></div>
+        <dl class="kv">
+          <dt>返回模式</dt><dd id="excMode">Thread</dd>
+          <dt>使用栈</dt><dd id="excStack">PSP</dd>
+          <dt>FPU 上下文</dt><dd id="excFpu">否</dd>
+        </dl>
+      </div>
+      <div class="detail" id="excNote"><strong>0xFFFFFFFD：</strong>FreeRTOS 任务最常用的返回值：回 Thread Mode、用 PSP、无 FPU 帧。</div>
+    </div>
+  </div>
+
+  <table>
+    <tr><th>EXC_RETURN</th><th>返回模式</th><th>栈</th><th>FPU</th><th>典型场景</th></tr>
+    <tr><td class="mono">0xFFFFFFF1</td><td>Handler</td><td>MSP</td><td>否</td><td>嵌套异常返回到另一个 Handler</td></tr>
+    <tr><td class="mono">0xFFFFFFF9</td><td>Thread</td><td>MSP</td><td>否</td><td>Thread 使用 MSP</td></tr>
+    <tr><td class="mono">0xFFFFFFFD</td><td>Thread</td><td>PSP</td><td>否</td><td>FreeRTOS 任务返回</td></tr>
+    <tr><td class="mono">0xFFFFFFE1</td><td>Handler</td><td>MSP</td><td>是</td><td>FPU 上下文中的嵌套返回</td></tr>
+    <tr><td class="mono">0xFFFFFFE9</td><td>Thread</td><td>MSP</td><td>是</td><td>Thread 使用 MSP + FPU</td></tr>
+    <tr><td class="mono">0xFFFFFFED</td><td>Thread</td><td>PSP</td><td>是</td><td>FreeRTOS 任务 + FPU</td></tr>
+  </table>
+
+  <div class="think">
+    <span class="label">先想一想</span>
+    <p>为什么 <code>EXC_RETURN</code> 的低 4 位不是普通地址的一部分？</p>
+    <details><summary>提示</summary><p>因为异常返回地址在栈帧的 PC 里；<code>EXC_RETURN</code> 是给硬件解码的控制字。低 4 位的组合表示模式/栈/FPU，不是跳转地址。</p></details>
+  </div>
+</section>
+
+<section class="section" id="s7" data-title="NVIC 与优先级">
+  <h2><span class="num">07</span>NVIC、向量表、优先级、尾链</h2>
+  <p class="lead">NVIC 决定“谁先跑、能不能打断、结束后要不要出栈再入栈”。M7 的优先级是<strong>数值越小越高</strong>；FreeRTOS 的临界区用 BASEPRI 只屏蔽一部分中断。</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>向量表（简化）</h3>
+      <table>
+        <tr><th>偏移</th><th>异常</th></tr>
+        <tr><td class="mono">0x00</td><td>初始 MSP</td></tr>
+        <tr><td class="mono">0x04</td><td>Reset</td></tr>
+        <tr><td class="mono">0x0C</td><td>HardFault</td></tr>
+        <tr><td class="mono">0x2C</td><td>SVC</td></tr>
+        <tr><td class="mono">0x38</td><td>PendSV</td></tr>
+        <tr><td class="mono">0x3C</td><td>SysTick</td></tr>
+        <tr><td class="mono">0x40+</td><td>IRQ0…</td></tr>
+      </table>
+      <p class="note">VTOR 指向向量表基址；FreeRTOS 启动时从向量表第 0 项取初始 MSP。</p>
+    </div>
+    <div class="card">
+      <h3>优先级比较器</h3>
+      <div class="btnrow">
+        <span class="small">IRQ A</span><select id="irqA" class="btn ghost"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
+        <span class="small">IRQ B</span><select id="irqB" class="btn ghost"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
+        <button class="btn" id="prioCheck">比较</button>
+      </div>
+      <div class="detail" id="prioResult">选两个优先级，点“比较”。</div>
+      <div class="btnrow" style="margin-top:12px">
+        <span class="small">BASEPRI 阈值</span>
+        <input type="range" id="basepriRange" min="0" max="15" value="5" style="flex:1">
+        <span class="pill mono" id="basepriVal">5</span>
+      </div>
+      <div class="small" id="maskResult">BASEPRI=5 时，优先级数值 ≥ 5 的中断被屏蔽。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>尾链与迟到</h3>
+    <div class="btnrow">
+      <button class="btn" id="tailBtn">演示尾链</button>
+      <button class="btn ghost" id="lateBtn">演示迟到</button>
+      <button class="btn ghost" id="nvicReset">复位</button>
+    </div>
+    <div class="timeline" id="nvicTimeline">
+      <div class="tl"><span class="t">T0</span><span>Thread 正在运行</span></div>
+      <div class="tl"><span class="t">T1</span><span>IRQ1 进入，硬件压栈</span></div>
+      <div class="tl"><span class="t">T2</span><span>IRQ1 Handler 执行</span></div>
+      <div class="tl"><span class="t">T3</span><span>IRQ1 结束；若 IRQ2 已 pending，直接尾链，不出栈</span></div>
+      <div class="tl"><span class="t">T4</span><span>IRQ2 Handler 执行</span></div>
+      <div class="tl"><span class="t">T5</span><span>返回 Thread，统一出栈</span></div>
+    </div>
+  </div>
+
+  <div class="think">
+    <span class="label">先想一想</span>
+    <p>为什么 FreeRTOS 的临界区用 BASEPRI，而不是 PRIMASK？</p>
+    <details><summary>提示</summary><p>PRIMASK 屏蔽所有可配置中断，会让高优先级中断也延迟；BASEPRI 只屏蔽“优先级数值 ≥ 阈值”的中断，保留高优先级（数值更小）中断的实时性。阈值就是 <code>configMAX_SYSCALL_INTERRUPT_PRIORITY</code>。</p></details>
+  </div>
+</section>
+
+<section class="section" id="s8" data-title="SVC 启动首任务">
+  <h2><span class="num">08</span>SVC：启动第一个任务</h2>
+  <p class="lead">FreeRTOS 不是“跳转”到第一个任务，而是用 <code>SVC</code> 触发异常，在 Handler 里把 PSP 指向任务栈，再用 <code>EXC_RETURN=0xFFFFFFFD</code> 返回 Thread/PSP。点“下一步”逐行走。</p>
+
+  <div class="grid2">
+    <div>
+      <pre class="code" id="svcCode"><div class="ln" data-l="0"><span class="cm">; prvPortStartFirstTask()</span></div><div class="ln" data-l="1">ldr r0, =0xE000ED08   <span class="cm">; VTOR</span></div><div class="ln" data-l="2">ldr r0, [r0]           <span class="cm">; 向量表基址</span></div><div class="ln" data-l="3">ldr r0, [r0]           <span class="cm">; 初始 MSP</span></div><div class="ln" data-l="4">msr msp, r0            <span class="cm">; 复位 MSP</span></div><div class="ln" data-l="5">mov r0, #0</div><div class="ln" data-l="6">msr control, r0        <span class="cm">; 清 FPCA，Thread 用 MSP</span></div><div class="ln" data-l="7">cpsie i / cpsie f      <span class="cm">; 开中断</span></div><div class="ln" data-l="8">svc 0                  <span class="cm">; 触发 SVCall</span></div><div class="ln" data-l="9"><span class="cm">; vPortSVCHandler()</span></div><div class="ln" data-l="10">ldr r3, =pxCurrentTCB</div><div class="ln" data-l="11">ldr r1, [r3]</div><div class="ln" data-l="12">ldr r0, [r1]           <span class="cm">; 任务栈顶</span></div><div class="ln" data-l="13">ldmia r0!, {r4-r11, r14}</div><div class="ln" data-l="14">msr psp, r0</div><div class="ln" data-l="15">msr basepri, #0</div><div class="ln" data-l="16">bx r14                 <span class="cm">; EXC_RETURN=0xFFFFFFFD</span></div></pre>
+    </div>
+    <div>
+      <div class="detail" id="svcState"><strong>初始：</strong>调度器即将启动第一个任务。点“下一步”。</div>
+      <div class="mem" style="margin-top:12px">
+        <div class="row head"><span>栈</span><span>指针</span><span>内容</span><span>说明</span></div>
+        <div class="row"><span class="name">MSP</span><span class="addr" id="svcMsp">0x2000A000</span><span class="val">SVC 硬件帧</span><span class="note">异常入口压在这里</span></div>
+        <div class="row"><span class="name">PSP</span><span class="addr" id="svcPsp">0x20008000</span><span class="val">任务初始帧</span><span class="note">17 字：8+1+8</span></div>
+      </div>
+      <div class="btnrow"><button class="btn" id="svcStepBtn">下一步</button><button class="btn ghost" id="svcReset">复位</button></div>
+      <div class="small">任务初始帧：xPSR / PC / LR / R0 / EXC_RETURN / R4–R11。`ldmia r0!, {r4-r11, r14}` 弹 9 个字，PSP 指向剩下的 8 字硬件帧。</div>
+    </div>
+  </div>
+
+  <div class="cross">
+    <span class="label">举一反三</span>
+    <p>为什么 SVC 的硬件帧在 MSP，而任务帧在 PSP？因为 <code>svc 0</code> 执行时还在 Thread/MSP；异常入口把 SVC 现场压到 MSP。Handler 里再把 PSP 指向任务栈，返回时 <code>EXC_RETURN</code> 指定 Thread/PSP，于是任务用自己的栈继续跑。</p>
+  </div>
+
+  <div class="think">
+    <span class="label">先想一想</span>
+    <p><code>ldmia r0!, {r4-r11, r14}</code> 里的 r14 是什么？为什么不直接跳到任务函数？</p>
+    <details><summary>提示</summary><p>r14 是任务栈里的 <code>EXC_RETURN</code>（初始值 0xFFFFFFFD），不是普通返回地址。<code>bx r14</code> 让硬件执行异常返回流程：恢复 8 字硬件帧、切换 PSP、回到 Thread Mode。</p></details>
+  </div>
+</section>
+<section class="section" id="s9" data-title="PendSV 切换">
+  <h2><span class="num">09</span>PendSV：真正的上下文切换</h2>
+  <p class="lead">PendSV 是 FreeRTOS 的“切换开关”。异常入口已经把 R0–R3/R12/LR/PC/xPSR 压到任务栈；PendSV 只需要保存 R4–R11，再切换 PSP。点“下一步”看两个任务栈怎么交换。</p>
+
+  <div class="grid2">
+    <div>
+      <pre class="code" id="psCode"><div class="ln" data-l="0"><span class="cm">; xPortPendSVHandler()</span></div><div class="ln" data-l="1">mrs r0, psp              <span class="cm">; 当前任务栈</span></div><div class="ln" data-l="2">ldr r3, =pxCurrentTCB</div><div class="ln" data-l="3">ldr r2, [r3]</div><div class="ln" data-l="4">tst r14, #0x10           <span class="cm">; FPU 上下文条件</span></div><div class="ln" data-l="5">vstmdbeq r0!, {s16-s31}</div><div class="ln" data-l="6">stmdb r0!, {r4-r11, r14} <span class="cm">; 软件保存</span></div><div class="ln" data-l="7">str r0, [r2]             <span class="cm">; 更新 TCB 栈顶</span></div><div class="ln" data-l="8">bl vTaskSwitchContext    <span class="cm">; 选下一个任务</span></div><div class="ln" data-l="9">ldr r1, [r3]</div><div class="ln" data-l="10">ldr r0, [r1]            <span class="cm">; 新任务栈顶</span></div><div class="ln" data-l="11">ldmia r0!, {r4-r11, r14}</div><div class="ln" data-l="12">msr psp, r0</div><div class="ln" data-l="13">bx r14                  <span class="cm">; EXC_RETURN</span></div></pre>
+    </div>
+    <div>
+      <div class="detail" id="psState"><strong>切换前：</strong>任务 A 正在运行，PendSV 已进入。硬件已把 A 的基本帧压到 A 的任务栈。</div>
+      <div class="stackwrap" style="margin-top:12px">
+        <div class="stackcol active" id="psTaskA"><h4>Task A</h4><div class="sp">PSP_A</div><p>运行中 → 保存 R4–R11 → 栈顶写入 TCB_A。</p></div>
+        <div class="stackcol" id="psTaskB"><h4>Task B</h4><div class="sp">PSP_B</div><p>就绪 → 从 TCB_B 取栈顶 → 恢复 R4–R11 → PSP_B。</p></div>
+      </div>
+      <div class="btnrow"><button class="btn" id="psStepBtn">下一步</button><button class="btn ghost" id="psReset">复位</button></div>
+      <div class="small">PendSV 通常设为最低优先级，确保它不会打断高优先级中断；高优先级中断可以“迟到”并先执行。</div>
+    </div>
+  </div>
+
+  <div class="cross">
+    <span class="label">举一反三</span>
+    <p>如果 PendSV 不是最低优先级，会发生什么？高优先级中断可能被切换流程延迟，实时性变差；更糟的是，PendSV 里调用 <code>vTaskSwitchContext</code> 时又被中断打断，栈/TCB 状态会变得难以推理。</p>
+  </div>
+
+  <div class="think">
+    <span class="label">先想一想</span>
+    <p>为什么 PendSV 保存 R4–R11，而不是 R0–R3？</p>
+    <details><summary>提示</summary><p>R0–R3、R12、LR、PC、xPSR 已在异常入口由硬件压栈；R4–R11 是 callee-saved，硬件不保存，必须由 PendSV 软件保存。两段合起来才是完整上下文。</p></details>
+  </div>
+</section>
+
+<section class="section" id="s10" data-title="SysTick 与 tick">
+  <h2><span class="num">10</span>SysTick 与 tick</h2>
+  <p class="lead">SysTick 只做两件事：把 tick 加一，判断要不要切换。它不直接做上下文切换，而是“挂起 PendSV”，让 PendSV 在合适的时候完成切换。</p>
+
+  <div class="card">
+    <div class="btnrow">
+      <button class="btn" id="tickBtn">来一个 SysTick</button>
+      <button class="btn ghost" id="tickReset">复位</button>
+      <span class="pill mono">tick = <span id="tickCount">0</span></span>
+      <span class="pill" id="tickPending">PendSV: 未挂起</span>
+    </div>
+    <div class="timeline" id="tickTimeline">
+      <div class="tl on"><span class="t">T0</span><span>SysTick 异常进入，Handler 使用 MSP</span></div>
+      <div class="tl"><span class="t">T1</span><span><code>xPortSysTickHandler</code> 调 <code>xTaskIncrementTick</code></span></div>
+      <div class="tl"><span class="t">T2</span><span>如果返回 <code>pdTRUE</code>，<code>portYIELD_FROM_ISR</code> 写 ICSR bit28</span></div>
+      <div class="tl"><span class="t">T3</span><span>PendSV 挂起；SysTick 返回</span></div>
+      <div class="tl"><span class="t">T4</span><span>PendSV 执行，完成上下文切换</span></div>
+    </div>
+    <div class="detail" id="tickInfo"><strong>tick=0：</strong>点“来一个 SysTick”。</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card tight"><h4>关键寄存器/位</h4><ul class="small"><li><code>SysTick-&gt;CTRL/LOAD/VAL</code>：tick 时基。</li><li><code>SCB-&gt;ICSR</code> bit28：PendSV set。</li><li><code>portNVIC_PENDSVSET_BIT = 1 &lt;&lt; 28</code>。</li></ul></div>
+    <div class="card tight"><h4>为什么不直接在 SysTick 里切？</h4><p class="small">SysTick 可能和其他中断嵌套；把切换推迟到最低优先级的 PendSV，可以保证所有高优先级中断先处理完，切换时序更可控。</p></div>
+  </div>
+
+  <div class="think">
+    <span class="label">先想一想</span>
+    <p>如果 <code>xTaskIncrementTick</code> 返回 <code>pdFALSE</code>，还会进 PendSV 吗？</p>
+    <details><summary>提示</summary><p>不会主动挂起；只有需要切换时才写 ICSR bit28。但 PendSV 可能因为其他原因已经挂起，不能只看 SysTick。</p></details>
+  </div>
+</section>
+
+<section class="section" id="s11" data-title="Fault 模型">
+  <h2><span class="num">11</span>Fault 模型</h2>
+  <p class="lead">M7 有四类 fault：MemManage、BusFault、UsageFault、HardFault。前三个可以被禁用或升级，最后都落到 HardFault。定位靠 CFSR/HFSR/MMFAR/BFAR。</p>
+
+  <div class="card">
+    <div class="btnrow" id="faultBtns">
+      <button class="btn" data-fault="mem">触发 MemManage</button>
+      <button class="btn ghost" data-fault="bus">触发 BusFault</button>
+      <button class="btn ghost" data-fault="usage">触发 UsageFault</button>
+      <button class="btn danger" data-fault="hard">触发 HardFault</button>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="detail" id="faultPath"><strong>等待触发。</strong>点击一个 fault，看它是否会升级到 HardFault。</div>
+        <dl class="kv">
+          <dt>CFSR</dt><dd id="faultCfsr">0x00000000</dd>
+          <dt>HFSR</dt><dd id="faultHfsr">0x00000000</dd>
+          <dt>MMFAR</dt><dd id="faultMmar">—</dd>
+          <dt>BFAR</dt><dd id="faultBfar">—</dd>
+        </dl>
+      </div>
+      <div class="detail" id="faultNote"><strong>示例值：</strong>真实值取决于触发原因和使能位。CFSR 的 MMFSR/BFSR/UFSR 分别对应三类 fault；HFSR 的 FORCED 位表示“被升级”。</div>
+    </div>
+  </div>
+
+  <table>
+    <tr><th>Fault</th><th>典型原因</th><th>关键状态</th></tr>
+    <tr><td>MemManage</td><td>MPU 越界、执行 XN 区</td><td>CFSR.MMFSR、MMFAR</td></tr>
+    <tr><td>BusFault</td><td>总线错误、非对齐/非法访问</td><td>CFSR.BFSR、BFAR</td></tr>
+    <tr><td>UsageFault</td><td>未定义指令、除零（若使能）、非对齐</td><td>CFSR.UFSR</td></tr>
+    <tr><td>HardFault</td><td>升级、向量表错误、在 Handler 中 fault</td><td>HFSR、CFSR</td></tr>
+  </table>
+
+  <div class="think">
+    <span class="label">先想一想</span>
+    <p>为什么在 HardFault Handler 里读 CFSR 之前，要先确认 HFSR.FORCED？</p>
+    <details><summary>提示</summary><p>FORCED=1 表示 HardFault 是其他 fault 升级来的；真正原因在 CFSR 的对应子域。如果只看 HardFault 本身，容易漏掉 MemManage/BusFault/UsageFault 的根因。</p></details>
+  </div>
+</section>
+
+<section class="section" id="s12" data-title="对比与实验">
+  <h2><span class="num">12</span>与 TriCore 对比 + 实验清单</h2>
+  <p class="lead">最后把 M7 的“硬件栈帧”与 TriCore 的“CSA 链”放在一张表里。两者都能保存上下文，但一个在栈上，一个在 CSA 链表上；这决定了 port.c 的写法完全不同。</p>
+
+  <div class="card">
+    <table>
+      <tr><th>维度</th><th>Cortex-M7</th><th>TriCore TC3xx</th></tr>
+      <tr><td>上下文载体</td><td>执行栈上的异常帧</td><td>CSA 链（Upper/Lower Context）</td></tr>
+      <tr><td>异常/调用保存</td><td>硬件 8 字 + 软件 R4–R11</td><td>硬件 Upper/Lower + CALL 保存</td></tr>
+      <tr><td>栈指针</td><td>MSP / PSP</td><td>A10 / ISP + 用户栈</td></tr>
+      <tr><td>向量表</td><td>VTOR + 向量表</td><td>BIV + 向量表</td></tr>
+      <tr><td>系统调用</td><td><code>SVC</code></td><td><code>SYSCALL</code> trap class 6</td></tr>
+      <tr><td>中断屏蔽</td><td>PRIMASK / BASEPRI / FAULTMASK</td><td>ICR.IE + 优先级</td></tr>
+      <tr><td>任务切换</td><td>PendSV</td><td>SYSCALL / 上下文切换中断</td></tr>
+      <tr><td>栈/CSA 回收</td><td>硬件自动恢复栈帧</td><td><code>vPortReclaimCSA</code></td></tr>
+    </table>
+  </div>
+
+  <h3>实验清单</h3>
+  <div class="grid2" id="expList">
+    <label class="card tight"><input type="checkbox" class="exp"> <strong>E-EM-M7-01</strong> SVC 进入/返回<br><span class="small">看 MSP/PSP、EXC_RETURN、栈帧。QEMU。</span></label>
+    <label class="card tight"><input type="checkbox" class="exp"> <strong>E-EM-M7-02</strong> PendSV 切换<br><span class="small">看 R4–R11 保存、PSP 切换。QEMU。</span></label>
+    <label class="card tight"><input type="checkbox" class="exp"> <strong>E-EM-M7-03</strong> 首次任务帧<br><span class="small">对比 17 字初始帧与真实 8 字帧。QEMU。</span></label>
+    <label class="card tight"><input type="checkbox" class="exp"> <strong>E-EM-M7-04</strong> FPU lazy stacking<br><span class="small">看 S0–S15/FPSCR、104 B 扩展帧。QEMU。</span></label>
+    <label class="card tight"><input type="checkbox" class="exp"> <strong>E-EM-M7-05</strong> 尾链/迟到<br><span class="small">看 NVIC 时间线。QEMU。</span></label>
+    <label class="card tight"><input type="checkbox" class="exp"> <strong>E-EM-M7-06</strong> Fault 升级<br><span class="small">看 CFSR/HFSR/MMFAR/BFAR。QEMU。</span></label>
+    <label class="card tight"><input type="checkbox" class="exp"> <strong>E-EM-M7-07</strong> BASEPRI vs PRIMASK<br><span class="small">看临界区与中断延迟。QEMU/实板。</span></label>
+    <label class="card tight"><input type="checkbox" class="exp"> <strong>E-EM-M7-08</strong> Cache/MPU<br><span class="small">QEMU 覆盖不足，实板再做。</span></label>
+  </div>
+  <div class="small" id="expCount">已完成 0 / 8。</div>
+
+  <div class="fail">
+    <span class="label">防跑偏三件事</span>
+    <p>1）不要把 x86 的调用栈直觉直接套到 M7：异常入口是硬件压栈，返回靠 EXC_RETURN。<br>2）不要混“硬件保存”和“软件保存”：R0–R3/R12/LR/PC/xPSR 是硬件；R4–R11 是 PendSV。<br>3）不要把 FreeRTOS 的 17 字初始帧当成 8 字硬件帧：多出来的是 EXC_RETURN + R4–R11。</p>
+  </div>
+
+  <h3>继续阅读</h3>
+  <div class="linkgrid">
+    <a href="./FreeRTOS_ExecutionModel_ARM_M7_Runtime_Model.md">M7 运行模型学习路线<span>EM0–EM12、检查点、实验与材料索引</span></a>
+    <a href="../../../../99_Attachments_附件/FreeRTOS_ARM_CM7_Port_V10.5.1/portable/GCC/ARM_CM7/r0p1/port.c">官方 ARM_CM7 port.c<span>FreeRTOS V10.5.1 GCC port 源码</span></a>
+    <a href="../FreeRTOS_ExecutionModel_TC3xx_Runtime_Model.md">TC3xx 运行模型（对照）<span>CSA 链、Upper/Lower Context、SYSCALL</span></a>
+  </div>
+
+  <div class="footer">
+    本页基于 ARMv7-M Architecture Reference Manual (DDI0403E)、Cortex-M7 TRM (DDI0489F)、Cortex-M7 DGUG (DUI0646C) 与 FreeRTOS V10.5.1 ARM_CM7 port 整理。示意图为教学简化；寄存器地址、优先级分组和 FPU 行为以具体芯片/工程配置为准。
+  </div>
+</section>
+  </div>
+</main>
+</div>
+<script>
+(function () {
+  "use strict";
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
+  const fmt = (n) => "0x" + (n >>> 0).toString(16).toUpperCase().padStart(8, "0");
+  const pad2 = (n) => String(n).padStart(2, "0");
+
+  /* ---------------- navigation ---------------- */
+  const sections = $$(".section");
+  const titles = sections.map((s) => s.dataset.title);
+  const nav = $("#nav");
+  let cur = 0;
+
+  sections.forEach((s, i) => {
+    const b = document.createElement("button");
+    b.innerHTML = '<span class="n">' + pad2(i + 1) + '</span><span>' + s.dataset.title + "</span>";
+    b.addEventListener("click", () => go(i));
+    nav.appendChild(b);
+  });
+
+  function go(i) {
+    if (i < 0 || i >= sections.length) return;
+    sections[cur].classList.remove("active");
+    cur = i;
+    sections[cur].classList.add("active");
+    $$("#nav button").forEach((b, j) => b.classList.toggle("active", j === cur));
+    $("#crumb").textContent = pad2(cur + 1) + " / " + titles[cur];
+    $("#bar").style.width = ((cur + 1) / sections.length) * 100 + "%";
+    try { history.replaceState(null, "", "#s" + (cur + 1)); } catch (e) { /* file:// 下可能被限制 */ }
+    window.scrollTo(0, 0);
+  }
+  $("#prev").addEventListener("click", () => go(cur - 1));
+  $("#next").addEventListener("click", () => go(cur + 1));
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") go(cur - 1);
+    if (e.key === "ArrowRight") go(cur + 1);
+  });
+
+  /* ---------------- 1 overview ---------------- */
+  function initOverview() {
+    const data = {
+      thread: ["Thread Mode（PSP）", "任务代码运行在这里。FreeRTOS 让每个任务使用自己的 PSP；异常入口把现场压到任务栈上，Handler 改用 MSP。"],
+      entry: ["异常入口", "硬件自动把 R0–R3、R12、LR、PC、xPSR 压到当前栈；如果 FPU 活跃，还会保留/写入扩展帧。SP 自动下移。"],
+      handler: ["Handler Mode（MSP）", "异常/中断服务程序运行在 Handler Mode，强制使用 MSP。嵌套中断继续使用 MSP，不会踩任务栈。"],
+      return: ["异常返回", "BX LR，LR 中是 EXC_RETURN。它告诉硬件：回 Thread 还是 Handler、用 MSP 还是 PSP、有没有 FPU 扩展帧。"],
+      thread2: ["回到 Thread（PSP）", "硬件按 EXC_RETURN 恢复栈帧和 SP，任务从被中断的地方继续。上下文切换时，PendSV 会改 PSP 指向下一个任务。"]
+    };
+    $$(".ov-node").forEach((n) => {
+      n.addEventListener("click", () => {
+        $$(".ov-node").forEach((x) => x.classList.remove("active"));
+        n.classList.add("active");
+        const d = data[n.dataset.key];
+        $("#ovDetail").innerHTML = "<strong>" + d[0] + "：</strong>" + d[1];
+      });
+    });
+  }
+
+  /* ---------------- 2 registers ---------------- */
+  function initRegs() {
+    const regs = [
+      ["R0", "参数/返回值", "R0", "函数参数/返回值；异常入口由硬件保存。", "硬件"],
+      ["R1", "参数", "R1", "函数参数；异常入口由硬件保存。", "硬件"],
+      ["R2", "参数", "R2", "函数参数；异常入口由硬件保存。", "硬件"],
+      ["R3", "参数", "R3", "函数参数；异常入口由硬件保存。", "硬件"],
+      ["R4", "局部变量", "R4", "callee-saved；PendSV 软件保存。", "软件"],
+      ["R5", "局部变量", "R5", "callee-saved；PendSV 软件保存。", "软件"],
+      ["R6", "局部变量", "R6", "callee-saved；PendSV 软件保存。", "软件"],
+      ["R7", "局部变量/帧指针", "R7", "常用作帧指针；callee-saved，PendSV 保存。", "软件"],
+      ["R8", "局部变量", "R8", "callee-saved；PendSV 软件保存。", "软件"],
+      ["R9", "局部变量", "R9", "callee-saved；PendSV 软件保存。", "软件"],
+      ["R10", "局部变量", "R10", "callee-saved；PendSV 软件保存。", "软件"],
+      ["R11", "局部变量", "R11", "callee-saved；PendSV 软件保存。", "软件"],
+      ["R12", "临时", "R12", "IP/scratch；异常入口由硬件保存。", "硬件"],
+      ["SP", "栈指针", "SP", "MSP/PSP 的统称；当前用哪条由模式和 CONTROL.SPSEL 决定。", "自动"],
+      ["MSP", "主栈", "MSP", "复位默认栈；Handler Mode 强制使用。", "自动"],
+      ["PSP", "进程栈", "PSP", "Thread Mode 可选；FreeRTOS 任务栈使用它。", "软件切换"],
+      ["LR", "链接寄存器", "LR", "普通函数返回地址；异常 Handler 中保存 EXC_RETURN。", "硬件/特殊"],
+      ["PC", "程序计数器", "PC", "下一条指令地址；异常帧保存返回地址。", "硬件"],
+      ["xPSR", "状态寄存器", "xPSR", "APSR 标志 + IPSR 异常号 + EPSR（T 位/对齐位）。", "硬件"],
+      ["CONTROL", "控制寄存器", "CONTROL", "nPRIV/SPSEL/FPCA；只有特权级能写。", "不保存"],
+      ["PRIMASK", "中断屏蔽", "PRIMASK", "1=屏蔽所有可配置中断（NMI/HardFault 除外）。", "不保存"],
+      ["BASEPRI", "优先级屏蔽", "BASEPRI", "屏蔽优先级数值 >= 阈值的中断；FreeRTOS 临界区使用。", "不保存"],
+      ["FAULTMASK", "Fault 屏蔽", "FAULTMASK", "1=屏蔽所有异常（NMI 除外），把优先级提升到 -1。", "不保存"]
+    ];
+    const grid = $("#regGrid");
+    regs.forEach((r) => {
+      const b = document.createElement("button");
+      b.innerHTML = r[2] + "<small>" + r[1] + "</small>";
+      b.addEventListener("click", () => {
+        $$("#regGrid button").forEach((x) => x.classList.remove("active"));
+        b.classList.add("active");
+        $("#regDetail").innerHTML =
+          "<strong>" + r[2] + "（" + r[1] + "）：</strong>" + r[3] +
+          '<br><span class="small">异常/切换时由：<span class="tag">' + r[4] + "</span> 处理。</span>";
+      });
+      grid.appendChild(b);
+    });
+  }
+
+  function initControl() {
+    const bits = $("#controlBits");
+    const note = $("#controlNote");
+    function upd() {
+      const np = $("#cNpriv").checked ? 1 : 0;
+      const sp = $("#cSpsel").checked ? 1 : 0;
+      const fp = $("#cFpca").checked ? 1 : 0;
+      bits.innerHTML =
+        '<span class="' + (fp ? "on" : "off") + '">bit2 FPCA=' + fp + "</span>" +
+        '<span class="' + (sp ? "on" : "off") + '">bit1 SPSEL=' + sp + "</span>" +
+        '<span class="' + (np ? "on" : "off") + '">bit0 nPRIV=' + np + "</span>" +
+        '<span class="off">CONTROL = 0x' + ((fp << 2) | (sp << 1) | np).toString(16).toUpperCase() + "</span>";
+      let t = [];
+      if (np) t.push("非特权：不能写 CONTROL，但可以执行 SVC 请求内核服务。");
+      else t.push("特权：可以写 CONTROL/NVIC/SCB 等系统寄存器。");
+      if (sp) t.push("Thread Mode 使用 PSP（任务栈）。");
+      else t.push("Thread Mode 使用 MSP。");
+      if (fp) t.push("FPU 活跃：异常帧可能扩展为 26 字。");
+      note.textContent = t.join(" ");
+    }
+    ["cNpriv", "cSpsel", "cFpca"].forEach((id) => $("#" + id).addEventListener("change", upd));
+    upd();
+  }
+
+  /* ---------------- 3 stacks ---------------- */
+  function initStacks() {
+    const st = { mode: "Thread", priv: "Privileged", spsel: "MSP" };
+    function activeStack() {
+      return st.mode === "Handler" ? "MSP" : st.spsel;
+    }
+    function upd() {
+      $("#stThread").classList.toggle("active", st.mode === "Thread");
+      $("#stThread").classList.toggle("ghost", st.mode !== "Thread");
+      $("#stHandler").classList.toggle("active", st.mode === "Handler");
+      $("#stHandler").classList.toggle("ghost", st.mode !== "Handler");
+      $("#stPriv").classList.toggle("active", st.priv === "Privileged");
+      $("#stPriv").classList.toggle("ghost", st.priv !== "Privileged");
+      $("#stUnpriv").classList.toggle("active", st.priv === "Unprivileged");
+      $("#stUnpriv").classList.toggle("ghost", st.priv !== "Unprivileged");
+      $("#stMspSel").classList.toggle("active", st.spsel === "MSP");
+      $("#stMspSel").classList.toggle("ghost", st.spsel !== "MSP");
+      $("#stPspSel").classList.toggle("active", st.spsel === "PSP");
+      $("#stPspSel").classList.toggle("ghost", st.spsel !== "PSP");
+      $("#stMspSel").disabled = st.mode === "Handler";
+      $("#stPspSel").disabled = st.mode === "Handler";
+      const a = activeStack();
+      $("#mspCard").classList.toggle("active", a === "MSP");
+      $("#pspCard").classList.toggle("active", a === "PSP");
+      let s = "<strong>当前：</strong>" + st.mode + " / " + st.priv + "，活动栈 " + a + "。";
+      if (st.mode === "Handler") s += " Handler Mode 强制 MSP，SPSEL 选择被忽略。";
+      else if (st.spsel === "PSP") s += " Thread/PSP：FreeRTOS 任务的常态。";
+      else s += " Thread/MSP：异常入口会压到同一条栈上。";
+      if (st.priv === "Unprivileged") s += " 非特权不能写 CONTROL；需要 SVC 陷入内核。";
+      $("#stackSummary").innerHTML = s;
+    }
+    $("#stThread").addEventListener("click", () => { st.mode = "Thread"; upd(); });
+    $("#stHandler").addEventListener("click", () => { st.mode = "Handler"; upd(); });
+    $("#stPriv").addEventListener("click", () => { st.priv = "Privileged"; upd(); });
+    $("#stUnpriv").addEventListener("click", () => { st.priv = "Unprivileged"; upd(); });
+    $("#stMspSel").addEventListener("click", () => { st.spsel = "MSP"; upd(); });
+    $("#stPspSel").addEventListener("click", () => { st.spsel = "PSP"; upd(); });
+    upd();
+  }
+
+  /* ---------------- 4 stack frame ---------------- */
+  function initFrame() {
+    const base = 0x20008000;
+    const basic = [
+      ["xPSR", 0x01000000, "T 位 + 对齐位"],
+      ["PC", 0x08000123, "异常返回地址"],
+      ["LR", 0x08000101, "返回链接"],
+      ["R12", 0x0000000c, "scratch"],
+      ["R3", 0x00000003, "参数/临时"],
+      ["R2", 0x00000002, "参数/临时"],
+      ["R1", 0x00000001, "参数/临时"],
+      ["R0", 0x00000000, "参数/返回值"]
+    ];
+    const ext = [
+      ["保留", "—", "对齐保留"],
+      ["FPSCR", 0x00000000, "FPU 状态"],
+      ["S15", 0x3f800000, "FPU 寄存器"],
+      ["S14", 0x00000000, "FPU 寄存器"],
+      ["S13", 0x00000000, "FPU 寄存器"],
+      ["S12", 0x00000000, "FPU 寄存器"],
+      ["S11", 0x00000000, "FPU 寄存器"],
+      ["S10", 0x00000000, "FPU 寄存器"],
+      ["S9", 0x00000000, "FPU 寄存器"],
+      ["S8", 0x00000000, "FPU 寄存器"],
+      ["S7", 0x00000000, "FPU 寄存器"],
+      ["S6", 0x00000000, "FPU 寄存器"],
+      ["S5", 0x00000000, "FPU 寄存器"],
+      ["S4", 0x00000000, "FPU 寄存器"],
+      ["S3", 0x00000000, "FPU 寄存器"],
+      ["S2", 0x00000000, "FPU 寄存器"],
+      ["S1", 0x00000000, "FPU 寄存器"],
+      ["S0", 0x00000000, "FPU 寄存器"]
+    ];
+    const st = { step: 0, fpu: false, lazy: true, written: false };
+
+    function row(addr, name, val, note, cls) {
+      return '<div class="row ' + (cls || "") + '"><span class="addr">' + addr + '</span><span class="name">' + name +
+        '</span><span class="val">' + val + '</span><span class="note">' + note + "</span></div>";
+    }
+    function render() {
+      let html = '<div class="row head"><span>地址</span><span>寄存器</span><span>值</span><span>说明</span></div>';
+      basic.forEach((r, i) => {
+        const addr = fmt(base - 4 * (i + 1));
+        const cls = i >= st.step ? "pending" : (i === st.step - 1 ? "hl" : "");
+        html += row(addr, r[0], fmt(r[1]), r[2], cls);
+      });
+      if (st.fpu && st.step >= 8) {
+        ext.forEach((r, j) => {
+          const addr = fmt(base - 32 - 4 * (j + 1));
+          let val = fmt(r[1]);
+          let cls = "";
+          let note = r[2];
+          if (st.lazy && !st.written) { val = "保留（未写）"; cls = "reserved"; note = "lazy stacking 预留"; }
+          html += row(addr, r[0], val, note, cls);
+        });
+      }
+      $("#frameTable").innerHTML = html;
+      let sp = base - 4 * st.step;
+      if (st.step >= 8) sp = st.fpu ? base - 104 : base - 32;
+      $("#frameSp").textContent = "SP = " + fmt(sp) + (st.step >= 8 ? "（异常入口完成后）" : "（压栈中）");
+      $("#fpuToggle").checked = st.fpu;
+      $("#lazyToggle").checked = st.lazy;
+      $("#fpuInstr").disabled = !(st.fpu && st.lazy && st.step >= 8 && !st.written);
+      if (st.step === 0) {
+        $("#frameInfo").innerHTML = "<strong>异常前：</strong>Thread Mode，PSP 指向任务栈顶。点“触发异常”开始压栈。";
+      } else if (st.step < 8) {
+        $("#frameInfo").innerHTML = "<strong>压栈中：</strong>正在压 <code>" + basic[st.step - 1][0] + "</code>；SP 已下降 " + (st.step * 4) + " 字节。";
+      } else if (!st.fpu) {
+        $("#frameInfo").innerHTML = "<strong>8 字基本帧完成：</strong>32 B。硬件保存 R0–R3/R12/LR/PC/xPSR；R4–R11 留给软件。";
+      } else if (st.lazy && !st.written) {
+        $("#frameInfo").innerHTML = "<strong>FPU 扩展帧（lazy）：</strong>26 字 = 104 B；扩展部分已保留，等第一条 FPU 指令再写。点“执行 FPU 指令”。";
+      } else {
+        $("#frameInfo").innerHTML = "<strong>FPU 扩展帧：</strong>26 字 = 104 B；S0–S15、FPSCR、保留字已写入。";
+      }
+    }
+    $("#frameStep").addEventListener("click", () => {
+      if (st.step >= 8) st.step = 0; else st.step++;
+      if (st.step < 8) { st.written = false; }
+      render();
+    });
+    $("#frameReset").addEventListener("click", () => { st.step = 0; st.written = false; render(); });
+    $("#fpuToggle").addEventListener("change", (e) => { st.fpu = e.target.checked; st.written = false; render(); });
+    $("#lazyToggle").addEventListener("change", (e) => { st.lazy = e.target.checked; st.written = !st.lazy; render(); });
+    $("#fpuInstr").addEventListener("click", () => { st.written = true; render(); });
+    render();
+  }
+
+  /* ---------------- 5 FPU ---------------- */
+  function initFPU() {
+    const base = 0x20008000;
+    const st = { use: false, run: false };
+    function row(addr, name, val, note, cls) {
+      return '<div class="row ' + (cls || "") + '"><span class="addr">' + addr + '</span><span class="name">' + name +
+        '</span><span class="val">' + val + '</span><span class="note">' + note + "</span></div>";
+    }
+    function render() {
+      let html = '<div class="row head"><span>地址</span><span>寄存器</span><span>值</span><span>说明</span></div>';
+      const basic = [["xPSR", 0x01000000], ["PC", 0x08000123], ["LR", 0x08000101], ["R12", 0x0000000c],
+        ["R3", 0x00000003], ["R2", 0x00000002], ["R1", 0x00000001], ["R0", 0x00000000]];
+      basic.forEach((r, i) => { html += row(fmt(base - 4 * (i + 1)), r[0], fmt(r[1]), "基本帧", ""); });
+      if (st.use) {
+        const ext = [["保留", "—"], ["FPSCR", 0x00000000], ["S15", 0x3f800000]];
+        for (let i = 14; i >= 0; i--) ext.push(["S" + i, 0x00000000]);
+        ext.forEach((r, j) => {
+          let val = fmt(r[1]);
+          let cls = "";
+          let note = "FPU 扩展帧";
+          if (!st.run) { val = "保留（未写）"; cls = "reserved"; note = "lazy：等 FPU 指令"; }
+          html += row(fmt(base - 32 - 4 * (j + 1)), r[0], val, note, cls);
+        });
+      }
+      $("#fpuFrame").innerHTML = html;
+      $("#fpuUse").checked = st.use;
+      $("#fpuLazyRun").disabled = !(st.use && !st.run);
+      if (!st.use) {
+        $("#fpuInfo").innerHTML = "<strong>FPU 未使用：</strong>异常帧 8 字（32 B），栈里没有 S0–S15/FPSCR。";
+      } else if (!st.run) {
+        $("#fpuInfo").innerHTML = "<strong>FPU 活跃 + lazy：</strong>扩展帧空间已保留，但 S0–S15/FPSCR 还没写。点“执行第一条 FPU 指令”。";
+      } else {
+        $("#fpuInfo").innerHTML = "<strong>FPU 扩展帧已写入：</strong>26 字 = 104 B；S0–S15、FPSCR、保留字都在栈上。";
+      }
+    }
+    $("#fpuUse").addEventListener("change", (e) => { st.use = e.target.checked; st.run = false; render(); });
+    $("#fpuLazyRun").addEventListener("click", () => { st.run = true; render(); });
+    render();
+  }
+
+  /* ---------------- 6 EXC_RETURN ---------------- */
+  function initExc() {
+    const data = {
+      "FFFFFFF1": { mode: "Handler", stack: "MSP", fpu: false, note: "嵌套异常返回到另一个 Handler；标准帧。" },
+      "FFFFFFF9": { mode: "Thread", stack: "MSP", fpu: false, note: "返回 Thread，使用 MSP；标准帧。" },
+      "FFFFFFFD": { mode: "Thread", stack: "PSP", fpu: false, note: "FreeRTOS 任务最常用的返回值：Thread/PSP，标准帧。" },
+      "FFFFFFE1": { mode: "Handler", stack: "MSP", fpu: true, note: "返回 Handler/MSP，FPU 扩展帧。" },
+      "FFFFFFE9": { mode: "Thread", stack: "MSP", fpu: true, note: "返回 Thread/MSP，FPU 扩展帧。" },
+      "FFFFFFED": { mode: "Thread", stack: "PSP", fpu: true, note: "返回 Thread/PSP，FPU 扩展帧。" }
+    };
+    function render(val) {
+      const d = data[val];
+      const n = parseInt(val, 16);
+      $("#excMode").textContent = d.mode;
+      $("#excStack").textContent = d.stack;
+      $("#excFpu").textContent = d.fpu ? "是（扩展帧）" : "否（标准帧）";
+      let bits = "";
+      for (let b = 31; b >= 0; b--) {
+        const on = ((n >>> b) & 1) === 1;
+        bits += '<span class="' + (on ? "on" : "off") + '">' + (on ? 1 : 0) + "</span>";
+      }
+      $("#excBinary").innerHTML = bits;
+      $("#excNote").innerHTML = "<strong>0x" + val + "：</strong>" + d.note +
+        '<br><span class="small">提示：bit4=0 表示 FPU 扩展帧，bit4=1 表示标准帧；FPU 变体是 E1/E9/ED。</span>';
+      $$("#excBtns button").forEach((b) => {
+        b.classList.toggle("active", b.dataset.val === val);
+        b.classList.toggle("ghost", b.dataset.val !== val);
+      });
+    }
+    $$("#excBtns button").forEach((b) => b.addEventListener("click", () => render(b.dataset.val)));
+    render("FFFFFFFD");
+  }
+
+  /* ---------------- 7 NVIC ---------------- */
+  function initNVIC() {
+    $("#prioCheck").addEventListener("click", () => {
+      const a = +$("#irqA").value, b = +$("#irqB").value;
+      let s;
+      if (a < b) s = "IRQ A（优先级 " + a + "）更高，可以抢占 IRQ B。";
+      else if (b < a) s = "IRQ B（优先级 " + b + "）更高，可以抢占 IRQ A。";
+      else s = "两者同优先级：不能互相抢占；同优先级中断按挂起顺序处理。";
+      $("#prioResult").innerHTML = "<strong>结果：</strong>" + s + '<br><span class="small">数值越小，优先级越高。</span>';
+    });
+    function updBase() {
+      const n = +$("#basepriRange").value;
+      $("#basepriVal").textContent = n;
+      $("#maskResult").textContent = n === 0
+        ? "BASEPRI=0：不屏蔽任何可配置中断。"
+        : "BASEPRI=" + n + " 时，优先级数值 ≥ " + n + " 的中断被屏蔽；数值 < " + n + " 的高优先级中断仍可抢占。";
+    }
+    $("#basepriRange").addEventListener("input", updBase);
+    updBase();
+    const tls = $$("#nvicTimeline .tl");
+    function clear() { tls.forEach((x) => x.classList.remove("on")); }
+    $("#tailBtn").addEventListener("click", () => {
+      clear(); [0, 1, 2, 3, 4].forEach((i) => tls[i] && tls[i].classList.add("on"));
+    });
+    $("#lateBtn").addEventListener("click", () => {
+      clear(); [0, 1, 2].forEach((i) => tls[i] && tls[i].classList.add("on"));
+    });
+    $("#nvicReset").addEventListener("click", () => { clear(); if (tls[0]) tls[0].classList.add("on"); });
+  }
+
+  /* ---------------- 8 SVC ---------------- */
+  function hlCode(id, lines) {
+    $$("#" + id + " .ln").forEach((el) => el.classList.remove("hl"));
+    lines.forEach((n) => {
+      const el = $("#" + id + ' .ln[data-l="' + n + '"]');
+      if (el) el.classList.add("hl");
+    });
+  }
+  function initSVC() {
+    let step = 0;
+    const lines = [[1, 2, 3], [4, 5, 6], [7, 8], [9, 10, 11, 12, 13], [14, 15, 16], []];
+    const states = [
+      "<strong>初始：</strong>调度器即将启动第一个任务。先从 VTOR 取初始 MSP。",
+      "<strong>1/5：</strong>设置 MSP，清 CONTROL（Thread/MSP，FPCA=0），准备开中断。",
+      "<strong>2/5：</strong>执行 <code>svc 0</code>。CPU 当前是 Thread/MSP，所以 SVC 的硬件帧压在 MSP 上。",
+      "<strong>3/5：</strong><code>vPortSVCHandler</code> 从任务栈弹 R4–R11 + r14（EXC_RETURN）。",
+      "<strong>4/5：</strong><code>msr psp, r0</code>，然后 <code>bx r14</code>；EXC_RETURN=0xFFFFFFFD 选择 Thread/PSP。",
+      "<strong>完成：</strong>任务开始运行在 Thread/PSP。SVC 的 MSP 帧在返回时被硬件恢复，任务帧留在 PSP。"
+    ];
+    function render() {
+      hlCode("svcCode", lines[step]);
+      $("#svcState").innerHTML = states[step];
+      $("#svcMsp").textContent = step >= 2 ? "0x1FFFFF80" : "0x2000A000";
+      $("#svcPsp").textContent = step >= 4 ? "0x20008000" : "—";
+      $("#svcStepBtn").textContent = step >= 5 ? "重新开始" : "下一步";
+    }
+    $("#svcStepBtn").addEventListener("click", () => { step = step >= 5 ? 0 : step + 1; render(); });
+    $("#svcReset").addEventListener("click", () => { step = 0; render(); });
+    render();
+  }
+
+  /* ---------------- 9 PendSV ---------------- */
+  function initPendSV() {
+    let step = 0;
+    const lines = [[1, 2, 3], [4, 5, 6, 7], [8], [9, 10, 11, 12], [13]];
+    const states = [
+      "<strong>切换前：</strong>任务 A 正在运行，PendSV 已进入。硬件已把 A 的基本帧压到 A 的任务栈。",
+      "<strong>1/4：</strong>保存 A 的 R4–R11（以及按 EXC_RETURN bit4 条件保存 S16–S31），把新栈顶写入 TCB_A。",
+      "<strong>2/4：</strong><code>vTaskSwitchContext</code> 选下一个任务；<code>pxCurrentTCB</code> 指向 B。",
+      "<strong>3/4：</strong>从 TCB_B 取栈顶，恢复 B 的 R4–R11（及 FPU 高寄存器），设置 PSP。",
+      "<strong>完成：</strong><code>bx r14</code> 返回 Thread/PSP；B 从上次被切走的地方继续。"
+    ];
+    function render() {
+      hlCode("psCode", lines[step]);
+      $("#psState").innerHTML = states[step];
+      $("#psTaskA").classList.toggle("active", step < 2);
+      $("#psTaskB").classList.toggle("active", step >= 3);
+      $("#psStepBtn").textContent = step >= 4 ? "重新开始" : "下一步";
+    }
+    $("#psStepBtn").addEventListener("click", () => { step = step >= 4 ? 0 : step + 1; render(); });
+    $("#psReset").addEventListener("click", () => { step = 0; render(); });
+    render();
+  }
+
+  /* ---------------- 10 SysTick ---------------- */
+  function initTick() {
+    let tick = 0, pending = false;
+    const tls = $$("#tickTimeline .tl");
+    function render() {
+      $("#tickCount").textContent = tick;
+      const p = $("#tickPending");
+      p.textContent = pending ? "PendSV: 已挂起" : "PendSV: 未挂起";
+      p.className = "pill " + (pending ? "warn" : "ok");
+      tls.forEach((x, i) => x.classList.toggle("on", i <= (pending ? 3 : 1)));
+      if (pending) $("#tickInfo").innerHTML = "<strong>tick=" + tick + "：</strong>xTaskIncrementTick 返回需要切换，ICSR bit28 已置位；SysTick 返回后 PendSV 会完成切换。";
+      else $("#tickInfo").innerHTML = "<strong>tick=" + tick + "：</strong>没有挂起的切换；SysTick 只更新时基。";
+    }
+    $("#tickBtn").addEventListener("click", () => {
+      tick++; pending = true; render();
+      setTimeout(() => { pending = false; render(); }, 900);
+    });
+    $("#tickReset").addEventListener("click", () => { tick = 0; pending = false; render(); });
+    render();
+  }
+
+  /* ---------------- 11 Fault ---------------- */
+  function initFault() {
+    const data = {
+      mem: { path: "MemManage_Handler（若未使能 → HardFault）", cfsr: 0x00000082, hfsr: 0x00000000, mmar: 0x20001000, bfar: "—", note: "MMFSR：MMARVALID + DACCVIOL；常见于 MPU 越界。" },
+      bus: { path: "BusFault_Handler（若未使能 → HardFault）", cfsr: 0x00008200, hfsr: 0x40000000, mmar: "—", bfar: 0x40000000, note: "BFSR：BFARVALID + PRECISERR；HFSR.FORCED 表示升级。" },
+      usage: { path: "UsageFault_Handler（若未使能 → HardFault）", cfsr: 0x00020000, hfsr: 0x40000000, mmar: "—", bfar: "—", note: "UFSR：INVSTATE（例如跳到非 Thumb 地址）。" },
+      hard: { path: "HardFault_Handler", cfsr: 0x00000000, hfsr: 0x40000000, mmar: "—", bfar: "—", note: "HFSR.FORCED：由其他 fault 升级；要继续查 CFSR。" }
+    };
+    function render(key) {
+      const d = data[key];
+      $("#faultPath").innerHTML = "<strong>处理路径：</strong>" + d.path;
+      $("#faultCfsr").textContent = fmt(d.cfsr);
+      $("#faultHfsr").textContent = fmt(d.hfsr);
+      $("#faultMmar").textContent = typeof d.mmar === "number" ? fmt(d.mmar) : d.mmar;
+      $("#faultBfar").textContent = typeof d.bfar === "number" ? fmt(d.bfar) : d.bfar;
+      $("#faultNote").innerHTML = "<strong>示例：</strong>" + d.note + '<br><span class="small">真实值取决于触发原因和使能位。</span>';
+      $$("#faultBtns button").forEach((b) => {
+        b.classList.toggle("active", b.dataset.fault === key);
+        b.classList.toggle("ghost", b.dataset.fault !== key);
+      });
+    }
+    $$("#faultBtns button").forEach((b) => b.addEventListener("click", () => render(b.dataset.fault)));
+    render("mem");
+  }
+
+  /* ---------------- 12 experiments ---------------- */
+  function initExp() {
+    const boxes = $$(".exp");
+    const count = $("#expCount");
+    function upd() {
+      const n = boxes.filter((b) => b.checked).length;
+      count.textContent = "已完成 " + n + " / " + boxes.length + "。";
+    }
+    boxes.forEach((b) => b.addEventListener("change", upd));
+    upd();
+  }
+
+  /* ---------------- boot ---------------- */
+  initOverview();
+  initRegs();
+  initControl();
+  initStacks();
+  initFrame();
+  initFPU();
+  initExc();
+  initNVIC();
+  initSVC();
+  initPendSV();
+  initTick();
+  initFault();
+  initExp();
+
+  const m = location.hash.match(/^#s(\d+)$/);
+  go(m ? Math.min(sections.length, Math.max(1, +m[1])) - 1 : 0);
+  setTimeout(function () { window.scrollTo(0, 0); }, 0);
+})();
+</script>
+</body>
+</html>
