@@ -15,6 +15,7 @@
 - 主教材是 ARMv7-M ARM B1、Cortex-M7 TRM Ch2/5/6/7/8，以及官方 FreeRTOS V10.5.1 `portable/GCC/ARM_CM7/r0p1` 代码。
 - 每个阶段以“能脱稿回答 + 能在调试器/QEMU 指出证据”为完成判据；最后用 8 个实验闭环。
 - 实践分两阶段：先用 QEMU MPS2-AN500 看异常/栈帧/上下文切换；Cache/TCM/Trace 类实验再上实板。
+- 实际入口以 `Cpu0_Main.c` 的 `xTaskCreate` ×2 + `vTaskStartScheduler()` 为锚点；从 port 层开始只按 **Cortex-M7** 讲，TriCore 只在对比章节出现，不混用。
 
 ## 背景
 
@@ -42,7 +43,7 @@
 | EM2 | 异常入口与硬件栈帧 | ARMv7-M B1.5.6/B1.5.7；DGUG 2.3 | 硬件自动压哪些寄存器？为什么是 8 个字？8 字节对齐如何做？ | 手工画出异常帧 |
 | EM3 | EXC_RETURN 与异常返回 | ARMv7-M B1.5.8；M7 TRM 2.7 | 常用 EXC_RETURN 值？返回 Thread/Handler、MSP/PSP、FPU 上下文如何区分？ | 解码一个真实 EXC_RETURN |
 | EM4 | NVIC、向量表、优先级 | ARMv7-M B1.5.3/B1.5.4/B1.5.12；M7 TRM Ch7 | VTOR、优先级分组、抢占、尾链、迟到如何工作？ | 对照向量表 + NVIC 寄存器 |
-| EM5 | SVC/PendSV/SysTick 与 FreeRTOS 切换 | 官方 ARM_CM7 `port.c`；FreeRTOS 文档 | 首次任务如何启动？PendSV 保存/恢复哪些寄存器？SysTick 如何触发切换？ | 逐行走 `vPortSVCHandler` / `xPortPendSVHandler` |
+| EM5 | 总体程序流 + SVC/PendSV/SysTick | `tasks.c`；官方 ARM_CM7 `port.c`；本工程 `Cpu0_Main.c` | `xTaskCreate` ×2 → `vTaskStartScheduler` → 首任务 → `vTaskDelay` → PendSV 的总流程？SVC/PendSV/SysTick 各自做什么？ | 先走总体流程，再逐行走 `vPortSVCHandler` / `xPortPendSVHandler` |
 | EM6 | Fault 模型 | ARMv7-M B1.5.14；DGUG 2.4；已有 FAULTMASK 笔记 | HardFault 如何从 MemManage/BusFault/UsageFault 升级？CFSR/HFSR/MMFAR/BFAR 怎么读？ | 构造一个 fault 并读状态寄存器 |
 | EM7 | 内存系统与运行时 | M7 TRM Ch5/Ch6；DGUG 2.2/4.6/4.8 | TCM、I/D Cache、Write Buffer、MPU 如何影响栈、ISR 延迟和上下文切换？ | 对照 MPU 区域 + Cache 维护 |
 | EM8 | 调试与观测 | M7 TRM Ch9；ARMv7-M Part C | DWT/ITM/ETM/MTB 各看什么？如何在断点处看 MSP/PSP/EXC_RETURN/栈帧？ | 在调试器/QEMU 指出证据 |
@@ -55,7 +56,9 @@
 
 | port.c 函数/动作 | 运行模型概念 | 材料 |
 |---|---|---|
-| `pxPortInitialiseStack` 构造初始栈帧 | 合成 xPSR/PC/LR/R0/EXC_RETURN/R4–R11（17 字）；不含 FPU 预置，FPU 由 lazy stacking 处理 | 官方 `port.c`；ARMv7-M B1.5.6 |
+| `xTaskCreate` | 分配 TCB/栈、构造初始帧、加入就绪表 | `tasks.c`；`pxPortInitialiseStack` |
+| `vTaskStartScheduler` | 创建 idle 任务，启动 port 调度器（SVC） | `tasks.c`；`xPortStartScheduler` |
+| `pxPortInitialiseStack` 构造初始栈帧 | 合成 xPSR/PC/LR/R12/R3–R0/EXC_RETURN/R4–R11（17 字）；不含 FPU 预置，FPU 由 lazy stacking 处理 | 官方 `port.c`；ARMv7-M B1.5.6 |
 | `prvPortStartFirstTask` 取初始 MSP、使能 FPU、`svc 0` | 向量表第 0 项、CPACR、SVC 异常 | 官方 `port.c`；M7 TRM 2.7/Ch8 |
 | `vPortSVCHandler` 恢复首个任务上下文 | PSP、EXC_RETURN、Thread/PSP 返回 | 官方 `port.c`；ARMv7-M B1.5.8 |
 | `xPortPendSVHandler` 保存 R4–R11，并按 EXC_RETURN bit4 条件保存 S16–S31，再切 PSP | 软件保存上下文 + PendSV 异常 | 官方 `port.c`；ARMv7-M B1.5.6 |
@@ -80,6 +83,7 @@
 10. HardFault 如何从 MemManage/BusFault/UsageFault 升级？CFSR/HFSR/MMFAR/BFAR 怎么读？
 11. BASEPRI、PRIMASK、FAULTMASK 的区别？FreeRTOS 临界区为什么选 BASEPRI？
 12. M7 的硬件栈帧与 TriCore 的 CSA 链，本质差异是什么？
+13. `xTaskCreate` 内部如何构造初始栈帧并加入就绪表？`vTaskStartScheduler` 为什么不返回？
 
 ### 4. 实践用例
 
@@ -100,7 +104,7 @@
   - `99_Attachments_附件/FreeRTOS_ARM_CM7_Port_V10.5.1/portable/GCC/ARM_CM7/r0p1/port.c`
   - `.../portmacro.h`
   - `.../README.md`（来源、SHA256、TriCore 对照表）
-- 交互实验台：[ARM_M7_Exception_Stack_Interactive.html](./ARM_M7_Exception_Stack_Interactive.html)（12 节：总图、寄存器、双栈、栈帧、FPU、EXC_RETURN、NVIC、SVC、PendSV、SysTick、Fault、对比）
+- 交互实验台：[ARM_M7_Exception_Stack_Interactive.html](./ARM_M7_Exception_Stack_Interactive.html)（13 节：总图、寄存器、双栈、栈帧、FPU、EXC_RETURN、NVIC、总体程序流、SVC、PendSV、SysTick、Fault、对比）
 - 本地 TriCore port：
   - `C:\Users\11064\Desktop\TC397_Platform_Jason\ADS\FreeRTOS\OS\FreeRTOS\portable\Tasking\TC3\port.c`
 - ARMv7-M Architecture Reference Manual（DDI0403E）：

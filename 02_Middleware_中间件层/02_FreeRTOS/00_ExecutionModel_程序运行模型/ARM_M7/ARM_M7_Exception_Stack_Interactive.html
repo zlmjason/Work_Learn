@@ -200,6 +200,14 @@ pre.code .op{color:var(--accent)}
   .mem .row .note{display:none}
   .kv{grid-template-columns:110px 1fr}
 }
+.swimwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:#070c17}
+.swim{min-width:760px;margin:0;font-size:11.5px}
+.swim th,.swim td{border-bottom:1px solid var(--line);border-right:1px solid rgba(38,52,83,.5);padding:6px 8px;text-align:left;vertical-align:top}
+.swim th{color:var(--accent3);background:rgba(147,197,253,.05);font-size:11px}
+.swim td{color:var(--muted)}
+.swim td:first-child{color:var(--dim);font-family:var(--mono)}
+.swim tr:last-child td{border-bottom:0}
+.swim td.active{background:rgba(94,234,212,.14);color:var(--text);box-shadow:inset 0 0 0 1px rgba(94,234,212,.3)}
 </style>
 </head>
 <body>
@@ -372,7 +380,7 @@ pre.code .op{color:var(--accent)}
 
   <div class="cross">
     <span class="label">举一反三</span>
-    <p>FreeRTOS 的 <code>pxPortInitialiseStack</code> 构造的不是 8 字硬件帧，而是 <strong>17 字</strong>：8 字硬件帧 + 1 字 EXC_RETURN + 8 字 R4–R11。为什么多一个 EXC_RETURN？因为 PendSV 用 <code>ldmia r0!, {r4-r11, r14}</code> 把返回信息也放在任务栈上。第 8 节会逐行走。</p>
+    <p>FreeRTOS 的 <code>pxPortInitialiseStack</code> 构造的不是 8 字硬件帧，而是 <strong>17 字</strong>：8 字硬件帧 + 1 字 EXC_RETURN + 8 字 R4–R11。为什么多一个 EXC_RETURN？因为 PendSV 用 <code>ldmia r0!, {r4-r11, r14}</code> 把返回信息也放在任务栈上。第 8 节先看三个 API 的总体流程，第 9 节再逐行走 SVC。</p>
   </div>
 
   <div class="think">
@@ -526,8 +534,122 @@ pre.code .op{color:var(--accent)}
   </div>
 </section>
 
-<section class="section" id="s8" data-title="SVC 启动首任务">
-  <h2><span class="num">08</span>SVC：启动第一个任务</h2>
+<section class="section" id="s8" data-title="总体程序流">
+  <h2><span class="num">08</span>总体程序流：三个 API 到两个任务</h2>
+  <p class="lead">你在 <code>core0_main</code> 里实际只用了三个接口：两次 <code>xTaskCreate</code>，一次 <code>vTaskStartScheduler</code>。这三行 API 是通用的；从 port 层开始我们只按 <strong>Cortex-M7</strong> 讲，不混 TriCore 的程序模型。先把总流程走通，再进第 9/10/11 节的 SVC、PendSV、SysTick 细节。</p>
+
+  <div class="card">
+    <h3>你实际写的三行</h3>
+    <pre class="code" id="flowCode"><div class="ln" data-l="0">xTaskCreate(task_app_led1, "APP LED1", configMINIMAL_STACK_SIZE, NULL, 1, NULL);</div><div class="ln" data-l="1">xTaskCreate(task_app_led2, "APP LED2", configMINIMAL_STACK_SIZE, NULL, 1, NULL);</div><div class="ln" data-l="2">vTaskStartScheduler();</div></pre>
+    <div class="grid3">
+      <div class="card tight"><h4>栈</h4><p class="small"><code>configMINIMAL_STACK_SIZE = 256</code> 字 → 1 KB/任务（32 位 StackType_t）。</p></div>
+      <div class="card tight"><h4>优先级</h4><p class="small">两个任务都是 1；<code>configMAX_PRIORITIES = 10</code>；idle 是 0。</p></div>
+      <div class="card tight"><h4>节拍</h4><p class="small"><code>configTICK_RATE_HZ = 1000</code> → 1 tick = 1 ms；250/500 就是 250/500 tick。</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>先看总图</h3>
+    <div class="flow">
+      <div class="node"><div class="t">main</div><div class="s">core0_main</div></div>
+      <span class="arrow">→</span>
+      <div class="node"><div class="t">xTaskCreate ×2</div><div class="s">TCB + 栈 + 初始帧</div></div>
+      <span class="arrow">→</span>
+      <div class="node"><div class="t">vTaskStartScheduler</div><div class="s">idle + port 启动</div></div>
+      <span class="arrow">→</span>
+      <div class="node"><div class="t">SVC / 首任务</div><div class="s">LED1 开始跑</div></div>
+      <span class="arrow">→</span>
+      <div class="node"><div class="t">vTaskDelay</div><div class="s">Blocked</div></div>
+      <span class="arrow">→</span>
+      <div class="node"><div class="t">PendSV</div><div class="s">切到 LED2</div></div>
+      <span class="arrow">→</span>
+      <div class="node"><div class="t">SysTick</div><div class="s">唤醒 / 抢占</div></div>
+    </div>
+    <p class="note">两个任务都是 priority 1，且都会 <code>vTaskDelay</code>；所以运行顺序主要由“谁在就绪表里、谁先到期”决定。下面是简化时间线，具体相位受就绪表和时间片影响。</p>
+  </div>
+
+  <div class="card">
+    <h3>单步：main → LED1 → PendSV → LED2</h3>
+    <div class="btnrow">
+      <button class="btn" id="flowStepBtn">下一步</button>
+      <button class="btn ghost" id="flowReset">复位</button>
+    </div>
+    <div>
+      <div>
+        <div class="detail" id="flowState"><strong>初始：</strong>main 还没创建任务。点“下一步”。</div>
+        <dl class="kv">
+          <dt>pxCurrentTCB</dt><dd id="flowCurrent">NULL</dd>
+          <dt>Ready</dt><dd id="flowReady">[]</dd>
+          <dt>Delayed</dt><dd id="flowDelayed">[]</dd>
+          <dt>Tick</dt><dd id="flowTick">0</dd>
+          <dt>活动栈</dt><dd id="flowStack">MSP</dd>
+          <dt>PendSV</dt><dd id="flowPending">未挂起</dd>
+        </dl>
+      </div>
+      <div class="swimwrap">
+        <table class="swim" id="flowSwim">
+          <tr><th>#</th><th>main</th><th>内核</th><th>SVC</th><th>PendSV</th><th>SysTick</th><th>LED1</th><th>LED2</th></tr>
+          <tr data-step="0"><td>1</td><td data-lane="main">xTaskCreate(LED1)</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr data-step="1"><td>2</td><td data-lane="main">xTaskCreate(LED2)</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr data-step="2"><td>3</td><td data-lane="main">vTaskStartScheduler</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr data-step="3"><td>4</td><td></td><td data-lane="kernel">idle + port 启动</td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr data-step="4"><td>5</td><td></td><td></td><td data-lane="svc">恢复 LED1</td><td></td><td></td><td></td><td></td></tr>
+          <tr data-step="5"><td>6</td><td></td><td></td><td></td><td></td><td></td><td data-lane="led1">toggle + delay 250</td><td></td></tr>
+          <tr data-step="6"><td>7</td><td></td><td></td><td></td><td data-lane="pendsv">保存 LED1，选 LED2</td><td></td><td></td><td></td></tr>
+          <tr data-step="7"><td>8</td><td></td><td></td><td></td><td></td><td></td><td></td><td data-lane="led2">toggle + delay 500</td></tr>
+          <tr data-step="8"><td>9</td><td></td><td></td><td></td><td></td><td data-lane="systick">tick 250，唤醒 LED1</td><td></td><td></td></tr>
+          <tr data-step="9"><td>10</td><td></td><td></td><td></td><td data-lane="pendsv">切回 LED1，循环</td><td></td><td></td><td></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card tight">
+      <h4>xTaskCreate 里发生了什么</h4>
+      <ol class="small">
+        <li><code>prvAllocateTCBAndStack</code>：分配 TCB 和任务栈（256 字 = 1 KB）。</li>
+        <li><code>prvInitialiseNewTask</code>：填任务名、优先级、状态列表，调用 <code>pxPortInitialiseStack</code> 构造初始帧。</li>
+        <li><code>prvAddNewTaskToReadyList</code>：挂到 <code>pxReadyTasksLists[1]</code>；<code>uxCurrentNumberOfTasks++</code>。</li>
+        <li>调度器还没启动时：第一个任务会成为 <code>pxCurrentTCB</code>；之后只有更高优先级才会替换它。所以 LED1 先跑。</li>
+      </ol>
+    </div>
+    <div class="card tight">
+      <h4>vTaskStartScheduler 里发生了什么</h4>
+      <ol class="small">
+        <li>创建 idle 任务（priority 0），必要时创建 timer 任务。</li>
+        <li>调用 <code>xPortStartScheduler</code>：配置 tick、PendSV、SVC 优先级。</li>
+        <li>M7：配置 SysTick、PendSV、SVC 优先级；<code>prvPortStartFirstTask</code> 设置 MSP、使能 FPU、执行 <code>svc 0</code>。</li>
+        <li>启动首任务后调度器开始运行；<strong>这个函数不返回</strong>，所以后面的 <code>while(1)</code> 是死代码。</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="card tight">
+    <h4>vTaskDelay 之后</h4>
+    <p class="small">任务从 Ready 移到 Delayed（记录唤醒 tick），然后 <code>portYIELD</code> / PendSV 切到下一个就绪任务。SysTick 的 <code>xTaskIncrementTick</code> 把到期任务移回 Ready；如果它的优先级高于当前任务，或者需要重新选择最高优先级任务，就挂起 PendSV，等异常返回前完成切换。</p>
+    <table>
+      <tr><th>通用动作</th><th>M7 port（本页后续按这个讲）</th></tr>
+      <tr><td>启动首任务</td><td><code>vPortSVCHandler</code>（SVC）</td></tr>
+      <tr><td>上下文切换</td><td><code>xPortPendSVHandler</code>（PendSV）</td></tr>
+      <tr><td>Tick</td><td><code>xPortSysTickHandler</code>（SysTick）</td></tr>
+    </table>
+    <p class="note">你工程里的 <code>core0_main</code> 用的是同一套 <code>xTaskCreate</code>/<code>vTaskStartScheduler</code>；port 层差异属于另一条线，本页不展开 TriCore。</p>
+  </div>
+
+  <div class="think">
+    <span class="label">先想一想</span>
+    <p>为什么两个任务都是 priority 1、LED2 后创建，但启动后先跑的是 LED1？</p>
+    <details><summary>提示</summary><p>调度器启动前，第一个创建的任务会成为 <code>pxCurrentTCB</code>；之后只有更高优先级任务才会替换它。同优先级不会替换，所以就绪表里的第一个任务先跑。后续同优先级任务之间是否轮转，取决于时间片和就绪表顺序。</p></details>
+  </div>
+
+  <div class="cross">
+    <span class="label">举一反三</span>
+    <p><code>vTaskStartScheduler()</code> 不返回，所以 <code>core0_main</code> 后面的 <code>while(1)</code> 永远不会执行。真正让两个 LED 交替的，不是 main 里的循环，而是 <strong>SysTick + PendSV + port 层上下文切换</strong>。</p>
+  </div>
+</section>
+<section class="section" id="s9" data-title="SVC 启动首任务">
+  <h2><span class="num">09</span>SVC：启动第一个任务</h2>
   <p class="lead">FreeRTOS 不是“跳转”到第一个任务，而是用 <code>SVC</code> 触发异常，在 Handler 里把 PSP 指向任务栈，再用 <code>EXC_RETURN=0xFFFFFFFD</code> 返回 Thread/PSP。点“下一步”逐行走。</p>
 
   <div class="grid2">
@@ -542,7 +664,7 @@ pre.code .op{color:var(--accent)}
         <div class="row"><span class="name">PSP</span><span class="addr" id="svcPsp">0x20008000</span><span class="val">任务初始帧</span><span class="note">17 字：8+1+8</span></div>
       </div>
       <div class="btnrow"><button class="btn" id="svcStepBtn">下一步</button><button class="btn ghost" id="svcReset">复位</button></div>
-      <div class="small">任务初始帧：xPSR / PC / LR / R0 / EXC_RETURN / R4–R11。`ldmia r0!, {r4-r11, r14}` 弹 9 个字，PSP 指向剩下的 8 字硬件帧。</div>
+      <div class="small">任务初始帧：xPSR / PC / LR / R12 / R3–R0 / EXC_RETURN / R4–R11。`ldmia r0!, {r4-r11, r14}` 弹 9 个字，PSP 指向剩下的 8 字硬件帧。</div>
     </div>
   </div>
 
@@ -557,8 +679,8 @@ pre.code .op{color:var(--accent)}
     <details><summary>提示</summary><p>r14 是任务栈里的 <code>EXC_RETURN</code>（初始值 0xFFFFFFFD），不是普通返回地址。<code>bx r14</code> 让硬件执行异常返回流程：恢复 8 字硬件帧、切换 PSP、回到 Thread Mode。</p></details>
   </div>
 </section>
-<section class="section" id="s9" data-title="PendSV 切换">
-  <h2><span class="num">09</span>PendSV：真正的上下文切换</h2>
+<section class="section" id="s10" data-title="PendSV 切换">
+  <h2><span class="num">10</span>PendSV：真正的上下文切换</h2>
   <p class="lead">PendSV 是 FreeRTOS 的“切换开关”。异常入口已经把 R0–R3/R12/LR/PC/xPSR 压到任务栈；PendSV 只需要保存 R4–R11，再切换 PSP。点“下一步”看两个任务栈怎么交换。</p>
 
   <div class="grid2">
@@ -588,8 +710,8 @@ pre.code .op{color:var(--accent)}
   </div>
 </section>
 
-<section class="section" id="s10" data-title="SysTick 与 tick">
-  <h2><span class="num">10</span>SysTick 与 tick</h2>
+<section class="section" id="s11" data-title="SysTick 与 tick">
+  <h2><span class="num">11</span>SysTick 与 tick</h2>
   <p class="lead">SysTick 只做两件事：把 tick 加一，判断要不要切换。它不直接做上下文切换，而是“挂起 PendSV”，让 PendSV 在合适的时候完成切换。</p>
 
   <div class="card">
@@ -621,8 +743,8 @@ pre.code .op{color:var(--accent)}
   </div>
 </section>
 
-<section class="section" id="s11" data-title="Fault 模型">
-  <h2><span class="num">11</span>Fault 模型</h2>
+<section class="section" id="s12" data-title="Fault 模型">
+  <h2><span class="num">12</span>Fault 模型</h2>
   <p class="lead">M7 有四类 fault：MemManage、BusFault、UsageFault、HardFault。前三个可以被禁用或升级，最后都落到 HardFault。定位靠 CFSR/HFSR/MMFAR/BFAR。</p>
 
   <div class="card">
@@ -661,8 +783,8 @@ pre.code .op{color:var(--accent)}
   </div>
 </section>
 
-<section class="section" id="s12" data-title="对比与实验">
-  <h2><span class="num">12</span>与 TriCore 对比 + 实验清单</h2>
+<section class="section" id="s13" data-title="对比与实验">
+  <h2><span class="num">13</span>与 TriCore 对比 + 实验清单</h2>
   <p class="lead">最后把 M7 的“硬件栈帧”与 TriCore 的“CSA 链”放在一张表里。两者都能保存上下文，但一个在栈上，一个在 CSA 链表上；这决定了 port.c 的写法完全不同。</p>
 
   <div class="card">
@@ -1096,6 +1218,44 @@ pre.code .op{color:var(--accent)}
     render();
   }
 
+  /* ---------------- 8 overall flow ---------------- */
+  function initFlow() {
+    const steps = [
+      { lane: "main", state: "xTaskCreate(LED1)：分配 TCB/栈、构造初始帧、加入 Ready；pxCurrentTCB=LED1。", current: "LED1", ready: "[LED1]", delayed: "[]", tick: "0", stack: "MSP", pending: "未挂起", code: 0 },
+      { lane: "main", state: "xTaskCreate(LED2)：第二个任务；同优先级，pxCurrentTCB 仍是 LED1。", current: "LED1", ready: "[LED1, LED2]", delayed: "[]", tick: "0", stack: "MSP", pending: "未挂起", code: 1 },
+      { lane: "main", state: "vTaskStartScheduler：创建 idle（priority 0），调用 xPortStartScheduler。", current: "LED1", ready: "[LED1, LED2, IDLE]", delayed: "[]", tick: "0", stack: "MSP", pending: "未挂起", code: 2 },
+      { lane: "kernel", state: "xPortStartScheduler：配置 SysTick/PendSV/SVC；prvPortStartFirstTask 设置 MSP 并 svc 0。", current: "LED1", ready: "[LED1, LED2, IDLE]", delayed: "[]", tick: "0", stack: "MSP（SVC）", pending: "未挂起", code: 2 },
+      { lane: "svc", state: "vPortSVCHandler：从 LED1 任务栈恢复上下文，EXC_RETURN=0xFFFFFFFD 返回 Thread/PSP。", current: "LED1", ready: "[LED1, LED2, IDLE]", delayed: "[]", tick: "0", stack: "PSP", pending: "未挂起", code: -1 },
+      { lane: "led1", state: "LED1：翻转 LED1，vTaskDelay(250) 进入 Blocked；portYIELD 触发 PendSV。", current: "LED1", ready: "[LED2, IDLE]", delayed: "[LED1@250]", tick: "0", stack: "PSP", pending: "已挂起", code: -1 },
+      { lane: "pendsv", state: "PendSV：保存 LED1，vTaskSwitchContext 选 LED2，恢复 LED2。", current: "LED2", ready: "[IDLE]", delayed: "[LED1@250]", tick: "0", stack: "PSP", pending: "完成", code: -1 },
+      { lane: "led2", state: "LED2：翻转 LED2，vTaskDelay(500) 进入 Blocked；idle 运行。", current: "IDLE", ready: "[IDLE]", delayed: "[LED1@250, LED2@500]", tick: "0", stack: "PSP", pending: "未挂起", code: -1 },
+      { lane: "systick", state: "SysTick 到 250：LED1 移回 Ready，PendSV 切回 LED1；循环。", current: "LED1", ready: "[LED1, IDLE]", delayed: "[LED2@500]", tick: "250", stack: "PSP", pending: "已挂起", code: -1 },
+      { lane: "pendsv", state: "PendSV：切回 LED1；LED1 继续 toggle/delay，循环。", current: "LED1", ready: "[LED1, IDLE]", delayed: "[LED2@500]", tick: "250", stack: "PSP", pending: "完成", code: -1 }
+    ];
+    let i = 0;
+    function render() {
+      const s = steps[i];
+      hlCode("flowCode", s.code >= 0 ? [s.code] : []);
+      $("#flowState").innerHTML = s.state.replace(/^([^：]+)：/, "<strong>$1：</strong>");
+      $("#flowCurrent").textContent = s.current;
+      $("#flowReady").textContent = s.ready;
+      $("#flowDelayed").textContent = s.delayed;
+      $("#flowTick").textContent = s.tick;
+      $("#flowStack").textContent = s.stack;
+      $("#flowPending").textContent = s.pending;
+      $$("#flowSwim td").forEach((td) => td.classList.remove("active"));
+      const tr = $('#flowSwim tr[data-step="' + i + '"]');
+      if (tr) {
+        const td = tr.querySelector('td[data-lane="' + s.lane + '"]');
+        if (td) td.classList.add("active");
+      }
+      $("#flowStepBtn").textContent = i >= steps.length - 1 ? "重新开始" : "下一步";
+    }
+    $("#flowStepBtn").addEventListener("click", () => { i = i >= steps.length - 1 ? 0 : i + 1; render(); });
+    $("#flowReset").addEventListener("click", () => { i = 0; render(); });
+    render();
+  }
+
   /* ---------------- 9 PendSV ---------------- */
   function initPendSV() {
     let step = 0;
@@ -1186,6 +1346,7 @@ pre.code .op{color:var(--accent)}
   initFPU();
   initExc();
   initNVIC();
+  initFlow();
   initSVC();
   initPendSV();
   initTick();
