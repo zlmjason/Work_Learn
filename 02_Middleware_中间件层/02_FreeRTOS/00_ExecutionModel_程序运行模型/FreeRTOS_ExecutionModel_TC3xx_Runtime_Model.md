@@ -105,6 +105,7 @@
 ## 关联笔记
 
 - [[FreeRTOS_00_总体学习与实践方案]]（总纲；EM 作为 SP 前置）
+- [[FreeRTOS_ExecutionModel_ARM_M7_Runtime_Model]]（M7 并行主线）
 - [[FreeRTOS_01_学习TODO]]（EM 知识点清单）
 - [[FreeRTOS_02_实践TODO]]（EM 验证用例）
 - [[FreeRTOS_Port_TC3xx_Context_Switch_CSA]]（SP1）
