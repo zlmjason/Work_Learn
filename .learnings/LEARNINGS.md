@@ -903,3 +903,97 @@ DSH **web profile** 里 host 层的 `skill-filesystem` 行是**禁用**状态，
 - Related Files: `.agents/skills`（junction）、`.gitignore`、`C:\Users\11064\.dsh\profiles\web\cordis.patch.yml`
 - Evidence: `dsh-web-app/cordis.patch.yml` 注释与 `presets/cordis.patch.yml`
 - Pattern-Key: dsh.skills.project_root_junction
+
+## [LRN-20261112-001] correction/teaching-story-layering
+
+**Logged**: 2026-11-12
+**Priority**: high
+**Status**: open
+**Area**: 教学表达 / 知识体系组织
+
+### Summary
+
+用户指出：讲 RTOS/port 层时，不能把公共内核逻辑和平台实现混在同一节。正确故事线是：先讲公共代码（`xTaskCreate` / `vTaskStartScheduler`），再抽象 port 接口（`xPortStartScheduler` 必须做什么），最后才落到具体平台（M7 的 SVC/PendSV/SysTick）。
+
+### Details
+
+- 原第 8 节同时讲了公共 API 和 M7 的 SVC/PendSV，跳层了
+- 用户要求：第 8 节只讲平台无关的创建/调度；第 9 节抽象 `xPortStartScheduler` 的职责；第 10 节起才讲 M7 如何实现
+- 抽象节里不应提前出现平台专有名词；平台差异要放在实现节
+- 第 8 节可以提到 `pxPortInitialiseStack` 这类小 port 点，但不展开
+
+### Suggested Action
+
+- 多平台/多层技术主题统一用“公共层 → 抽象契约 → 平台实现 → 细节”的叙事顺序
+- 每节明确标注“平台无关 / 平台相关”
+- 抽象节只写职责、约束和“为什么内核不能自己做”，具体机制留到实现节
+- 这个模式要沉淀到后续教学文档和技能中，不只修这一篇
+
+### Metadata
+
+- Related Files: `02_Middleware_中间件层/02_FreeRTOS/00_ExecutionModel_程序运行模型/ARM_M7/ARM_M7_Exception_Stack_Interactive.html`, `.../FreeRTOS_ExecutionModel_ARM_M7_Runtime_Model.md`
+- Pattern-Key: teaching.layering.common_abstract_platform
+- Recurrence-Count: 1
+- First-Seen: 2026-11-12
+
+## [LRN-20261112-002] correction/systematic-depth-not-surface
+
+**Logged**: 2026-11-12
+**Priority**: high
+**Status**: open
+**Area**: 教学深度 / 系统学习
+
+### Summary
+
+用户强调：当前是系统学习，要求深刻理解，不是了解皮毛。文档不能只列“第一步、第二步”的流程，必须讲到机制、源码、不变量、失败模式和验证方法。
+
+### Details
+
+- 用户对“总体程序流”提出分层讲故事之后，进一步要求每一层都讲深
+- 只列 API 步骤、只画流程图不够；要能回答“内部具体怎么做、为什么这么做、做错会怎样、怎么验证”
+- 对 FreeRTOS/port 层，至少要到：`tasks.c` 的实际函数、TCB 字段、就绪表/`pxCurrentTCB` 选择、port 层寄存器/汇编、EXC_RETURN/栈帧、失败模式
+
+### Suggested Action
+
+- 每个主题按“问题 → 机制 → 源码证据 → 不变量 → 失败模式 → 验证”组织
+- 关键结论必须能指到源码函数/寄存器/栈帧，而不是只给结论
+- 明确区分“公共层抽象”与“平台实现”，抽象层讲职责和不变量，实现层讲寄存器和汇编
+- 不以“覆盖了多少节”为完成标准，以“能脱稿解释并指出证据”为标准
+
+### Metadata
+
+- Related Files: `02_Middleware_中间件层/02_FreeRTOS/00_ExecutionModel_程序运行模型/ARM_M7/`
+- Pattern-Key: teaching.depth.source_evidence
+- Recurrence-Count: 1
+- First-Seen: 2026-11-12
+
+## [LRN-20261112-003] knowledge_gap/freertos-first-task-timer
+
+**Logged**: 2026-11-12
+**Priority**: high
+**Status**: open
+**Area**: FreeRTOS 调度 / 源码分析
+
+### Summary
+
+判断 FreeRTOS 启动后第一个任务时，不能只看用户创建的任务；`vTaskStartScheduler` 会创建 idle 和 timer task，timer task 的优先级可能改写 `pxCurrentTCB`。本工程 `configUSE_TIMERS=1`、`configTIMER_TASK_PRIORITY=9`，最终首任务是 `Tmr Svc`，不是 LED2。
+
+### Details
+
+- LED1/LED2 都是 priority 1；LED2 因 `prvAddNewTaskToReadyList` 的 `<=` 先成为 `pxCurrentTCB`
+- 随后 `vTaskStartScheduler` 创建 idle（0）和 timer task（9）；9 > 1，timer task 再次替换 `pxCurrentTCB`
+- `Tmr Svc` 阻塞在定时器队列后，PendSV 才切到 LED2；LED 任务中 LED2 先跑
+- 只看 `Cpu0_Main.c` 会漏掉 `tasks.c` / `timers.c` 的创建副作用
+
+### Suggested Action
+
+- 分析首任务/调度顺序时，把 `vTaskStartScheduler` 内部创建的 idle/timer task 一起纳入
+- 先读 `FreeRTOSConfig.h` 的 `configUSE_TIMERS`、`configTIMER_TASK_PRIORITY`
+- 用 `pxCurrentTCB`、Ready 列表、timer queue 阻塞点验证，不只靠用户任务创建顺序
+
+### Metadata
+
+- Related Files: `02_Middleware_中间件层/02_FreeRTOS/00_ExecutionModel_程序运行模型/ARM_M7/`
+- Pattern-Key: freertos.first_task.timer_task
+- Recurrence-Count: 1
+- First-Seen: 2026-11-12
