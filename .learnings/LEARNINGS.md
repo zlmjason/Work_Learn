@@ -997,3 +997,34 @@ DSH **web profile** 里 host 层的 `skill-filesystem` 行是**禁用**状态，
 - Pattern-Key: freertos.first_task.timer_task
 - Recurrence-Count: 1
 - First-Seen: 2026-11-12
+
+## [LRN-20261113-001] correction/port-touchpoints-before-boundary
+
+**Logged**: 2026-11-13
+**Priority**: high
+**Status**: open
+**Area**: 教学表达 / FreeRTOS 分层
+
+### Summary
+
+用户指出：第 8 节讲公共层时，不能把 port 说成“从 `xPortStartScheduler()` 才开始”。`xTaskCreate` / `vTaskStartScheduler` 在调用它之前已经碰到 port 小点（`portSTACK_GROWTH`、`StackType_t`、`portBYTE_ALIGNMENT_MASK`、`pxPortInitialiseStack`、`portDISABLE_INTERRUPTS`），必须显式标出，否则故事线断裂。
+
+### Details
+
+- 公共层不是“零 port”，但这里是点状适配：内存布局、栈单位、初始帧、启动屏蔽
+- 面状契约从 `xPortStartScheduler()` 开始：tick、切换触发、首任务上下文、临界区、启动不返回
+- 用户要求第 8 节先讲两个公共函数的内部时序和“为什么这么干”，再把 port 小点放进时间线
+- 原版本只在表格角落提了 `pxPortInitialiseStack`，没有形成“点状适配 vs 面状契约”的显式边界
+
+### Suggested Action
+
+- 讲分层时同时讲“层内的小接触点”和“层间的边界面”
+- 先列 port 符号表，再讲抽象契约；用“点状适配 vs 面状契约”固定表述
+- 时序图里给 port 小点做标记，避免读者以为平台差异突然出现
+
+### Metadata
+
+- Related Files: `02_Middleware_中间件层/02_FreeRTOS/00_ExecutionModel_程序运行模型/ARM_M7/`
+- Pattern-Key: teaching.layering.port_touchpoints
+- Recurrence-Count: 1
+- First-Seen: 2026-11-13

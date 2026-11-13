@@ -11,7 +11,7 @@
 ## 结论
 
 - 把「M7 程序运行模型」作为 TC3xx EM 的**并行主线**，先于 ARM_CM7 port 深读。
-- 程序流按**三层叙事**展开：公共内核层（`xTaskCreate` ×2 → `vTaskStartScheduler`）→ 抽象 port 契约（任何平台必须履行的六条职责）→ M7 实现（`xPortStartScheduler` / SVC / PendSV / SysTick / NVIC / BASEPRI）→ 函数与汇编细节。
+- 程序流按**三层叙事**展开：公共内核层（`xTaskCreate` ×2 → `vTaskStartScheduler`；其间会碰到 `pxPortInitialiseStack` 等点状 port 适配）→ 抽象 port 契约（任何平台必须履行的六条职责）→ M7 实现（`xPortStartScheduler` / SVC / PendSV / SysTick / NVIC / BASEPRI）→ 函数与汇编细节。成体系的平台差异从 `xPortStartScheduler()` 开始，不是从第一行公共代码开始。
 - 学习顺序按硬件依赖组织：**寄存器/模式 → 双栈 → 异常入口/栈帧 → EXC_RETURN → NVIC → 公共程序流 → 抽象 port 契约 → M7 实现 → Fault → 内存系统 → 对比 → 实验**。
 - 主教材是 ARMv7-M ARM B1、Cortex-M7 TRM Ch2/5/6/7/8，以及官方 FreeRTOS V10.5.1 `portable/GCC/ARM_CM7/r0p1` 代码。
 - 每个阶段以“能脱稿回答 + 能在调试器/QEMU 指出证据”为完成判据；最后用 8 个实验闭环。
@@ -61,11 +61,14 @@
 | 层 | 讲什么 | 明确不出现 | HTML | 源码锚点 |
 |---|---|---|---|---|
 | 公共内核层（平台无关） | 两次 `xTaskCreate` 的分配/初始化/入就绪表；`vTaskStartScheduler` 创建 idle 和 timer task，再调用 `xPortStartScheduler`；`pxCurrentTCB` 选择（timer task 最终胜出） | 不讲 SVC/PendSV/SysTick，不讲 MSP/PSP | 第 8 节 | `tasks.c` L721、L816、L1026、L1954；`timers.c` L233 |
+| 公共层里的 port 小点（点状适配） | `portSTACK_GROWTH`、`StackType_t`、`portBYTE_ALIGNMENT_MASK`、`pxPortInitialiseStack`、`portDISABLE_INTERRUPTS`、`portPRIVILEGE_BIT` | 只做内存布局、初始帧、启动屏蔽、任务属性；不建立 tick/切换/异常返回机制 | 第 8 节 | `tasks.c` L721/L816/L1954；`portmacro.h` |
 | 抽象 port 契约（平台无关） | 任何 `xPortStartScheduler()` 必须保证：周期 tick、切换触发、首任务上下文、中断屏蔽/临界区、启动不返回、平台特性 | 不出现具体异常/寄存器/指令名 | 第 9 节 | 六条职责表 + 抽象伪代码 |
 | M7 实现（平台相关） | `xPortStartScheduler` 探测 NVIC 优先级位、设 PendSV/SysTick 最低、配 SysTick、开 FPU；SVC 启动首任务（`Tmr Svc`）；PendSV 切换；SysTick tick | 不混 TriCore 程序模型；TriCore 只在第 14 节对比 | 第 10–12 节 | 官方 `port.c` L290–L389、L244、L430、L489 |
 | 细节与验证 | 每条汇编对应的寄存器/栈帧动作、Fault、实验 | — | 第 11–14 节 | `port.c`、ARMv7-M B1.5 |
 
 **为什么这样分层**：公共内核知道“该跑哪个任务”，但不知道“怎么让 CPU 跑起来”；port 层的职责是把前者的决定翻译成具体平台的异常/寄存器动作。先把职责抽象出来，再看 M7 用 SVC/PendSV/SysTick 逐条履行，才不会把“汇编动作”误当成“设计目的”。
+
+**边界是渐变的**：第 8 节虽然以公共层为主，但 `xTaskCreate` 在分配顺序、栈顶对齐、初始帧上依赖 `portSTACK_GROWTH`、`portBYTE_ALIGNMENT_MASK`、`pxPortInitialiseStack` 等 port 符号；`vTaskStartScheduler` 在进入 `xPortStartScheduler()` 前也会调用 `portDISABLE_INTERRUPTS()`。这些是**点状适配**；把 `xPortStartScheduler()` 当整体契约，才是第 9 节要讲的“面”。
 
 **源码级校正（首任务有两层）**：`prvAddNewTaskToReadyList` 在 `xSchedulerRunning == pdFALSE` 时执行：
 
@@ -95,6 +98,7 @@ xTaskCreate( prvTimerTask,
 | port.c 函数/动作 | 运行模型概念 | 材料 |
 |---|---|---|
 | `xTaskCreate` | 分配 TCB/栈、构造初始帧、加入就绪表 | `tasks.c`；`pxPortInitialiseStack` |
+| `portSTACK_GROWTH` / `pxPortInitialiseStack` / `portDISABLE_INTERRUPTS` | 公共层里的点状 port 适配：分配顺序、初始帧、启动屏蔽 | `tasks.c` L721/L816/L1954；`portmacro.h` |
 | `vTaskStartScheduler` | 创建 idle（0）和 timer task（本工程 priority 9），关中断，置调度器运行，调用 `xPortStartScheduler`（平台分界点） | `tasks.c` L1954；`timers.c` L233 |
 | `pxPortInitialiseStack` 构造初始栈帧 | 合成 xPSR/PC/LR/R12/R3–R0/EXC_RETURN/R4–R11（17 字）；不含 FPU 预置，FPU 由 lazy stacking 处理 | 官方 `port.c`；ARMv7-M B1.5.6 |
 | `prvPortStartFirstTask` 取初始 MSP、清 CONTROL、`svc 0` | 向量表第 0 项、SVC 异常 | 官方 `port.c`；M7 TRM 2.7 |
@@ -124,8 +128,9 @@ xTaskCreate( prvTimerTask,
 12. M7 的硬件栈帧与 TriCore 的 CSA 链，本质差异是什么？
 13. `xTaskCreate` 内部如何构造初始栈帧并加入就绪表？`vTaskStartScheduler` 为什么不返回？
 14. 公共层：两次 `xTaskCreate` 后 `pxCurrentTCB` 为什么先变成 LED2？`vTaskStartScheduler` 又为什么把它换成 `Tmr Svc`？
-15. 抽象契约：`xPortStartScheduler()` 必须保证哪六件事？为什么内核公共代码不能自己做？
-16. M7 映射：M7 用哪些机制逐条履行这六条职责？`xPortStartScheduler` 在启动首任务前配置了什么？
+15. 第 8 节的公共函数在调用 `xPortStartScheduler()` 之前碰到哪些 port 小点？为什么它们不等于 port 契约？
+16. 抽象契约：`xPortStartScheduler()` 必须保证哪六件事？为什么内核公共代码不能自己做？
+17. M7 映射：M7 用哪些机制逐条履行这六条职责？`xPortStartScheduler` 在启动首任务前配置了什么？
 
 ### 5. 实践用例
 
@@ -215,6 +220,7 @@ xTaskCreate( prvTimerTask,
 
 ## Agent 整理记录
 
+- 2026-11-13 第 8 节补充“公共层里的 port 小点”与函数内部时序，明确点状适配（`portSTACK_GROWTH`/`pxPortInitialiseStack`/`portDISABLE_INTERRUPTS`）与面状契约（`xPortStartScheduler`）的边界；第 9 节增加衔接说明。
 - 2026-11-12 按用户要求把程序流改为三层叙事（公共内核 → 抽象 port 契约 → M7 实现），交互台扩为 14 节；依据 `tasks.c` 的 `<=` 和 `timers.c` 的 timer task 创建路径校正首任务为 `Tmr Svc`（LED 任务中 LED2 先跑）；TriCore 仅保留在对比节。
 - 2026-11-10 创建。依据用户要求，按 TC3xx EM 的结构建立 M7 并行主线；材料来自本地 ARMv7-M ARM、Cortex-M7 TRM/DGUG、官方 FreeRTOS V10.5.1 ARM_CM7 port，以及已有 M7 内核手册和异常对比笔记。
 - 与 TC3xx EM 的差异：M7 没有 CSA 链，重点是硬件异常栈帧 + EXC_RETURN + 双栈 + NVIC；实验环境先 QEMU，Cache/Trace 后置。

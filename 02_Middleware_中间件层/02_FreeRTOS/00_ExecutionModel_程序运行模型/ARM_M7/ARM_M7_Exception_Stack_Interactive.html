@@ -535,8 +535,8 @@ pre.code .op{color:var(--accent)}
 </section>
 
 <section class="section" id="s8" data-title="公共程序流">
-  <h2><span class="num">08</span>公共程序流：两个任务 + 启动调度器</h2>
-  <p class="lead">这一节只看 FreeRTOS <strong>公共层</strong>：两次 <code>xTaskCreate</code>、一次 <code>vTaskStartScheduler</code>。它们不知道底下是 M7 还是 TriCore；讲到 <code>xPortStartScheduler()</code> 这个平台分界点就停。每个关键结论都给源码位置；最后会看到 timer task 如何在启动前改写 <code>pxCurrentTCB</code>。</p>
+  <h2><span class="num">08</span>公共程序流：xTaskCreate ×2 + vTaskStartScheduler</h2>
+  <p class="lead">这一节只讲两个公共函数：<code>xTaskCreate</code> 和 <code>vTaskStartScheduler</code>。它们绝大部分是平台无关逻辑，但在调用 <code>xPortStartScheduler()</code> 之前会碰到几个 <strong>port 小点</strong>：<code>portSTACK_GROWTH</code>/<code>StackType_t</code>、<code>pxPortInitialiseStack</code>、<code>portDISABLE_INTERRUPTS</code>。先把这些点标出来，再看函数内部时序和完整启动流程。</p>
 
   <div class="card">
     <h3>你实际写的三行</h3>
@@ -546,6 +546,21 @@ pre.code .op{color:var(--accent)}
       <div class="card tight"><h4>优先级</h4><p class="small">两个 LED 任务都是 1；idle 是 0；timer task 是 <code>configTIMER_TASK_PRIORITY = 9</code>（本工程最高）。</p></div>
       <div class="card tight"><h4>节拍</h4><p class="small"><code>configTICK_RATE_HZ = 1000</code> → 1 tick = 1 ms；250/500 就是 250/500 tick。</p></div>
     </div>
+  </div>
+
+  <div class="card">
+    <h3>先划边界：第 8 节里的 port 小点</h3>
+    <p class="small">公共层不是“零 port”。但这里碰到的是<strong>点状适配</strong>，不是 tick/切换/异常返回那套成体系的平台机制。</p>
+    <table style="table-layout:fixed">
+      <colgroup><col style="width:17%"><col style="width:24%"><col style="width:35%"><col style="width:24%"></colgroup>
+      <tr><th>出现位置</th><th>port 符号</th><th>做什么</th><th>为什么不算“平台机制”</th></tr>
+      <tr><td><code>xTaskCreate</code> 分配</td><td><code>portSTACK_GROWTH</code>、<code>StackType_t</code></td><td>决定先分配栈还是 TCB；<code>usStackDepth</code> 的单位是 <code>StackType_t</code></td><td>只影响内存布局和单位，不涉及异常/中断</td></tr>
+      <tr><td><code>prvInitialiseNewTask</code> 栈顶</td><td><code>portBYTE_ALIGNMENT_MASK</code>、<code>portPOINTER_SIZE_TYPE</code></td><td>按平台对齐要求算栈顶、检查对齐</td><td>数据布局，不决定“怎么切换”</td></tr>
+      <tr><td><code>prvInitialiseNewTask</code> 初始帧</td><td><code>pxPortInitialiseStack</code></td><td>为任务造一个“像被异常打断过”的初始上下文</td><td>只造单个任务的假现场；tick/切换/异常返回仍归 port</td></tr>
+      <tr><td><code>vTaskStartScheduler</code> 启动前</td><td><code>portDISABLE_INTERRUPTS</code></td><td>关中断，防止 tick 在调度器配置完成前打断</td><td>只是一个屏蔽原语；不建立 tick 源</td></tr>
+      <tr><td>idle/timer task 优先级</td><td><code>portPRIVILEGE_BIT</code></td><td>若 port 支持 MPU，给内核任务加特权位</td><td>任务属性，不是调度机制</td></tr>
+    </table>
+    <p class="note">真正的“面”从 <code>xPortStartScheduler()</code> 开始：tick 从哪来、切换怎么触发、首任务怎么恢复、临界区怎么屏蔽。第 9 节只抽象这些职责，第 10 节才落到 M7。</p>
   </div>
 
   <div class="card">
@@ -587,6 +602,21 @@ pre.code .op{color:var(--accent)}
       <li>设置 <code>xSchedulerRunning = pdTRUE</code>、<code>xTickCount = 0</code>、<code>xNextTaskUnblockTime = portMAX_DELAY</code>。</li>
       <li>调用 <code>xPortStartScheduler()</code>；<strong>正常不返回</strong>。只有 port 启动失败或应用调用 <code>vTaskEndScheduler()</code> 才可能返回。</li>
     </ol>
+    <p class="note"><strong>为什么是这个顺序：</strong>idle 必须存在，否则没有就绪任务时调度器无处可去；timer task 优先级 9，保证软件定时器命令能抢占用户任务；<code>portDISABLE_INTERRUPTS()</code> 必须在 port 配置前，否则 tick 可能提前进来；<code>xSchedulerRunning</code> 先置 TRUE，后面创建/唤醒任务才走“运行中”分支；<code>xPortStartScheduler()</code> 最后调用，因为它正常不返回。这里的 <code>portDISABLE_INTERRUPTS()</code> 是 port 小点，不是完整的 tick/切换机制。</p>
+  </div>
+
+  <div class="card">
+    <h3>函数内部时序：从 main 到 xPortStartScheduler</h3>
+    <div class="timeline">
+      <div class="tl on"><span class="t">T0</span><span>main 调用 <code>xTaskCreate(LED1)</code>；进入公共层。</span></div>
+      <div class="tl"><span class="t">T1</span><span>分配：<code>pvPortMallocStack()</code> → <code>pvPortMalloc(TCB)</code>；先栈后 TCB 还是反过来，由 <code>portSTACK_GROWTH</code> 决定。</span></div>
+      <div class="tl"><span class="t">T2</span><span>初始化：<code>prvInitialiseNewTask</code> 算栈顶、按 <code>portBYTE_ALIGNMENT_MASK</code> 对齐、填 TCB，最后调用 <code>pxPortInitialiseStack</code> 造初始帧。</span></div>
+      <div class="tl"><span class="t">T3</span><span>入表：<code>taskENTER_CRITICAL</code> → 更新 <code>uxCurrentNumberOfTasks</code> → 选 <code>pxCurrentTCB</code> → 插入 Ready 表。</span></div>
+      <div class="tl"><span class="t">T4</span><span>main 再调 <code>xTaskCreate(LED2)</code>：重复 T1–T3；同优先级且 <code>&lt;=</code>，<code>pxCurrentTCB</code> 变成 LED2。</span></div>
+      <div class="tl"><span class="t">T5</span><span><code>vTaskStartScheduler</code>：创建 idle(0) → 创建 timer task(9)；timer task 再次改写 <code>pxCurrentTCB</code>。</span></div>
+      <div class="tl"><span class="t">T6</span><span><code>portDISABLE_INTERRUPTS()</code> → 置 <code>xSchedulerRunning=TRUE</code>、<code>xTickCount=0</code> → 调用 <code>xPortStartScheduler()</code>；平台分界。</span></div>
+    </div>
+    <p class="note"><strong>T1/T2/T6 里有 port 小点：</strong><code>portSTACK_GROWTH</code>、<code>pxPortInitialiseStack</code>、<code>portDISABLE_INTERRUPTS</code>。它们只做点状适配；T6 末尾的 <code>xPortStartScheduler()</code> 才是“面”。</p>
   </div>
 
   <div class="card">
@@ -612,7 +642,7 @@ pre.code .op{color:var(--accent)}
         <tr data-step="0"><td>1</td><td data-lane="main">xTaskCreate(LED1)</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
         <tr data-step="1"><td>2</td><td data-lane="main">xTaskCreate(LED2)</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
         <tr data-step="2"><td>3</td><td data-lane="main">vTaskStartScheduler</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-        <tr data-step="3"><td>4</td><td></td><td data-lane="kernel">idle(0) + Tmr Svc(9)，调 xPortStartScheduler</td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr data-step="3"><td>4</td><td></td><td data-lane="kernel">idle(0) + Tmr Svc(9) → portDISABLE_INTERRUPTS → xPortStartScheduler</td><td></td><td></td><td></td><td></td><td></td></tr>
         <tr data-step="4"><td>5</td><td></td><td></td><td data-lane="portstart">首任务（Tmr Svc）</td><td></td><td></td><td></td><td></td></tr>
         <tr data-step="5"><td>6</td><td></td><td data-lane="kernel">Tmr Svc 阻塞在定时器队列</td><td></td><td></td><td></td><td></td><td></td></tr>
         <tr data-step="6"><td>7</td><td></td><td></td><td></td><td data-lane="portswitch">切到 LED2</td><td></td><td></td><td></td></tr>
@@ -628,7 +658,7 @@ pre.code .op{color:var(--accent)}
 
   <div class="fail">
     <span class="label">失败模式</span>
-    <p><strong>忽略 xTaskCreate 返回值：</strong>堆不足时任务根本没创建，后面却按“已创建”分析，现象是“任务没跑/优先级不对”。<strong>栈深度按字节算：</strong>256 被当成 256 B，实际只有 64 字，栈很快溢出。<strong>误判首任务：</strong>以为先创建的 LED1 先跑；实际源码的 <code>&lt;=</code> 让 LED2 在 LED 任务中先跑，而最终首任务是 priority 9 的 <code>Tmr Svc</code>。只盯着 LED 任务就会漏掉 timer task。</p>
+    <p><strong>忽略 xTaskCreate 返回值：</strong>堆不足时任务根本没创建，后面却按“已创建”分析，现象是“任务没跑/优先级不对”。<strong>栈深度按字节算：</strong>256 被当成 256 B，实际只有 64 字，栈很快溢出。<strong>误判首任务：</strong>以为先创建的 LED1 先跑；实际源码的 <code>&lt;=</code> 让 LED2 在 LED 任务中先跑，而最终首任务是 priority 9 的 <code>Tmr Svc</code>。只盯着 LED 任务就会漏掉 timer task。<strong>把第 8 节当成“零 port”：</strong>忽略 <code>pxPortInitialiseStack</code>、<code>portDISABLE_INTERRUPTS</code>，后面看到 SVC 就以为平台差异突然出现；实际边界是渐变的：先是点状 port 适配，到了 <code>xPortStartScheduler()</code> 才变成面状契约。</p>
   </div>
 
   <div class="think">
@@ -639,12 +669,12 @@ pre.code .op{color:var(--accent)}
 
   <div class="cross">
     <span class="label">举一反三</span>
-    <p>公共层只负责“选哪个任务”；<strong>怎么保存、怎么切、怎么产生 tick</strong> 都是 port 层的事。下一节把 port 层当成接口，问“任何平台都必须做什么”。</p>
+    <p>公共层负责“选哪个任务”，但在选的过程中已经碰到 <code>portSTACK_GROWTH</code>、<code>pxPortInitialiseStack</code>、<code>portDISABLE_INTERRUPTS</code> 这几个小点；<strong>怎么保存、怎么切、怎么产生 tick</strong> 才是 port 层成体系的职责。下一节把 <code>xPortStartScheduler()</code> 当成接口，问“任何平台都必须做什么”。</p>
   </div>
 </section>
 <section class="section" id="s9" data-title="抽象 port 契约">
   <h2><span class="num">09</span>抽象 port 契约：xPortStartScheduler() 必须做什么</h2>
-  <p class="lead">这一节不出现 SVC、PendSV、SysTick，也不出现 MSP/PSP。只回答一个问题：<strong>任何平台的 <code>xPortStartScheduler()</code> 必须保证什么？</strong> 为什么这些事内核公共代码不能自己做？</p>
+  <p class="lead">第 8 节已经碰到 <code>pxPortInitialiseStack</code> 这类点状 port 适配；从 <code>xPortStartScheduler()</code> 开始，平台差异才变成一套完整契约。这一节不出现 SVC、PendSV、SysTick，也不出现 MSP/PSP。只回答一个问题：<strong>任何平台的 <code>xPortStartScheduler()</code> 必须保证什么？</strong> 为什么这些事内核公共代码不能自己做？</p>
 
   <div class="card">
     <h3>平台分界点</h3>
